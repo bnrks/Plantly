@@ -5,9 +5,11 @@ import { Colors } from "../constants/Colors";
 import { useColorScheme } from "react-native";
 import ThemedTitle from "./ThemedTitle";
 import ThemedText from "./ThemedText";
+import { useContext } from "react";
+import { ThemeContext } from "../app/context/ThemeContext";
 const PlantCard = ({ name, description, image, onPress, style }) => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
   return (
     <TouchableOpacity
       style={[styles.card, style, { backgroundColor: theme.fourthBg }]}

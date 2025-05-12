@@ -6,52 +6,53 @@ import {
   FlatList,
 } from "react-native";
 import React from "react";
-import ThemedCard from "../../components/ThemedCard";
-import ThemedView from "../../components/ThemedView";
-import ThemedTitle from "../../components/ThemedTitle";
-import ThemedText from "../../components/ThemedText";
+import ThemedCard from "../../../components/ThemedCard";
+import ThemedView from "../../../components/ThemedView";
+import ThemedTitle from "../../../components/ThemedTitle";
+import ThemedText from "../../../components/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
-import PlantCard from "../../components/PlantCard";
-import LoginScreen from "../(auth)/login";
+import PlantCard from "../../../components/PlantCard";
+import LoginScreen from "../../(auth)/login";
 import { Link } from "expo-router";
-import { Colors } from "../../constants/Colors";
+import { Colors } from "../../../constants/Colors";
 import { useColorScheme } from "react-native";
-
+import { useContext } from "react";
+import { ThemeContext } from "../../context/ThemeContext";
 const Home = () => {
   const plants = [
     {
       id: "1",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
     {
       id: "2",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
     {
       id: "3",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
     {
       id: "4",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
     {
       id: "5",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
   ];
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
   return (
     <ThemedView
       style={{

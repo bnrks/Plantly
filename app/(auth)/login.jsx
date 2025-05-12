@@ -16,11 +16,13 @@ import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
 import ThemedCard from "../../components/ThemedCard";
 import { Colors } from "../../constants/Colors";
+import { useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
   const handleLogin = () => {
     console.log("Giriş yapılıyor:", email, password);
   };

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Pressable, Text, StyleSheet, useColorScheme } from "react-native";
 import { Colors } from "../constants/Colors";
-
+import { useContext } from "react";
+import { ThemeContext } from "../app/context/ThemeContext";
 const ThemedButton = ({
   title,
   onPress,
@@ -10,8 +11,8 @@ const ThemedButton = ({
   stayPressed = false,
   ...props
 }) => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
   const [active, setActive] = useState(false);
 
   const handlePress = (event) => {

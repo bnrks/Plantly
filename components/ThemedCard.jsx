@@ -1,10 +1,11 @@
 import { StyleSheet, View, useColorScheme } from "react-native";
 import React from "react";
 import { Colors } from "../constants/Colors";
-
+import { useContext } from "react";
+import { ThemeContext } from "../app/context/ThemeContext";
 const ThemedCard = ({ style, children, ...props }) => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
 
   return (
     <View style={[{ backgroundColor: theme.secondBg }, style]} {...props}>

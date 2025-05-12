@@ -1,44 +1,46 @@
 import { StyleSheet, Text, View, FlatList } from "react-native";
 import React from "react";
-import ThemedCard from "../../components/ThemedCard";
-import ThemedView from "../../components/ThemedView";
-import { Colors } from "../../constants/Colors";
-import ThemedTitle from "../../components/ThemedTitle";
-import ThemedText from "../../components/ThemedText";
+import ThemedCard from "../../../components/ThemedCard";
+import ThemedView from "../../../components/ThemedView";
+import { Colors } from "../../../constants/Colors";
+import ThemedTitle from "../../../components/ThemedTitle";
+import ThemedText from "../../../components/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
-import PlantCard from "../../components/PlantCard";
-import ThemedButton from "../../components/ThemedButton";
+import PlantCard from "../../../components/PlantCard";
+import ThemedButton from "../../../components/ThemedButton";
+import { useRouter } from "expo-router";
 const MyPlants = () => {
+  const router = useRouter();
   const plants = [
     {
       id: "1",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
     {
       id: "2",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
     {
       id: "3",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
     {
       id: "4",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
     {
       id: "5",
       name: "Aloe Vera",
       description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../assets/plantly-logo.png"),
+      image: require("../../../assets/plantly-logo.png"),
     },
   ];
   return (
@@ -66,7 +68,12 @@ const MyPlants = () => {
               name={item.name}
               description={item.description}
               image={item.image}
-              onPress={() => console.log(item.name, "tıklandı")}
+              onPress={() =>
+                router.push({
+                  pathname: "../plantDetails", // doğru dosya adı
+                  params: { id: item.id },
+                })
+              }
             />
           )}
         />

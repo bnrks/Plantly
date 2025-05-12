@@ -1,9 +1,11 @@
 import { StyleSheet, Text, View, useColorScheme } from "react-native";
 import React from "react";
 import { Colors } from "../constants/Colors";
+import { useContext } from "react";
+import { ThemeContext } from "../app/context/ThemeContext";
 const ThemedView = ({ style, ...props }) => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
   console.log("Current theme:", theme);
   return (
     <View
