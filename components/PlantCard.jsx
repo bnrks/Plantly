@@ -6,7 +6,7 @@ import { useColorScheme } from "react-native";
 import ThemedTitle from "./ThemedTitle";
 import ThemedText from "./ThemedText";
 import { useContext } from "react";
-import { ThemeContext } from "../app/context/ThemeContext";
+import { ThemeContext } from "../src/context/ThemeContext";
 const PlantCard = ({ name, description, image, onPress, style }) => {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;

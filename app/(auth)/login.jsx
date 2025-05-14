@@ -9,7 +9,8 @@ import {
   Pressable,
   useColorScheme,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import { signin } from "../../src/services/authService";
 import PlantlyLogo from "../../assets/plantly-logo.png";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
@@ -17,13 +18,20 @@ import ThemedButton from "../../components/ThemedButton";
 import ThemedCard from "../../components/ThemedCard";
 import { Colors } from "../../constants/Colors";
 import { useContext } from "react";
-import { ThemeContext } from "../context/ThemeContext";
-const LoginScreen = () => {
+import { ThemeContext } from "../../src/context/ThemeContext";
+import ThemedTextInput from "../../components/ThemedTextInput";
+export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    try {
+      await signin(email.trim(), password);
+      console.log("Giriş başarılı");
+      router.replace("/home");
+    } catch (error) {}
     console.log("Giriş yapılıyor:", email, password);
   };
 
@@ -54,6 +62,7 @@ const LoginScreen = () => {
           marginTop: 10,
           borderRadius: 20,
           padding: 20,
+          alignItems: "center",
         }}
       >
         <ThemedText
@@ -64,6 +73,7 @@ const LoginScreen = () => {
               fontSize: 30,
               paddingBottom: 20,
               fontWeight: "bold",
+              marginBottom: 20,
             })
           }
         >
@@ -71,8 +81,13 @@ const LoginScreen = () => {
         </ThemedText>
 
         {/* E-posta girişi */}
-        <TextInput
-          style={styles.input}
+        <ThemedTextInput
+          style={{
+            width: "90%",
+            marginBottom: 20,
+            borderRadius: 5,
+            height: 50,
+          }}
           placeholder="E-posta"
           value={email}
           onChangeText={setEmail}
@@ -81,8 +96,13 @@ const LoginScreen = () => {
         />
 
         {/* Şifre girişi */}
-        <TextInput
-          style={styles.input}
+        <ThemedTextInput
+          style={{
+            width: "90%",
+            marginBottom: 20,
+            borderRadius: 5,
+            height: 50,
+          }}
           placeholder="Şifre"
           value={password}
           onChangeText={setPassword}
@@ -92,8 +112,15 @@ const LoginScreen = () => {
         {/* Giriş butonu */}
         <ThemedButton
           title="Giriş"
+          style={{
+            height: 50,
+            borderRadius: 5,
+            backgroundColor: theme.primary,
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
           onPress={handleLogin}
-          style={styles.button}
           textStyle={styles.buttonText}
           stayPressed={true}
         />
@@ -106,9 +133,7 @@ const LoginScreen = () => {
       </ThemedCard>
     </ThemedView>
   );
-};
-
-export default LoginScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -117,26 +142,7 @@ const styles = StyleSheet.create({
     alignItems: "center", // Dikeyde ortala
     padding: 10,
   },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-    fontWeight: "bold",
-  },
-  input: {
-    width: "100%",
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-  },
-  button: {
-    width: "100%",
-    paddingVertical: 15,
-    borderRadius: 5,
-    alignItems: "center",
-  },
+
   buttonText: {
     fontSize: 16,
     fontWeight: "600",

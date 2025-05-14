@@ -16,7 +16,7 @@ import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
 import ThemedCard from "../../components/ThemedCard";
 import { useContext } from "react";
-import { ThemeContext } from "../context/ThemeContext";
+import { ThemeContext } from "../../src/context/ThemeContext";
 export default function PlantDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();

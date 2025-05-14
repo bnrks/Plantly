@@ -2,7 +2,7 @@ import { StyleSheet, Text, useColorScheme } from "react-native";
 import React from "react";
 import { Colors } from "../constants/Colors";
 import { useContext } from "react";
-import { ThemeContext } from "../app/context/ThemeContext";
+import { ThemeContext } from "../src/context/ThemeContext";
 const ThemedText = ({ style, children, ...props }) => {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;

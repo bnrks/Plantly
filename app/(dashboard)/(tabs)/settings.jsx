@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { StyleSheet, View, Switch, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors } from "../../../constants/Colors";
-import { ThemeContext } from "../../context/ThemeContext";
+import { ThemeContext } from "../../../src/context/ThemeContext";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";

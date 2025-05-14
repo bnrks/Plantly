@@ -1,25 +1,42 @@
-import { StyleSheet, Text, View, useColorScheme } from "react-native";
-import React from "react";
-import { Slot, Stack } from "expo-router"; // Slot bileşenini içe aktar
-import { ThemeProvider } from "./context/ThemeContext";
-const RootLayout = () => {
-  const colorScheme = useColorScheme();
+// app/_layout.jsx
+import React, { useContext } from "react";
+import { StyleSheet, SafeAreaView, StatusBar } from "react-native";
+import { Stack } from "expo-router";
+import { ThemeProvider, ThemeContext } from "../src/context/ThemeContext";
+import { Colors } from "../constants/Colors";
+import { AuthProvider } from "../src/context/AuthContext";
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        {/* Ana sayfa / splash / yönlendirme */}
-        <Stack.Screen name="index" />
-
-        {/* Authentication */}
-        <Stack.Screen name="(auth)" />
-
-        {/* Dashboard → içine girince tabları gösterir */}
-        <Stack.Screen name="(dashboard)" />
-      </Stack>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <RootInner />
+      </ThemeProvider>
+    </AuthProvider>
   );
-};
+}
 
-export default RootLayout;
+function RootInner() {
+  // 2. Artık context'ten tema bilgisini okuyabiliriz
+  const { theme: currentTheme } = useContext(ThemeContext);
+  const theme = Colors[currentTheme] ?? Colors.light;
 
-const styles = StyleSheet.create({});
+  return (
+    // 3. SafeAreaView ile status bar bölgesini de renklendirelim
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: theme.background }]}
+    >
+      <StatusBar
+        barStyle={currentTheme === "dark" ? "light-content" : "dark-content"}
+        backgroundColor={theme.background}
+      />
+
+      <Stack screenOptions={{ headerShown: false }} />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+});

@@ -18,6 +18,18 @@ const index = () => {
       >
         Home
       </Link>
+      <Link
+        href={"/login"}
+        style={{
+          fontSize: 20,
+          padding: 20,
+          backgroundColor: "blue",
+          color: "white",
+          borderRadius: 10,
+        }}
+      >
+        login
+      </Link>
     </View>
   );
 };

@@ -17,7 +17,7 @@ import { Link } from "expo-router";
 import { Colors } from "../../../constants/Colors";
 import { useColorScheme } from "react-native";
 import { useContext } from "react";
-import { ThemeContext } from "../../context/ThemeContext";
+import { ThemeContext } from "../../../src/context/ThemeContext";
 const Home = () => {
   const plants = [
     {
@@ -59,6 +59,7 @@ const Home = () => {
         flex: 1,
         padding: 20,
       }}
+      safe={true}
     >
       {/* ÜST KISIM */}
       <ThemedCard

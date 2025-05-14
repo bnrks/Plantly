@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Pressable, Text, StyleSheet, useColorScheme } from "react-native";
 import { Colors } from "../constants/Colors";
 import { useContext } from "react";
-import { ThemeContext } from "../app/context/ThemeContext";
+import { ThemeContext } from "../src/context/ThemeContext";
 const ThemedButton = ({
   title,
   onPress,

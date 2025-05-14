@@ -1,34 +1,38 @@
-import { StyleSheet, Text, View, useColorScheme } from "react-native";
+// app/(auth)/_layout.jsx
 import React, { useState } from "react";
-import { Slot, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
 import * as Font from "expo-font";
-import AppLoading from "expo-app-loading";
-const AuthLayout = () => {
-  const loadFonts = () =>
-    Font.loadAsync({
-      "noto-sans": require("../../assets/fonts/MartianMono-VariableFont_wdth,wght.ttf"),
-    });
-  const [fontsLoaded, setFontsLoaded] = useState(false);
-  if (!fontsLoaded) {
-    return (
-      <AppLoading
-        startAsync={loadFonts}
-        onFinish={() => setFontsLoaded(true)}
-        onError={console.warn}
-      />
-    );
+import { Slot } from "expo-router";
+
+export default function AuthLayout() {
+  const [ready, setReady] = useState(false);
+
+  React.useEffect(() => {
+    async function prepare() {
+      try {
+        await SplashScreen.preventAutoHideAsync();
+        await Font.loadAsync({
+          "noto-sans": require("../../assets/fonts/MartianMono-VariableFont_wdth,wght.ttf"),
+        });
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setReady(true);
+        await SplashScreen.hideAsync();
+      }
+    }
+    prepare();
+  }, []);
+
+  if (!ready) {
+    return null; // splash ekranı açık kalır
   }
+
   return (
     <>
       <StatusBar style="auto" />
-      <Stack
-        screenOptions={{ headerShown: false, animation: "default" }}
-      ></Stack>
+      <Slot />
     </>
   );
-};
-
-export default AuthLayout;
-
-const styles = StyleSheet.create({});
+}
