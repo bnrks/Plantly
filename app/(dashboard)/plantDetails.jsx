@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import {
   StyleSheet,
   Image,
@@ -17,18 +17,29 @@ import ThemedButton from "../../components/ThemedButton";
 import ThemedCard from "../../components/ThemedCard";
 import { useContext } from "react";
 import { ThemeContext } from "../../src/context/ThemeContext";
+import { fetchPlantById } from "../../src/services/firestoreService";
+import { AuthContext } from "../../src/context/AuthContext";
 export default function PlantDetails() {
-  const { id } = useLocalSearchParams();
+  const userid = useContext(AuthContext).user.uid;
   const router = useRouter();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
-
+  const { id, imageUrl } = useLocalSearchParams();
+  const [plant, setPlant] = useState({});
+  useEffect(() => {
+    async function getPlant() {
+      const info = await fetchPlantById(userid, id);
+      console.log(typeof info);
+      if (info) setPlant(info);
+      console.log("plant", plant.imageUrl);
+    }
+    getPlant();
+  }, []);
   // TODO: Backend ile entegre edilecek => örnek veri
-  const plant = {
-    id,
-    name: "Aloe Vera",
-    description: "Güneşi sever, haftada 1 kez sulanmalı.",
-    image: require("../../assets/aleo-vera.jpg"),
+  const plantexample = {
+    name: plant.name,
+    descrieption: plant.description,
+    image: { uri: plant.imageUrl },
     wateringSchedule: [
       { day: "Pazartesi", time: "08:00" },
       { day: "Perşembe", time: "08:00" },
@@ -79,33 +90,39 @@ export default function PlantDetails() {
       >
         {/* İçerik kaydırılabilir */}
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Image source={plant.image} style={styles.image} />
-          <ThemedTitle style={styles.title}>{plant.name}</ThemedTitle>
+          <Image source={plantexample.image} style={styles.image} />
+          <ThemedTitle style={styles.title}>{plantexample.name}</ThemedTitle>
 
           <ThemedText style={styles.description}>
-            {plant.description}
+            {plantexample.description}
           </ThemedText>
 
           <ThemedTitle style={styles.sectionHeader}>Sulama Takvimi</ThemedTitle>
-          {plant.wateringSchedule.map((item, idx) => (
-            <ThemedText key={idx} style={styles.itemText}>
-              {`${item.day} - ${item.time}`}
-            </ThemedText>
-          ))}
+          {plantexample.wateringSchedule &&
+            plantexample.wateringSchedule.map((item, idx) => (
+              <ThemedText key={idx} style={styles.itemText}>
+                {`${item.day} ${item.time}`}
+              </ThemedText>
+            ))}
 
           <ThemedTitle style={styles.sectionHeader}>
             Gübreleme Takvimi
           </ThemedTitle>
-          {plant.fertilizing.map((item, idx) => (
-            <ThemedText key={idx} style={styles.itemText}>
-              {`${item.month} ${item.day}`}
-            </ThemedText>
-          ))}
+          {plantexample.fertilizing &&
+            plantexample.fertilizing.map((item, idx) => (
+              <ThemedText key={idx} style={styles.itemText}>
+                {`${item.month} ${item.day}`}
+              </ThemedText>
+            ))}
 
           <ThemedTitle style={styles.sectionHeader}>Notlar</ThemedTitle>
-          <ThemedText style={styles.itemText}>{plant.notes}</ThemedText>
+          <ThemedText style={styles.itemText}>{plantexample.notes}</ThemedText>
 
-          <ThemedButton title="Analiz Et" style={styles.button} />
+          <ThemedButton
+            title="Analiz Et"
+            style={styles.button}
+            onPress={() => router.push("analysis")}
+          />
         </ScrollView>
       </ThemedCard>
     </ThemedView>

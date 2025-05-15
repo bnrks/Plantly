@@ -27,7 +27,7 @@ export default function Register() {
       return;
     }
     try {
-      await signup(email.trim(), password);
+      await signup(email.trim(), password, username.trim());
       Alert.alert("Başarılı", "Kayıt işlemi tamamlandı.");
 
       router.replace("/login");

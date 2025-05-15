@@ -18,6 +18,8 @@ import { Colors } from "../../../constants/Colors";
 import { useColorScheme } from "react-native";
 import { useContext } from "react";
 import { ThemeContext } from "../../../src/context/ThemeContext";
+import { AuthContext } from "../../../src/context/AuthContext";
+
 const Home = () => {
   const plants = [
     {
@@ -53,6 +55,8 @@ const Home = () => {
   ];
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
+  const username = useContext(AuthContext).user.displayName;
+  console.log(username);
   return (
     <ThemedView
       style={{
@@ -80,7 +84,9 @@ const Home = () => {
         >
           {/* SOL TARAF */}
           <View style={{ width: "80%" }}>
-            <ThemedTitle style={{ fontSize: 20 }}>Merhaba, Burak</ThemedTitle>
+            <ThemedTitle style={{ fontSize: 20 }}>
+              Merhaba, {username}
+            </ThemedTitle>
             <ThemedText>3 tane bildirimin var.</ThemedText>
           </View>
 
@@ -140,8 +146,6 @@ const Home = () => {
           )}
         />
       </ThemedCard>
-
-      <Link href={"login"}>login</Link>
     </ThemedView>
   );
 };

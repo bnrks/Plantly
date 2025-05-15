@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View, FlatList } from "react-native";
-import React from "react";
+import { useState, useEffect } from "react";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedView from "../../../components/ThemedView";
 import { Colors } from "../../../constants/Colors";
@@ -9,8 +9,21 @@ import { Ionicons } from "@expo/vector-icons";
 import PlantCard from "../../../components/PlantCard";
 import ThemedButton from "../../../components/ThemedButton";
 import { useRouter } from "expo-router";
+import { fetchPlants } from "../../../src/services/firestoreService";
+import { AuthContext } from "../../../src/context/AuthContext";
+import { useContext } from "react";
 const MyPlants = () => {
   const router = useRouter();
+  const [plantss, setPlantss] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const userid = useContext(AuthContext).user.uid;
+  console.log(userid);
+  useEffect(() => {
+    const list = fetchPlants(userid, setPlantss, setLoading);
+    setPlantss(list);
+    console.log("plantlar", plantss);
+  }, []);
+
   const plants = [
     {
       id: "1",
@@ -58,7 +71,7 @@ const MyPlants = () => {
         </ThemedTitle>
 
         <FlatList
-          data={plants}
+          data={plantss}
           keyExtractor={(item) => item.id}
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
@@ -67,11 +80,16 @@ const MyPlants = () => {
             <PlantCard
               name={item.name}
               description={item.description}
-              image={item.image}
+              image={{ uri: item.imageUrl }}
               onPress={() =>
                 router.push({
                   pathname: "../plantDetails", // doğru dosya adı
-                  params: { id: item.id },
+                  params: {
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    imageUrl: item.imageUrl,
+                  },
                 })
               }
             />

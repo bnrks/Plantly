@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -17,14 +17,20 @@ import ThemedButton from "../../../components/ThemedButton";
 import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@expo/vector-icons";
 import ThemedCard from "../../../components/ThemedCard";
-
-export default function AddPlantScreen({ navigation }) {
-  const [photo, setPhoto] = useState(null);
+import { uploadImageAsync } from "../../../src/services/storageService";
+import { addPlant } from "../../../src/services/firestoreService";
+import { AuthContext } from "../../../src/context/AuthContext";
+import { useRouter } from "expo-router";
+import { Alert } from "react-native";
+export default function AddPlantScreen({}) {
+  const { user } = useContext(AuthContext);
+  const router = useRouter();
+  const [photoUri, setPhotoUri] = useState(null);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [description, setDescription] = useState("");
   const [showOptions, setShowOptions] = useState(false);
-
+  console.log(user.uid);
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -36,7 +42,7 @@ export default function AddPlantScreen({ navigation }) {
       quality: 0.8,
     });
     if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
+      setPhotoUri(result.assets[0].uri);
     }
   };
 
@@ -50,13 +56,29 @@ export default function AddPlantScreen({ navigation }) {
       quality: 0.8,
     });
     if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
+      setPhotoUri(result.assets[0].uri);
     }
   };
 
-  const handleSave = () => {
-    console.log({ photo, name, species, description });
-    navigation.goBack();
+  const handleSave = async () => {
+    if (!photoUri || !name.trim() || !species.trim()) {
+      Alert.alert("Eksik bilgi", "Lütfen fotoğraf, isim ve tür girin.");
+      return;
+    }
+    try {
+      // 1) Fotoğrafı Storage'a yükle
+      const imageUrl = await uploadImageAsync(photoUri, `plants/${user.uid}`);
+      console.log("Yüklenen fotoğraf URL'si:", imageUrl);
+      // 2) Firestore'a kaydet
+      console.log("addPlant çağrıldı, userId:", user.uid);
+      await addPlant(user.uid, { name, species, description, imageUrl });
+
+      Alert.alert("Başarılı", "Bitki eklendi.");
+      router.replace("/myPlants"); // Veya hangi sayfaya dönmek istersen
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Hata", "Bitki eklenirken bir sorun oluştu.");
+    }
   };
 
   return (
@@ -111,7 +133,9 @@ export default function AddPlantScreen({ navigation }) {
           </Modal>
 
           {/* Önizleme */}
-          {photo && <Image source={{ uri: photo }} style={styles.preview} />}
+          {photoUri && (
+            <Image source={{ uri: photoUri }} style={styles.preview} />
+          )}
 
           {/* İsim */}
           <ThemedText style={styles.label}>Ad</ThemedText>
@@ -127,8 +151,8 @@ export default function AddPlantScreen({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Bitkinin türü"
-            value={name}
-            onChangeText={setName}
+            value={species}
+            onChangeText={setSpecies}
           />
 
           {/* Açıklama */}
@@ -143,7 +167,7 @@ export default function AddPlantScreen({ navigation }) {
 
           {/* Kaydet Butonu */}
           <ThemedButton
-            title="Analize Gönder"
+            title="Kaydet"
             onPress={handleSave}
             style={styles.saveButton}
           />

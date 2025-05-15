@@ -5,10 +5,21 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  updateProfile,
 } from "firebase/auth";
+import { createUserDocument } from "./firestoreService";
 
-export const signup = (email, password) =>
-  createUserWithEmailAndPassword(auth, email, password);
+export const signup = async (email, password, username) => {
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
+  const user = userCredential.user;
+  await updateProfile(user, { displayName: username });
+  await createUserDocument(user);
+  return userCredential;
+};
 
 export const signin = (email, password) =>
   signInWithEmailAndPassword(auth, email, password);
