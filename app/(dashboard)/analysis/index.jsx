@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { StyleSheet, View, Image, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import ThemedView from "../../components/ThemedView";
-import ThemedTitle from "../../components/ThemedTitle";
-import ThemedText from "../../components/ThemedText";
-import ThemedButton from "../../components/ThemedButton";
-
+import ThemedView from "../../../components/ThemedView";
+import ThemedTitle from "../../../components/ThemedTitle";
+import ThemedText from "../../../components/ThemedText";
+import ThemedButton from "../../../components/ThemedButton";
+import { useRouter } from "expo-router";
 export default function Analysis() {
   const [step, setStep] = useState("instruction"); // 'instruction', 'capturing', 'preview'
   const [photoUri, setPhotoUri] = useState(null);
+  const router = useRouter();
 
   // Kamera izni isteği
   useEffect(() => {
@@ -60,8 +61,10 @@ export default function Analysis() {
   };
 
   const confirmPhoto = () => {
-    // TODO: göndermek için iş akışı
-    Alert.alert("Fotoğraf onaylandı");
+    router.push({
+      pathname: "/analysis/results",
+      params: { photoUri },
+    });
   };
 
   const retakePhoto = () => {
@@ -131,7 +134,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   button: {
-    width: 200,
+    width: 180,
     marginVertical: 10,
   },
   preview: {
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     width: "100%",
   },
 });

@@ -6,6 +6,7 @@ import {
   View,
   TouchableOpacity,
   useColorScheme,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +20,7 @@ import { useContext } from "react";
 import { ThemeContext } from "../../src/context/ThemeContext";
 import { fetchPlantById } from "../../src/services/firestoreService";
 import { AuthContext } from "../../src/context/AuthContext";
+import Loading from "../../components/Loading";
 export default function PlantDetails() {
   const userid = useContext(AuthContext).user.uid;
   const router = useRouter();
@@ -26,32 +28,31 @@ export default function PlantDetails() {
   const theme = Colors[selectedTheme] ?? Colors.light;
   const { id, imageUrl } = useLocalSearchParams();
   const [plant, setPlant] = useState({});
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     async function getPlant() {
       const info = await fetchPlantById(userid, id);
-      console.log(typeof info);
       if (info) setPlant(info);
-      console.log("plant", plant.imageUrl);
+      setLoading(false);
     }
     getPlant();
   }, []);
   // TODO: Backend ile entegre edilecek => örnek veri
   const plantexample = {
     name: plant.name,
-    descrieption: plant.description,
+    description: plant.description,
     image: { uri: plant.imageUrl },
-    wateringSchedule: [
-      { day: "Pazartesi", time: "08:00" },
-      { day: "Perşembe", time: "08:00" },
-    ],
-    fertilizing: [
-      { month: "Mart", day: 15 },
-      { month: "Eylül", day: 15 },
-    ],
-    status: "Sağlıklı",
-    notes: "Yaprak altına spreyle nem uygulayın.",
-  };
 
+    status: "Sağlıklı",
+    notes: [
+      "Yaprakları haftada bir nemlendirin.",
+      "Toprağı her 2 haftada bir gübreleyin.",
+      "Güneşi seven bitki, direkt güneş ışığından kaçının.",
+    ],
+  };
+  if (loading) {
+    return <Loading>Yükleniyor</Loading>;
+  }
   return (
     <ThemedView style={styles.container}>
       {/* Sabit Header */}
@@ -96,27 +97,17 @@ export default function PlantDetails() {
           <ThemedText style={styles.description}>
             {plantexample.description}
           </ThemedText>
-
-          <ThemedTitle style={styles.sectionHeader}>Sulama Takvimi</ThemedTitle>
-          {plantexample.wateringSchedule &&
-            plantexample.wateringSchedule.map((item, idx) => (
-              <ThemedText key={idx} style={styles.itemText}>
-                {`${item.day} ${item.time}`}
-              </ThemedText>
-            ))}
+          <ThemedTitle style={{ fontSize: 20 }}>Durum</ThemedTitle>
+          <ThemedText style={styles.itemText}>{plantexample.status}</ThemedText>
 
           <ThemedTitle style={styles.sectionHeader}>
-            Gübreleme Takvimi
+            Bakım Önerileri
           </ThemedTitle>
-          {plantexample.fertilizing &&
-            plantexample.fertilizing.map((item, idx) => (
-              <ThemedText key={idx} style={styles.itemText}>
-                {`${item.month} ${item.day}`}
-              </ThemedText>
-            ))}
-
-          <ThemedTitle style={styles.sectionHeader}>Notlar</ThemedTitle>
-          <ThemedText style={styles.itemText}>{plantexample.notes}</ThemedText>
+          {plantexample.notes.map((note, idx) => (
+            <ThemedText key={idx} style={styles.itemText}>
+              • {note}
+            </ThemedText>
+          ))}
 
           <ThemedButton
             title="Analiz Et"

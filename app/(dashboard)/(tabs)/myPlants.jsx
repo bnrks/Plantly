@@ -1,61 +1,40 @@
-import { StyleSheet, Text, View, FlatList } from "react-native";
-import { useState, useEffect } from "react";
-import ThemedCard from "../../../components/ThemedCard";
-import ThemedView from "../../../components/ThemedView";
-import { Colors } from "../../../constants/Colors";
-import ThemedTitle from "../../../components/ThemedTitle";
-import ThemedText from "../../../components/ThemedText";
-import { Ionicons } from "@expo/vector-icons";
-import PlantCard from "../../../components/PlantCard";
-import ThemedButton from "../../../components/ThemedButton";
-import { useRouter } from "expo-router";
+import { StyleSheet, FlatList } from "react-native";
+import { useState, useEffect, useContext } from "react";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { fetchPlants } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
-import { useContext } from "react";
+import ThemedCard from "../../../components/ThemedCard";
+import ThemedView from "../../../components/ThemedView";
+import ThemedTitle from "../../../components/ThemedTitle";
+import PlantCard from "../../../components/PlantCard";
+import ThemedButton from "../../../components/ThemedButton";
+import Loading from "../../../components/Loading";
 const MyPlants = () => {
   const router = useRouter();
+  const { refresh } = useLocalSearchParams();
+  const userid = useContext(AuthContext).user.uid;
   const [plantss, setPlantss] = useState([]);
   const [loading, setLoading] = useState(true);
-  const userid = useContext(AuthContext).user.uid;
-  console.log(userid);
-  useEffect(() => {
-    const list = fetchPlants(userid, setPlantss, setLoading);
-    setPlantss(list);
-    console.log("plantlar", plantss);
-  }, []);
+  const [initialFetched, setInitialFetched] = useState(false);
 
-  const plants = [
-    {
-      id: "1",
-      name: "Aloe Vera",
-      description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../../assets/plantly-logo.png"),
-    },
-    {
-      id: "2",
-      name: "Aloe Vera",
-      description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../../assets/plantly-logo.png"),
-    },
-    {
-      id: "3",
-      name: "Aloe Vera",
-      description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../../assets/plantly-logo.png"),
-    },
-    {
-      id: "4",
-      name: "Aloe Vera",
-      description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../../assets/plantly-logo.png"),
-    },
-    {
-      id: "5",
-      name: "Aloe Vera",
-      description: "Güneşi sever, haftada 1 kez su ister.",
-      image: require("../../../assets/plantly-logo.png"),
-    },
-  ];
+  useEffect(() => {
+    if (!initialFetched && refresh !== "true") {
+      setLoading(true);
+      fetchPlants(userid, setPlantss, setLoading);
+      setInitialFetched(true);
+    }
+  }, []);
+  useEffect(() => {
+    if (refresh === "true") {
+      setLoading(true);
+      fetchPlants(userid, setPlantss, setLoading);
+      router.replace({ pathname: "/myPlants" });
+    }
+  }, [refresh]);
+
+  if (loading) {
+    return <Loading>Yükleniyor</Loading>;
+  }
   return (
     <ThemedView style={{ flex: 1, padding: 10, height: "100%" }}>
       <ThemedCard
@@ -98,7 +77,7 @@ const MyPlants = () => {
       </ThemedCard>
       <ThemedButton
         title="Yeni Bitki Ekle"
-        onPress={() => console.log("Tıklandı")}
+        onPress={() => router.push("../addPlant")}
         style={{ marginTop: 10 }}
         textStyle={{ fontSize: 18 }}
       />

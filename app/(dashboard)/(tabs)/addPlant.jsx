@@ -22,6 +22,7 @@ import { addPlant } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
+
 export default function AddPlantScreen({}) {
   const { user } = useContext(AuthContext);
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function AddPlantScreen({}) {
   const [species, setSpecies] = useState("");
   const [description, setDescription] = useState("");
   const [showOptions, setShowOptions] = useState(false);
-  console.log(user.uid);
+  const [isSaving, setIsSaving] = useState(false);
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -61,23 +62,34 @@ export default function AddPlantScreen({}) {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
     if (!photoUri || !name.trim() || !species.trim()) {
       Alert.alert("Eksik bilgi", "Lütfen fotoğraf, isim ve tür girin.");
       return;
     }
     try {
+      setIsSaving(true);
       // 1) Fotoğrafı Storage'a yükle
       const imageUrl = await uploadImageAsync(photoUri, `plants/${user.uid}`);
       console.log("Yüklenen fotoğraf URL'si:", imageUrl);
       // 2) Firestore'a kaydet
       console.log("addPlant çağrıldı, userId:", user.uid);
       await addPlant(user.uid, { name, species, description, imageUrl });
-
+      // 3) Formu temizle
+      setPhotoUri(null);
+      setName("");
+      setSpecies("");
+      setDescription("");
+      setShowOptions(false);
       Alert.alert("Başarılı", "Bitki eklendi.");
-      router.replace("/myPlants"); // Veya hangi sayfaya dönmek istersen
+      router.replace({
+        pathname: "/myPlants",
+        params: { refresh: "true" }, // burada query param olarak gönderiyoruz
+      }); // Veya hangi sayfaya dönmek istersen
     } catch (e) {
       console.error(e);
       Alert.alert("Hata", "Bitki eklenirken bir sorun oluştu.");
+      setIsSaving(false);
     }
   };
 
@@ -167,9 +179,10 @@ export default function AddPlantScreen({}) {
 
           {/* Kaydet Butonu */}
           <ThemedButton
-            title="Kaydet"
+            title={isSaving ? "Kaydediliyor…" : "Kaydet"}
             onPress={handleSave}
-            style={styles.saveButton}
+            style={[styles.saveButton, isSaving && { opacity: 0.6 }]}
+            disabled={isSaving}
           />
         </ScrollView>
       </ThemedCard>
