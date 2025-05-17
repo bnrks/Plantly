@@ -8,7 +8,18 @@ const ThemedCard = ({ style, children, ...props }) => {
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   return (
-    <View style={[{ backgroundColor: theme.secondBg }, style]} {...props}>
+    <View
+      style={[
+        {
+          backgroundColor: theme.secondBg,
+          flexGrow: 0,
+          flexShrink: 1,
+          flexBasis: "auto",
+        },
+        style,
+      ]}
+      {...props}
+    >
       {children}
     </View>
   );

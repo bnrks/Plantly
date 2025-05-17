@@ -62,12 +62,9 @@ const MyPlants = () => {
               image={{ uri: item.imageUrl }}
               onPress={() =>
                 router.push({
-                  pathname: "../plantDetails", // doğru dosya adı
+                  pathname: "/plant/details", // doğru dosya adı
                   params: {
                     id: item.id,
-                    name: item.name,
-                    description: item.description,
-                    imageUrl: item.imageUrl,
                   },
                 })
               }

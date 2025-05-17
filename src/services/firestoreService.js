@@ -7,6 +7,9 @@ import {
   addDoc,
   getDocs,
   getDoc,
+  updateDoc,
+  serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 
 export const createUserDocument = async (user) => {
@@ -90,4 +93,22 @@ export async function fetchPlantById(useruid, plantId) {
     console.error("Bitki detayları çekilirken hata oluştu:", error);
     return null;
   }
+}
+export async function updatePlant(userId, plantId, data) {
+  // 1. Bitki dokümanına bir referans oluşturuyoruz
+  const plantRef = doc(db, "users", userId, "plants", plantId);
+
+  // 2. updateDoc ile sadece gönderdiğimiz alanları Firestore’da güncelliyoruz.
+  //    Ayrıca bir "updatedAt" alanı ekleyip değişiklik zamanını kaydediyoruz.
+  await updateDoc(plantRef, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+}
+export async function deletePlant(userId, plantId) {
+  // 1. Bitki dokümanına referans oluştur
+  const plantRef = doc(db, "users", userId, "plants", plantId);
+
+  // 2. deleteDoc ile dokümanı tamamen sil
+  await deleteDoc(plantRef);
 }

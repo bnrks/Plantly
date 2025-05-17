@@ -9,10 +9,7 @@ export default function DashboardLayout() {
       <Stack.Screen name="(tabs)" />
 
       {/* 2. Sonra detay ekranı */}
-      <Stack.Screen
-        name="plantDetails" // dosya adıyla birebir eşleşmeli
-        options={{ title: "Detay" }}
-      />
+      <Stack.Screen name="plant/details" options={{ title: "Detay" }} />
     </Stack>
   );
 }

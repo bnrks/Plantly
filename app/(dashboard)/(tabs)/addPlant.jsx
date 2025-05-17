@@ -30,6 +30,8 @@ export default function AddPlantScreen({}) {
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [description, setDescription] = useState("");
+  const [notes, setNotes] = useState([]);
+  const [noteText, setNoteText] = useState(""); // geçici not girişi
   const [showOptions, setShowOptions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const pickImage = async () => {
@@ -60,7 +62,16 @@ export default function AddPlantScreen({}) {
       setPhotoUri(result.assets[0].uri);
     }
   };
+  const handleAddNote = () => {
+    const text = noteText.trim();
+    if (!text) return;
+    setNotes((prev) => [...prev, text]);
+    setNoteText("");
+  };
 
+  const handleRemoveNote = (idx) => {
+    setNotes((prev) => prev.filter((_, i) => i !== idx));
+  };
   const handleSave = async () => {
     if (isSaving) return;
     if (!photoUri || !name.trim() || !species.trim()) {
@@ -74,12 +85,14 @@ export default function AddPlantScreen({}) {
       console.log("Yüklenen fotoğraf URL'si:", imageUrl);
       // 2) Firestore'a kaydet
       console.log("addPlant çağrıldı, userId:", user.uid);
-      await addPlant(user.uid, { name, species, description, imageUrl });
+      await addPlant(user.uid, { name, species, description, imageUrl, notes });
       // 3) Formu temizle
       setPhotoUri(null);
       setName("");
       setSpecies("");
       setDescription("");
+      setNotes([]);
+      setNoteText("");
       setShowOptions(false);
       Alert.alert("Başarılı", "Bitki eklendi.");
       router.replace({
@@ -95,7 +108,7 @@ export default function AddPlantScreen({}) {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedCard style={{ height: "90%", margin: 10, borderRadius: 20 }}>
+      <ThemedCard style={{ minHeight: "72%", margin: 10, borderRadius: 20 }}>
         <ScrollView contentContainerStyle={styles.content}>
           <ThemedTitle style={styles.header}>Bitki Ekle</ThemedTitle>
           <ThemedText>Bitkinin fotoğrafını</ThemedText>
@@ -176,7 +189,30 @@ export default function AddPlantScreen({}) {
             onChangeText={setDescription}
             multiline
           />
-
+          <ThemedText style={styles.label}>Notlar</ThemedText>
+          <View style={styles.noteInputRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Yeni not ekle"
+              value={noteText}
+              onChangeText={setNoteText}
+            />
+            <TouchableOpacity onPress={handleAddNote} style={styles.addNoteBtn}>
+              <Ionicons name="add-circle-outline" size={32} color="#4CAF50" />
+            </TouchableOpacity>
+          </View>
+          {notes.map((note, idx) => (
+            <View key={idx} style={styles.noteItem}>
+              <ThemedText style={styles.noteText}>• {note}</ThemedText>
+              <TouchableOpacity onPress={() => handleRemoveNote(idx)}>
+                <Ionicons
+                  name="close-circle-outline"
+                  size={20}
+                  color="#E53935"
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
           {/* Kaydet Butonu */}
           <ThemedButton
             title={isSaving ? "Kaydediliyor…" : "Kaydet"}
@@ -243,5 +279,26 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: 20,
+  },
+  // Not ekleme satırı
+  noteInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  addNoteBtn: {
+    marginLeft: 8,
+  },
+
+  // Eklenen notlar listesi
+  noteItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+    justifyContent: "space-between",
+  },
+  noteText: {
+    fontSize: 16,
+    flex: 1,
   },
 });

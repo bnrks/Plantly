@@ -9,6 +9,7 @@ export const Colors = {
     secondBg: "#424242",
     thirdBg: "#C8E6C9",
     fourthBg: "#537354",
+    danger: "#B31313",
   },
   light: {
     title: "#424242",
@@ -17,5 +18,6 @@ export const Colors = {
     secondBg: "#FFFFFF",
     thirdBg: "#537354",
     fourthBg: "#C8E6C9",
+    danger: "#B31313",
   },
 };
