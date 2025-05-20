@@ -10,7 +10,6 @@ const ThemedView = ({ style, safe = false, ...props }) => {
 
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
-  console.log("Current theme:", theme);
   if (!safe) {
     return (
       <View

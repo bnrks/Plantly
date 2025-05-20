@@ -1,65 +1,81 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { StyleSheet, View, Image, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
 import ThemedButton from "../../../components/ThemedButton";
 import { useRouter } from "expo-router";
+
 export default function Analysis() {
-  const [step, setStep] = useState("instruction"); // 'instruction', 'capturing', 'preview'
+  const [step, setStep] = useState("instruction"); // instruction | preview
   const [photoUri, setPhotoUri] = useState(null);
   const router = useRouter();
 
-  // Kamera izni isteği
-  useEffect(() => {
-    (async () => {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "İzin Gerekli",
-          "Kamera izni verilmedi. Ayarlardan izin verin."
-        );
-      }
-    })();
-  }, []);
-  useEffect(() => {
-    if (step === "capturing") {
-      (async () => {
-        const result = await ImagePicker.launchCameraAsync({
-          allowsEditing: true,
-          quality: 0.8,
-        });
-        if (!result.canceled) {
-          setPhotoUri(result.assets[0].uri);
-          setStep("preview");
-        } else {
-          setStep("instruction");
-        }
-      })();
-    }
-  }, [step]);
-  const startCapture = () => setStep("capturing");
-
+  /** 1) Kamera aç ve fotoğrafı kalıcı cache/uploads klasörüne kopyala */
   const takePhoto = async () => {
     try {
-      const result = await ImagePicker.launchCameraAsync({
+      // Kamera aç
+      const res = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.4, // ≈300-500 KB
       });
-      if (!result.canceled) {
-        setPhotoUri(result.assets[0].uri);
-        setStep("preview");
-      } else {
-        setStep("instruction");
-      }
+      if (res.canceled) return;
+
+      await saveImageToCache(res.assets[0].uri);
     } catch (e) {
       console.warn(e);
       Alert.alert("Hata", "Fotoğraf alınamadı. Tekrar deneyin.");
-      setStep("instruction");
     }
   };
 
+  /** Galeriden fotoğraf seçme */
+  const pickFromGallery = async () => {
+    try {
+      // Galeri izni kontrol et
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("İzin Gerekli", "Galeriye erişim izni vermelisiniz.");
+        return;
+      }
+
+      // Galeriyi aç - doğru seçeneği kullan
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // MediaType yerine MediaTypeOptions
+        allowsEditing: true,
+        quality: 0.4,
+      });
+
+      if (result.canceled) return;
+
+      await saveImageToCache(result.assets[0].uri);
+    } catch (e) {
+      console.warn(e);
+      Alert.alert("Hata", "Fotoğraf seçilemedi. Tekrar deneyin.");
+    }
+  };
+
+  /** Görüntüyü önbelleğe kaydetme helper fonksiyonu */
+  const saveImageToCache = async (sourceUri) => {
+    // Kalıcı klasör (/cache/uploads/) -> mutlaka var olsun
+    const cacheDir = FileSystem.cacheDirectory + "uploads/";
+    await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+
+    // Her seferinde aynı ada yaz: uploads/latest.jpg
+    const destUri = cacheDir + "latest.jpg";
+    await FileSystem.copyAsync({
+      from: sourceUri,
+      to: destUri,
+    });
+    console.log("Fotoğraf kopyalandı:", destUri);
+
+    setPhotoUri(destUri);
+    setStep("preview");
+  };
+
+  /** 2) Onayla -> Results sayfasına kalıcı URI ile git */
   const confirmPhoto = () => {
     router.push({
       pathname: "/analysis/results",
@@ -67,32 +83,27 @@ export default function Analysis() {
     });
   };
 
-  const retakePhoto = () => {
-    setPhotoUri(null);
-    takePhoto();
-  };
-
+  /** 3) UI  */
   return (
     <ThemedView style={styles.container}>
       {step === "instruction" && (
         <View style={styles.block}>
           <ThemedTitle style={styles.title}>Yaprak Analizi</ThemedTitle>
           <ThemedText style={styles.text}>
-            Fotoğraf çekerken yaprağın tüm kenarlarını görünür şekilde tutun.
-            Beyaz düz bir arka plan tercih edin.
+            Fotoğraf çekerken yaprağı net ve arka planı sade tutun.
           </ThemedText>
-          <ThemedButton
-            title="Başla"
-            onPress={startCapture}
-            style={styles.button}
-          />
-        </View>
-      )}
-
-      {step === "capturing" && (
-        <View style={styles.block}>
-          <ThemedText style={styles.text}>Kamera açılıyor…</ThemedText>
-          {/* artık burada TAKE_PHOTO çağrısı YOK */}
+          <View style={styles.buttonContainer}>
+            <ThemedButton
+              title="Fotoğraf Çek"
+              onPress={takePhoto}
+              style={styles.button}
+            />
+            <ThemedButton
+              title="Galeriden Seç"
+              onPress={pickFromGallery}
+              style={styles.button}
+            />
+          </View>
         </View>
       )}
 
@@ -100,15 +111,10 @@ export default function Analysis() {
         <View style={styles.block}>
           <Image source={{ uri: photoUri }} style={styles.preview} />
           <View style={styles.actionRow}>
+            <ThemedButton title="Onayla" onPress={confirmPhoto} />
             <ThemedButton
-              title="Onayla"
-              onPress={confirmPhoto}
-              style={styles.button}
-            />
-            <ThemedButton
-              title="Tekrar Çek"
-              onPress={retakePhoto}
-              style={styles.button}
+              title="Tekrar Seç"
+              onPress={() => setStep("instruction")}
             />
           </View>
         </View>
@@ -118,34 +124,22 @@ export default function Analysis() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-  },
-  block: {
-    alignItems: "center",
-  },
-  title: {
-    marginBottom: 20,
-  },
-  text: {
-    marginBottom: 30,
-    textAlign: "center",
-  },
-  button: {
-    width: 180,
-    marginVertical: 10,
-  },
-  preview: {
-    width: "100%",
-    height: 300,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
+  container: { flex: 1, padding: 20, justifyContent: "center" },
+  block: { alignItems: "center" },
+  title: { marginBottom: 20 },
+  text: { marginBottom: 30, textAlign: "center" },
+  preview: { width: "100%", height: 300, borderRadius: 12, marginBottom: 20 },
   actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    width: "100%",
+  },
+  buttonContainer: {
+    flexDirection: "column",
+    gap: 10, // Butonlar arası boşluk
+    width: "100%",
+  },
+  button: {
     width: "100%",
   },
 });

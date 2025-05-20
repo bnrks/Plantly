@@ -3,6 +3,8 @@
 # dependencies
 node_modules/
 firebaseConfig.js
+groqConfig.js
+.env
 # Expo
 .expo/
 dist/

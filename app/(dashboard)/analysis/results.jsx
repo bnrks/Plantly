@@ -14,24 +14,83 @@ import ThemedText from "../../../components/ThemedText";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedButton from "../../../components/ThemedButton";
 import Loading from "../../../components/Loading";
+import { classifyImage } from "../../../src/services/inferenceService";
+import { pingServer } from "../../../src/services/inferenceService";
 export default function AnalysisResults() {
   const router = useRouter();
   const { photoUri } = useLocalSearchParams(); // /analysis/results?photoUri=...
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState(null);
-
+  const [answer, setAnswer] = useState(null);
+  async function groqChat(prompt) {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        "https://2d4c-212-253-193-24.ngrok-free.app/groq-chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        }
+      );
+      const json = await res.json();
+      console.log("json.answer", json.answer); // Doğrudan API cevabını gösterir
+      setAnswer(json.answer);
+    } catch (e) {
+      console.error(e);
+      setAnswer("Sunucuya bağlanırken hata oluştu.");
+    }
+    setLoading(false);
+  }
   useEffect(() => {
-    // Gerçek servis burada çağrılacak
-    setTimeout(() => {
-      setResults({
-        disease: "Pas",
-        confidence: 0.92,
-        advice: "Toprağı kuru tut, mantar ilacı uygula.",
-      });
-      setLoading(false);
-    }, 1000);
-  }, []);
-
+    (async () => {
+      try {
+        const ping = await pingServer();
+        const out = await classifyImage(photoUri); // 📡 gerçek istek
+        setResults({
+          disease: out.class,
+          confidence: Math.max(...out.probs),
+          advice: await adviseFromClass(out.class),
+        });
+        setLoading(false); // ✅ sadece başarıda
+      } catch (e) {
+        alert("Analiz hatası: " + e.message);
+        console.log("FETCH HATASI:", e);
+        router.back(); // kullanıcıyı geri at
+      }
+    })();
+  }, [photoUri]);
+  async function adviseFromClass(cls) {
+    switch (cls) {
+      case "rust":
+        const rustRes = await groqChat(
+          "Kullanıcının bitkisi " +
+            "%95" +
+            " güvenle " +
+            cls +
+            " hastalığına sahip. Bitkisinin türü ise orkide. Kullanıcıya önerilerde bulun."
+        );
+        return rustRes;
+      case "powdery":
+        const powderyRes = await groqChat(
+          "Kullanıcının bitkisi " +
+            "%95" +
+            " güvenle " +
+            cls +
+            " hastalığına sahip. Bitkisinin türü ise orkide. Kullanıcıya önerilerde bulun."
+        );
+        return powderyRes;
+      default:
+        const res = await groqChat(
+          "Kullanıcının bitkisi " +
+            "%95" +
+            " güvenle " +
+            cls +
+            " hastalığına sahip. Bitkisinin türü ise orkide. Kullanıcıya önerilerde bulun."
+        );
+        return res;
+    }
+  }
   if (loading) {
     return <Loading>Yükleniyor</Loading>;
   }
