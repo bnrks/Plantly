@@ -62,19 +62,11 @@ export default function PlantDetails() {
   const plantexample = {
     name: plant.name,
     description: plant.description,
+    species: plant.species,
     image: { uri: plant.imageUrl },
-
     status: "Sağlıklı",
-    suggestions: [
-      "Yaprakları haftada bir nemlendirin.",
-      "Toprağı her 2 haftada bir gübreleyin.",
-      "Güneşi seven bitki, direkt güneş ışığından kaçının.",
-    ],
-    notes: [
-      "Yaprakları haftada bir nemlendirin.",
-      "Toprağı her 2 haftada bir gübreleyin.",
-      "Güneşi seven bitki, direkt güneş ışığından kaçının.",
-    ],
+    suggestions: plant.suggestions || ["Bakım önerisi yok"],
+    notes: plant.notes || ["Not yok."],
   };
   if (loading) {
     return <Loading>Yükleniyor</Loading>;
@@ -122,6 +114,10 @@ export default function PlantDetails() {
           <ThemedText style={styles.description}>
             {plantexample.description}
           </ThemedText>
+          <ThemedTitle style={styles.sectionHeader}>Tür</ThemedTitle>
+          <ThemedText style={styles.itemText}>
+            {plantexample.species}
+          </ThemedText>
           <ThemedTitle style={{ fontSize: 20 }}>Durum</ThemedTitle>
           <ThemedText style={styles.itemText}>{plantexample.status}</ThemedText>
           <ThemedTitle style={styles.sectionHeader}>
@@ -132,7 +128,6 @@ export default function PlantDetails() {
               • {suggestion}
             </ThemedText>
           ))}
-
           <ThemedTitle style={styles.sectionHeader}>Notlar</ThemedTitle>
           {plantexample.notes.map((note, idx) => (
             <ThemedText key={idx} style={styles.itemText}>
@@ -142,15 +137,21 @@ export default function PlantDetails() {
         </ScrollView>
       </ThemedCard>
       <ThemedButton
-        title="Analiz Et"
+        title="Yapay Zeka ile Hastalık Analizi Yap"
         style={styles.button}
-        onPress={() => router.push("analysis")}
+        onPress={() =>
+          router.push({
+            pathname: "analysis",
+            params: { id: id },
+          })
+        }
       />
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-around",
           width: "100%",
+          marginBottom: 20,
         }}
       >
         <ThemedButton

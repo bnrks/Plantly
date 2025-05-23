@@ -279,6 +279,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: 20,
+    marginBottom: 50,
   },
   // Not ekleme satırı
   noteInputRow: {

@@ -112,3 +112,21 @@ export async function deletePlant(userId, plantId) {
   // 2. deleteDoc ile dokümanı tamamen sil
   await deleteDoc(plantRef);
 }
+export async function updatePlantSuggestions(userId, plantId, suggestions) {
+  try {
+    // Bitki dokümanına referans oluştur
+    const plantRef = doc(db, "users", userId, "plants", plantId);
+    console.log("Bitki referansı:", plantRef);
+    // Sadece suggestions alanını ve güncellenme zamanını güncelle
+    await updateDoc(plantRef, {
+      suggestions: suggestions,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log(`${plantId} ID'li bitkinin önerileri güncellendi.`);
+    return true;
+  } catch (error) {
+    console.error("Bitki önerileri güncellenirken hata oluştu:", error);
+    throw error; // Hatayı çağıran fonksiyona ilet
+  }
+}
