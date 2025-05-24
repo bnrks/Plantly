@@ -22,7 +22,7 @@ import { addPlant } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
-
+import Header from "../../../components/Header";
 export default function AddPlantScreen({}) {
   const { user } = useContext(AuthContext);
   const router = useRouter();
@@ -108,7 +108,8 @@ export default function AddPlantScreen({}) {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedCard style={{ minHeight: "72%", margin: 10, borderRadius: 20 }}>
+      <Header style={{ marginBottom: 0, marginTop: 10 }} />
+      <ThemedCard style={{ maxHeight: "77%", margin: 10, borderRadius: 20 }}>
         <ScrollView contentContainerStyle={styles.content}>
           <ThemedTitle style={styles.header}>Bitki Ekle</ThemedTitle>
           <ThemedText>Bitkinin fotoğrafını</ThemedText>
@@ -213,15 +214,15 @@ export default function AddPlantScreen({}) {
               </TouchableOpacity>
             </View>
           ))}
-          {/* Kaydet Butonu */}
-          <ThemedButton
-            title={isSaving ? "Kaydediliyor…" : "Kaydet"}
-            onPress={handleSave}
-            style={[styles.saveButton, isSaving && { opacity: 0.6 }]}
-            disabled={isSaving}
-          />
         </ScrollView>
       </ThemedCard>
+      {/* Kaydet Butonu */}
+      <ThemedButton
+        title={isSaving ? "Kaydediliyor…" : "Kaydet"}
+        onPress={handleSave}
+        style={[styles.saveButton, isSaving && { opacity: 0.6 }]}
+        disabled={isSaving}
+      />
     </ThemedView>
   );
 }
@@ -278,8 +279,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAF6E9",
   },
   saveButton: {
-    marginTop: 20,
+    width: "90%",
     marginBottom: 50,
+    position: "absolute",
+    bottom: 30,
+    left: 20,
+    right: 20,
   },
   // Not ekleme satırı
   noteInputRow: {

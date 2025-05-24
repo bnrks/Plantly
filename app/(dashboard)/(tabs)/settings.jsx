@@ -8,13 +8,14 @@ import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
 import ThemedButton from "../../../components/ThemedButton";
 import ThemedCard from "../../../components/ThemedCard";
-
+import { AuthContext } from "../../../src/context/AuthContext";
 export default function Settings() {
   const router = useRouter();
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext);
   const theme = Colors[currentTheme] ?? Colors.light;
-
-  const handleLogout = () => {
+  const { logout } = useContext(AuthContext);
+  const handleLogout = async () => {
+    await logout();
     Alert.alert("Çıkış yapıldı");
     router.replace("/");
   };

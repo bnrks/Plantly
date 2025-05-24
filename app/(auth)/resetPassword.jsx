@@ -21,19 +21,32 @@ import { useContext } from "react";
 import { ThemeContext } from "../../src/context/ThemeContext";
 import ThemedTextInput from "../../components/ThemedTextInput";
 import { LinearGradient } from "expo-linear-gradient";
-export default function LoginScreen() {
+import { resetPassword } from "../../src/services/authService";
+const ResetPassword = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
-  const handleLogin = async () => {
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+
+  const handleResetPassword = async () => {
     try {
-      await signin(email.trim(), password);
-      console.log("Giriş başarılı");
-      router.replace("/home");
-    } catch (error) {}
-    console.log("Giriş yapılıyor:", email, password);
+      setIsLoading(true);
+      const result = await resetPassword(email.trim());
+      if (result.success) {
+        console.log("Şifre sıfırlama linki gönderildi");
+        setResetSuccess(true);
+        // router.replace("/login");
+      } else {
+        console.error("Şifre sıfırlama hatası:", result.code);
+      }
+    } catch (error) {
+      console.error("Beklenmeyen bir hata oluştu:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -70,7 +83,7 @@ export default function LoginScreen() {
             })
           }
         >
-          Giriş Yap
+          Şifremi Sıfırla
         </ThemedText>
 
         {/* E-posta girişi */}
@@ -86,36 +99,25 @@ export default function LoginScreen() {
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={!resetSuccess}
         />
 
-        {/* Şifre girişi */}
-        <ThemedTextInput
-          style={{
-            width: "90%",
-            marginBottom: 20,
-            borderRadius: 5,
-            height: 50,
-          }}
-          placeholder="Şifre"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        {/* Giriş butonu */}
         <ThemedButton
-          title="Giriş"
+          title={resetSuccess ? "Gönderildi" : "Şifre Sıfırlama Linki Gönder"}
           style={{
             height: 50,
             borderRadius: 5,
-            backgroundColor: theme.fourthBg,
+            backgroundColor: resetSuccess
+              ? theme.disabledButton || "#ccc"
+              : theme.fourthBg,
             justifyContent: "center",
             alignItems: "center",
             marginBottom: 20,
           }}
-          onPress={handleLogin}
+          onPress={handleResetPassword}
           textStyle={styles.buttonText}
           stayPressed={true}
+          disabled={isLoading || resetSuccess}
         />
 
         <TouchableOpacity style={styles.button}>
@@ -124,14 +126,16 @@ export default function LoginScreen() {
           </Link>
         </TouchableOpacity>
         <TouchableOpacity style={{ ...styles.button, marginTop: 20 }}>
-          <Link href={"/resetPassword"} style={styles.buttonText}>
-            Şifremi Unuttum
+          <Link href={"/login"} style={styles.buttonText}>
+            Giriş Yap
           </Link>
         </TouchableOpacity>
       </ThemedCard>
     </LinearGradient>
   );
-}
+};
+
+export default ResetPassword;
 
 const styles = StyleSheet.create({
   container: {

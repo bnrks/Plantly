@@ -9,6 +9,7 @@ import ThemedTitle from "../../../components/ThemedTitle";
 import PlantCard from "../../../components/PlantCard";
 import ThemedButton from "../../../components/ThemedButton";
 import Loading from "../../../components/Loading";
+import Header from "../../../components/Header";
 const MyPlants = () => {
   const router = useRouter();
   const { refresh } = useLocalSearchParams();
@@ -37,10 +38,12 @@ const MyPlants = () => {
   }
   return (
     <ThemedView style={{ flex: 1, padding: 10, height: "100%" }}>
+      <Header />
       <ThemedCard
         style={{
-          height: "75%",
+          flex: 1,
           width: "100%",
+          minHeight: "70%",
           marginTop: 10,
           borderRadius: 20,
         }}
@@ -75,7 +78,12 @@ const MyPlants = () => {
       <ThemedButton
         title="Yeni Bitki Ekle"
         onPress={() => router.push("../addPlant")}
-        style={{ marginTop: 10 }}
+        style={{
+          position: "absolute",
+          bottom: 90,
+          left: 10,
+          right: 10,
+        }}
         textStyle={{ fontSize: 18 }}
       />
     </ThemedView>

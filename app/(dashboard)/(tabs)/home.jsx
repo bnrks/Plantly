@@ -19,7 +19,7 @@ import { useColorScheme } from "react-native";
 import { useContext } from "react";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { AuthContext } from "../../../src/context/AuthContext";
-
+import Header from "../../../components/Header";
 const Home = () => {
   const plants = [
     {
@@ -52,10 +52,17 @@ const Home = () => {
       description: "Güneşi sever, haftada 1 kez su ister.",
       image: require("../../../assets/plantly-logo.png"),
     },
+    {
+      id: "6",
+      name: "Aloe Vera",
+      description: "Güneşi sever, haftada 1 kez su ister.",
+      image: require("../../../assets/plantly-logo.png"),
+    },
   ];
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
-  const username = useContext(AuthContext).user.displayName;
+  const username = useContext(AuthContext).user.displayName || "Kullanıcı";
+
   console.log(username);
   return (
     <ThemedView
@@ -66,6 +73,7 @@ const Home = () => {
       safe={true}
     >
       {/* ÜST KISIM */}
+      <Header />
       <ThemedCard
         style={{
           height: "20%",
@@ -120,10 +128,12 @@ const Home = () => {
       {/* orta kısım */}
       <ThemedCard
         style={{
-          height: "70%",
+          flex: 1,
           width: "100%",
+          minHeight: "50%",
           marginTop: 20,
           borderRadius: 20,
+          paddingBottom: 20,
         }}
       >
         <ThemedTitle style={{ fontSize: 20, padding: 20 }}>
@@ -133,9 +143,9 @@ const Home = () => {
         <FlatList
           data={plants}
           keyExtractor={(item) => item.id}
-          style={{ flex: 1 }}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
           showsVerticalScrollIndicator={false}
+          scrollEnabled={true}
           renderItem={({ item }) => (
             <PlantCard
               name={item.name}

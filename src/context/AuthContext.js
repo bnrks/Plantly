@@ -1,7 +1,7 @@
 // src/context/AuthContext.js
 import React, { createContext, useState, useEffect } from "react";
 import { observeAuth } from "../services/authService";
-
+import { auth } from "../services/firebaseConfig";
 export const AuthContext = createContext({ user: null, loading: true });
 
 export function AuthProvider({ children }) {
@@ -15,9 +15,16 @@ export function AuthProvider({ children }) {
     });
     return unsubscribe;
   }, []);
-
+  const logout = async () => {
+    try {
+      await auth.signOut(); // Firebase oturumu kapat
+      // setUser(null);           // onAuthStateChanged zaten user’ı null’a çeker
+    } catch (e) {
+      console.error("Çıkış hatası:", e);
+    }
+  };
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

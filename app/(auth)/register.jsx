@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { StyleSheet, Alert } from "react-native";
+import { StyleSheet, Alert, Image } from "react-native";
 import { useRouter, Link } from "expo-router";
 import { signup } from "../../src/services/authService";
 import PlantlyLogo from "../../assets/plantly-logo.png";
@@ -10,7 +10,7 @@ import ThemedCard from "../../components/ThemedCard";
 import { Colors } from "../../constants/Colors";
 import { ThemeContext } from "../../src/context/ThemeContext";
 import ThemedTextInput from "../../components/ThemedTextInput";
-
+import { LinearGradient } from "expo-linear-gradient";
 export default function Register() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -37,10 +37,31 @@ export default function Register() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText style={styles.heading}>Plantly</ThemedText>
+    <LinearGradient
+      colors={["#A8E6CF", "#DCEDC1", "#FFFFFF"]}
+      start={{ x: 0, y: 0.001 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
+      <Image
+        source={require("../../assets/plantly-logo.png")}
+        style={styles.logo}
+      />
       <ThemedCard style={styles.card}>
-        <ThemedText style={styles.cardTitle}>Kayıt Ol</ThemedText>
+        <ThemedText
+          style={
+            (styles.title,
+            {
+              alignSelf: "center",
+              fontSize: 30,
+              paddingBottom: 20,
+              fontWeight: "bold",
+              marginBottom: 20,
+            })
+          }
+        >
+          Kayıt Ol
+        </ThemedText>
 
         <ThemedTextInput
           style={styles.input}
@@ -74,16 +95,24 @@ export default function Register() {
 
         <ThemedButton
           title="Kayıt Ol"
+          style={{
+            height: 50,
+            borderRadius: 5,
+            backgroundColor: theme.fourthBg,
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
           onPress={handleRegister}
-          style={[styles.button, { backgroundColor: theme.secondBg }]}
           textStyle={styles.buttonText}
+          stayPressed={true}
         />
 
-        <Link href="/login" style={styles.link}>
+        <Link href="/login" style={[styles.link, styles.buttonText]}>
           <ThemedText>Hesabın var mı? Giriş yap</ThemedText>
         </Link>
       </ThemedCard>
-    </ThemedView>
+    </LinearGradient>
   );
 }
 
@@ -130,8 +159,13 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "600",
+    color: "#000000",
   },
   link: {
     marginTop: 10,
+  },
+  logo: {
+    width: 300,
+    height: 300,
   },
 });

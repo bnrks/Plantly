@@ -1,4 +1,4 @@
-export const API_URL = "https://c574-212-253-193-24.ngrok-free.app/predict";
+export const API_URL = "https://5fce-212-253-193-24.ngrok-free.app/predict";
 import * as FileSystem from "expo-file-system";
 import * as ImageManipulator from "expo-image-manipulator";
 console.log("FETCH →", API_URL);

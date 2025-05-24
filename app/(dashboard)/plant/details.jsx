@@ -23,6 +23,7 @@ import { fetchPlantById } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
 import Loading from "../../../components/Loading";
 import { deletePlant } from "../../../src/services/firestoreService";
+import Header from "../../../components/Header";
 export default function PlantDetails() {
   const userid = useContext(AuthContext).user.uid;
   const router = useRouter();
@@ -79,7 +80,7 @@ export default function PlantDetails() {
           styles.headerContainer,
           {
             position: "absolute",
-            top: 10,
+            top: -10,
             left: -10,
             right: 0,
             zIndex: 1,
@@ -103,11 +104,13 @@ export default function PlantDetails() {
           minHeight: "50%",
           margin: 10,
           borderRadius: 20,
-          marginTop: 30,
+          marginTop: 5,
           paddingTop: 20,
         }}
       >
         {/* İçerik kaydırılabilir */}
+        <Header style={{ marginTop: -10 }} />
+
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Image source={plantexample.image} style={styles.image} />
           <ThemedTitle style={styles.title}>{plantexample.name}</ThemedTitle>
