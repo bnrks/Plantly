@@ -27,7 +27,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Asistant from "../../../assets/plantly-asistant.png";
 import Thinking from "../../../assets/plantly-thinking.png";
 import { AuthContext } from "../../../src/context/AuthContext";
-
+import { updatePlantDisease } from "../../../src/services/firestoreService";
 export default function AnalysisResults() {
   const userid = useContext(AuthContext).user.uid;
   const router = useRouter();
@@ -97,6 +97,15 @@ export default function AnalysisResults() {
       Alert.alert("Hata", "Bitki önerileri güncellenemedi");
     }
   }
+  useEffect(() => {
+    if (results && results.disease && plant && plant.id && userid) {
+      // Bitkinin analiz hastalığını Firebase'e yaz
+      updatePlantDisease(userid, plant.id, results.disease)
+        .then(() => console.log("Bitki hastalık durumu güncellendi"))
+        .catch((e) => console.error("Durum güncellenemedi:", e));
+    }
+    // Sadece ilk sonuç geldiğinde çalışsın diye dependency'e results.disease ekle
+  }, [results?.disease]);
   // Plant verisinin hazır olmasını bekleyen ikinci useEffect
   useEffect(() => {
     // Plant verisi hazır olduğunda analiz işlemini başlat

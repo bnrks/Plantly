@@ -22,7 +22,10 @@ import ThemedView from "../components/ThemedView";
 import ThemedText from "../components/ThemedText";
 import ThemedButton from "../components/ThemedButton";
 import { LinearGradient } from "expo-linear-gradient";
-
+import { registerForPushNotificationsAsync } from "../src/services/notificationService";
+import { updateUserToken } from "../src/services/firestoreService";
+import * as Notifications from "expo-notifications";
+import { planDailyReminder } from "../src/services/notificationService";
 const { width, height } = Dimensions.get("window");
 
 const slides = [
@@ -55,6 +58,14 @@ const slides = [
     image: require("../assets/onboarding-1.png"),
   },
 ];
+// Foreground'da da banner göstermek için:
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const Index = () => {
   // ⭐ TÜM HOOK TANIMLAMALARI BURADA OLMALI ⭐
@@ -62,7 +73,6 @@ const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [splashComplete, setSplashComplete] = useState(false); // Splash animasyonundan sonra kullanıcı kontrolü için ek state
-
   // Ref hooks
   const flatListRef = useRef(null);
   const splashOpacity = useRef(new Animated.Value(0)).current;
@@ -79,7 +89,17 @@ const Index = () => {
   const router = useRouter();
 
   // HOOK TANIMLAMALARI BİTTİ - Bundan sonra normal fonksiyonlar ve logic
-
+  useEffect(() => {
+    if (user) {
+      (async () => {
+        const token = await registerForPushNotificationsAsync();
+        if (token) await updateUserToken(user.uid, token); // Firestore’a yaz
+      })();
+    }
+  }, [user]);
+  useEffect(() => {
+    planDailyReminder(); // Günlük hatırlatıcıları planla
+  }, []);
   // Splash ekranını göster ve animasyonları başlat
   useEffect(() => {
     // Logo görünümü için animasyonları çalıştır

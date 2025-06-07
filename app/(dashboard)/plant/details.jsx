@@ -59,13 +59,25 @@ export default function PlantDetails() {
       ]
     );
   };
+  function diseaseToStatus(disease) {
+    switch (disease) {
+      case "healthy":
+        return "Sağlıklı";
+      case "rust":
+        return "Pas Hastalığı";
+      case "powdery":
+        return "Külleme Hastalığı";
+      default:
+        return "deneme"; // Veya başka bir default metin
+    }
+  }
   // TODO: Backend ile entegre edilecek => örnek veri
   const plantexample = {
     name: plant.name,
     description: plant.description,
     species: plant.species,
     image: { uri: plant.imageUrl },
-    status: "Sağlıklı",
+    status: diseaseToStatus(plant.disease),
     suggestions: plant.suggestions || ["Bakım önerisi yok"],
     notes: plant.notes || ["Not yok."],
   };

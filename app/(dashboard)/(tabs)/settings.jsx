@@ -9,6 +9,9 @@ import ThemedText from "../../../components/ThemedText";
 import ThemedButton from "../../../components/ThemedButton";
 import ThemedCard from "../../../components/ThemedCard";
 import { AuthContext } from "../../../src/context/AuthContext";
+import * as Notifications from "expo-notifications";
+import { useEffect } from "react";
+
 export default function Settings() {
   const router = useRouter();
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext);

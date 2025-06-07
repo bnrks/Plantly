@@ -10,8 +10,35 @@ import {
   updateDoc,
   serverTimestamp,
   deleteDoc,
+  enableIndexedDbPersistence,
 } from "firebase/firestore";
+import { cancelScheduledNotificationAsync } from "expo-notifications";
+import {
+  savePlantNotifId,
+  getPlantNotifId,
+  deletePlantNotifId,
+} from "./notificationStorage";
+// ÖNEMLİ: enableIndexedDbPersistence'ı dosyanın en üstüne taşıyın,
+// diğer firestore işlemlerinden önce çalıştırılmalı
+try {
+  enableIndexedDbPersistence(db)
+    .then(() => console.log("Offline kalıcılık başarıyla etkinleştirildi"))
+    .catch((err) => {
+      if (err.code === "failed-precondition") {
+        console.warn(
+          "IndexedDB kalıcılığı birden fazla sekmede desteklenmiyor"
+        );
+      } else if (err.code === "unimplemented") {
+        console.warn("Tarayıcı IndexedDB'yi desteklemiyor");
+      } else {
+        console.error("Persistence etkinleştirilirken hata:", err);
+      }
+    });
+} catch (e) {
+  console.warn("Persistence zaten etkinleştirilmiş olabilir:", e);
+}
 
+// Diğer Firebase işlevleri
 export const createUserDocument = async (user) => {
   const userRef = doc(db, "users", user.uid);
   await setDoc(userRef, {
@@ -29,7 +56,7 @@ export async function addPlant(userId, plantData) {
   // 'users' koleksiyonunda, 'userId' ID'sine sahip belgeye referans oluşturur.
   const userDocRef = doc(db, "users", userId);
 
-  // 2. Kullanıcının altındaki 'plants' koleksiyon referansını al
+  // 2. Kullanıcının altındaki 'plants' koleksiyonu referansını al
   // userDocRef'in altında bir 'plants' alt-koleksiyonu oluşturur.
   const userPlantsCol = collection(userDocRef, "plants");
 
@@ -40,6 +67,7 @@ export async function addPlant(userId, plantData) {
     createdAt: new Date(),
   });
 }
+
 export async function fetchPlants(useruid, setPlants, setLoading) {
   try {
     setLoading(true); // Veri yüklenirken loading durumunu ayarlayın
@@ -107,8 +135,10 @@ export async function updatePlant(userId, plantId, data) {
 }
 export async function deletePlant(userId, plantId) {
   // 1. Bitki dokümanına referans oluştur
+  const notifId = await getPlantNotifId(plantId);
   const plantRef = doc(db, "users", userId, "plants", plantId);
-
+  if (notifId) await cancelScheduledNotificationAsync(notifId);
+  await deletePlantNotifId(plantId);
   // 2. deleteDoc ile dokümanı tamamen sil
   await deleteDoc(plantRef);
 }
@@ -129,4 +159,75 @@ export async function updatePlantSuggestions(userId, plantId, suggestions) {
     console.error("Bitki önerileri güncellenirken hata oluştu:", error);
     throw error; // Hatayı çağıran fonksiyona ilet
   }
+}
+// import { setLogLevel } from "firebase/firestore";
+// setLogLevel("debug"); // Geçici olarak ayrıntılı log açın
+
+export async function updateUserToken(userId, token) {
+  try {
+    console.log("▶ userId:", userId);
+    console.log("▶ token :", token);
+
+    const userRef = doc(db, "users", userId);
+    console.log("▶ userRef.path:", userRef.path);
+
+    await updateDoc(userRef, {
+      expoPushToken: token,
+      updatedAt: serverTimestamp(),
+    });
+
+    console.log("✅ Token Firestore’a yazıldı");
+  } catch (error) {
+    console.error("🔥 Firestore write error:", error);
+  }
+}
+export async function updatePlantWatering(userId, plantId) {
+  const plantRef = doc(db, "users", userId, "plants", plantId);
+  await updateDoc(plantRef, {
+    lastWatered: new Date(), // Son sulama zamanı (timestamp olarak kaydediyoruz)
+    updatedAt: serverTimestamp(), // Firestore'un kendi server zamanı
+  });
+}
+export async function fetchPlantsForWatering(useruid, setPlants, setLoading) {
+  try {
+    setLoading(true);
+    if (!useruid) {
+      console.warn("Kullanıcı oturum açmamış, bitkiler yüklenemiyor.");
+      setLoading(false);
+      return;
+    }
+    const plantsCol = collection(db, "users", useruid, "plants");
+    const snapshot = await getDocs(plantsCol);
+
+    const now = new Date();
+    // Her bir bitkinin lastWatered'ını kontrol et
+    const list = snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .filter((plant) => {
+        // Eğer hiç sulanmamışsa (lastWatered yoksa) listeye ekle
+        if (!plant.lastWatered) return true;
+        // lastWatered Firestore'dan Timestamp objesi olarak gelir, onu Date'e çevir
+        const lastWateredDate =
+          plant.lastWatered.toDate?.() || new Date(plant.lastWatered);
+        // Şimdiki zaman ile lastWatered arasındaki farkı saat cinsine çevir
+        const diffMs = now - lastWateredDate;
+        const diffHours = diffMs / (1000 * 60 * 60);
+        return diffHours >= 20;
+      });
+    setPlants(list);
+  } catch (err) {
+    console.error("Firestore veri çekme hatası:", err);
+  } finally {
+    setLoading(false);
+  }
+}
+export async function updatePlantDisease(userId, plantId, disease) {
+  const plantRef = doc(db, "users", userId, "plants", plantId);
+  await updateDoc(plantRef, {
+    disease: disease, // ör: "rust", "powdery", "healthy"
+    diseaseUpdatedAt: serverTimestamp(),
+  });
 }

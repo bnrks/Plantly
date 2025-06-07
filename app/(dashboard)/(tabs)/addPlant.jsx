@@ -23,6 +23,7 @@ import { AuthContext } from "../../../src/context/AuthContext";
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import Header from "../../../components/Header";
+import { scheduleWateringNotificationRepeating } from "../../../src/services/notificationService";
 export default function AddPlantScreen({}) {
   const { user } = useContext(AuthContext);
   const router = useRouter();
@@ -34,6 +35,10 @@ export default function AddPlantScreen({}) {
   const [noteText, setNoteText] = useState(""); // geçici not girişi
   const [showOptions, setShowOptions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const wateringSchedule = [
+    { date: "2025-05-28T09:00:00", plant: "Kaktüs" },
+    { date: "2025-05-29T18:00:00", plant: "Orkide" },
+  ];
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -80,12 +85,18 @@ export default function AddPlantScreen({}) {
     }
     try {
       setIsSaving(true);
+
       // 1) Fotoğrafı Storage'a yükle
       const imageUrl = await uploadImageAsync(photoUri, `plants/${user.uid}`);
       console.log("Yüklenen fotoğraf URL'si:", imageUrl);
       // 2) Firestore'a kaydet
       console.log("addPlant çağrıldı, userId:", user.uid);
       await addPlant(user.uid, { name, species, description, imageUrl, notes });
+      await scheduleWateringNotificationRepeating({
+        id: user.uid,
+        name,
+        species,
+      });
       // 3) Formu temizle
       setPhotoUri(null);
       setName("");
