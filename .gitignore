@@ -5,6 +5,9 @@ node_modules/
 firebaseConfig.js
 groqConfig.js
 .env
+eas.json
+google-services.json
+metro.config.js
 # Expo
 .expo/
 dist/
