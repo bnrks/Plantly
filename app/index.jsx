@@ -59,13 +59,6 @@ const slides = [
   },
 ];
 // Foreground'da da banner göstermek için:
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
 
 const Index = () => {
   // ⭐ TÜM HOOK TANIMLAMALARI BURADA OLMALI ⭐
@@ -89,17 +82,7 @@ const Index = () => {
   const router = useRouter();
 
   // HOOK TANIMLAMALARI BİTTİ - Bundan sonra normal fonksiyonlar ve logic
-  useEffect(() => {
-    if (user) {
-      (async () => {
-        const token = await registerForPushNotificationsAsync();
-        if (token) await updateUserToken(user.uid, token); // Firestore’a yaz
-      })();
-    }
-  }, [user]);
-  useEffect(() => {
-    planDailyReminder(); // Günlük hatırlatıcıları planla
-  }, []);
+
   // Splash ekranını göster ve animasyonları başlat
   useEffect(() => {
     // Logo görünümü için animasyonları çalıştır
@@ -273,7 +256,9 @@ const Index = () => {
   }
 
   // Kullanıcı giriş yapmışsa yönlendir - splash animasyonu bittikten sonra kontrol et
-  if (user && splashComplete) return <Redirect href="/home" />;
+  if (splashComplete && !loading) {
+    if (user) return <Redirect href="/home" />;
+  }
 
   // Normal onboarding akışını render et
   return (
@@ -327,7 +312,7 @@ const Index = () => {
             >
               <ThemedButton
                 title="Kayıt Ol"
-                onPress={() => router.push("/signup")}
+                onPress={() => router.push("/register")}
                 style={[
                   styles.button,
                   styles.secondaryButton,

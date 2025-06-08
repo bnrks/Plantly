@@ -43,7 +43,10 @@ export default function PlantDetails() {
   function handleDelete() {
     deletePlant(userid, id)
       .then(() => {
-        router.back();
+        router.push({
+          pathname: "/myPlants",
+          params: { refresh: "true" },
+        });
       })
       .catch((error) => {
         console.error("Error deleting plant:", error);

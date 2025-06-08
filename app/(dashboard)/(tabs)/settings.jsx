@@ -18,9 +18,9 @@ export default function Settings() {
   const theme = Colors[currentTheme] ?? Colors.light;
   const { logout } = useContext(AuthContext);
   const handleLogout = async () => {
-    await logout();
     Alert.alert("Çıkış yapıldı");
-    router.replace("/");
+    router.push("/login");
+    await logout();
   };
 
   return (

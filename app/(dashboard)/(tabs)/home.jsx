@@ -18,26 +18,59 @@ import { AuthContext } from "../../../src/context/AuthContext";
 import Header from "../../../components/Header";
 import { fetchPlantsForWatering } from "../../../src/services/firestoreService";
 import { updatePlantWatering } from "../../../src/services/firestoreService";
+import { useRouter } from "expo-router";
+import { registerForPushNotificationsAsync } from "../../../src/services/notificationService";
+import { updateUserToken } from "../../../src/services/firestoreService";
+import * as Notifications from "expo-notifications";
+import { planDailyReminder } from "../../../src/services/notificationService";
+
 const Home = () => {
   const [plantss, setPlantss] = useState([]);
   const [loading, setLoading] = useState(true);
   const [initialFetched, setInitialFetched] = useState(false);
-
+  const router = useRouter();
+  const notificationCount = plantss.length;
+  const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
-  const username = useContext(AuthContext).user.displayName || "Kullanıcı";
-  const userid = useContext(AuthContext)?.user?.uid;
+  const username = user?.displayName || "Kullanıcı";
+  const userid = user?.uid;
 
-  // Bildirim sayısı = sulanmamış bitki sayısı = plantss.length
-  const notificationCount = plantss.length;
-
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
   useEffect(() => {
-    if (!initialFetched && userid) {
+    if (user) {
+      (async () => {
+        const token = await registerForPushNotificationsAsync();
+        if (token) await updateUserToken(user.uid, token); // Firestore’a yaz
+      })();
+    }
+  }, [user]);
+  useEffect(() => {
+    planDailyReminder(); // Günlük hatırlatıcıları planla
+  }, []);
+  // Kullanıcı yoksa login'e at
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login");
+    }
+  }, [user]);
+
+  // Bitkileri sadece kullanıcı varsa çek
+  useEffect(() => {
+    if (user && !initialFetched && userid) {
       setLoading(true);
       fetchPlantsForWatering(userid, setPlantss, setLoading);
       setInitialFetched(true);
     }
-  }, [userid]);
+  }, [user, userid, initialFetched]);
+
+  if (!user) return null;
 
   // Bitkiyi sulama - state'den silme
   const handleWaterPlant = async (plantId) => {
@@ -127,7 +160,7 @@ const Home = () => {
             marginBottom: 10,
           }}
         >
-          Suladığın bitkileri işaretlemeyi unutma
+          Suladığın bitkileri işaretlemeyi unutma!
         </ThemedText>
 
         <FlatList
