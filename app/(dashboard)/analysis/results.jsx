@@ -320,7 +320,10 @@ export default function AnalysisResults() {
             title="Önerileri Kaydet"
             onPress={() => updateSuggestions()}
           />
-          <ThemedButton title="Ana Sayfa" onPress={() => router.replace("/")} />
+          <ThemedButton
+            title="Ana Sayfa"
+            onPress={() => router.replace("/home")}
+          />
         </View>
       </ScrollView>
     </ThemedView>

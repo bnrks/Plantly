@@ -34,7 +34,7 @@ const Home = () => {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
   const username = user?.displayName || "Kullanıcı";
-  const userid = user?.uid;
+  const userid = user?.uid || "";
 
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
