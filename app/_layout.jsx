@@ -1,5 +1,5 @@
 // app/_layout.jsx
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { StyleSheet, SafeAreaView, StatusBar } from "react-native";
 import { Stack } from "expo-router";
 import { ThemeProvider, ThemeContext } from "../src/context/ThemeContext";

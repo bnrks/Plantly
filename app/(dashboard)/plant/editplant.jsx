@@ -136,207 +136,214 @@ export default function EditPlant() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
-          <Header style={{ marginVertical: 10 }} />
-
+        <Header style={{ marginTop: 40, marginBottom: -5 }} />
+        <View style={styles.content}>
           <Animated.View
             style={[
               styles.card,
-              { backgroundColor: colors.secondBg, opacity: fadeAnim },
+              {
+                backgroundColor: colors.secondBg,
+                opacity: fadeAnim,
+                overflow: "hidden",
+              },
             ]}
           >
             <ThemedTitle style={styles.title}>Bitkini Güncelle</ThemedTitle>
-
-            <TouchableOpacity
-              style={styles.imageContainer}
-              onPress={pickImage}
-              activeOpacity={0.8}
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 10 }}
+              showsVerticalScrollIndicator={false}
             >
-              {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.image} />
-              ) : (
+              <TouchableOpacity
+                style={styles.imageContainer}
+                onPress={pickImage}
+                activeOpacity={0.8}
+              >
+                {photoUri ? (
+                  <Image source={{ uri: photoUri }} style={styles.image} />
+                ) : (
+                  <View
+                    style={[
+                      styles.placeholderImage,
+                      { backgroundColor: colors.inputBg },
+                    ]}
+                  >
+                    <Ionicons
+                      name="image"
+                      size={60}
+                      color={colors.placeholder}
+                    />
+                  </View>
+                )}
                 <View
                   style={[
-                    styles.placeholderImage,
-                    { backgroundColor: colors.inputBg },
+                    styles.imageOverlay,
+                    { backgroundColor: colors.accent },
                   ]}
                 >
-                  <Ionicons name="image" size={60} color={colors.placeholder} />
+                  <Ionicons name="camera" size={20} color="#fff" />
+                  <ThemedText style={styles.imageText}>
+                    Fotoğraf Değiştir
+                  </ThemedText>
                 </View>
-              )}
-              <View
-                style={[
-                  styles.imageOverlay,
-                  { backgroundColor: colors.accent },
-                ]}
-              >
-                <Ionicons name="camera" size={20} color="#fff" />
-                <ThemedText style={styles.imageText}>
-                  Fotoğraf Değiştir
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
+              </TouchableOpacity>
 
-            <View style={styles.formSection}>
-              <ThemedTitle style={styles.sectionTitle}>
-                Temel Bilgiler
-              </ThemedTitle>
+              <View style={styles.formSection}>
+                <ThemedTitle style={styles.sectionTitle}>
+                  Temel Bilgiler
+                </ThemedTitle>
 
-              <View style={styles.fieldContainer}>
-                <View style={styles.labelContainer}>
-                  <Ionicons name="leaf" size={20} color={colors.accent} />
-                  <ThemedText style={styles.label}>Bitki Adı</ThemedText>
-                </View>
-                <TextInput
-                  style={[
-                    styles.input,
-                    { backgroundColor: colors.inputBg, color: colors.text },
-                  ]}
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="Örn: Orkide"
-                  placeholderTextColor={colors.placeholder}
-                />
-              </View>
-
-              <View style={styles.fieldContainer}>
-                <View style={styles.labelContainer}>
-                  <Ionicons name="flask" size={20} color={colors.accent} />
-                  <ThemedText style={styles.label}>Bitki Türü</ThemedText>
-                </View>
-                <TextInput
-                  style={[
-                    styles.input,
-                    { backgroundColor: colors.inputBg, color: colors.text },
-                  ]}
-                  value={species}
-                  onChangeText={setSpecies}
-                  placeholder="Örn: Phalaenopsis"
-                  placeholderTextColor={colors.placeholder}
-                />
-              </View>
-
-              <View style={styles.fieldContainer}>
-                <View style={styles.labelContainer}>
-                  <Ionicons name="create" size={20} color={colors.accent} />
-                  <ThemedText style={styles.label}>Açıklama</ThemedText>
-                </View>
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.textArea,
-                    { backgroundColor: colors.inputBg, color: colors.text },
-                  ]}
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                  placeholder="Biraz açıklama ekleyin..."
-                  placeholderTextColor={colors.placeholder}
-                />
-              </View>
-            </View>
-
-            <View style={styles.formSection}>
-              <ThemedTitle style={styles.sectionTitle}>
-                Bakım Notları
-              </ThemedTitle>
-              <ThemedText style={styles.sectionDescription}>
-                Bitkiniz için özel bakım notları ekleyebilirsiniz.
-              </ThemedText>
-
-              <View style={styles.fieldContainer}>
-                <View style={styles.noteRow}>
+                <View style={styles.fieldContainer}>
+                  <View style={styles.labelContainer}>
+                    <Ionicons name="leaf" size={20} color={colors.accent} />
+                    <ThemedText style={styles.label}>Bitki Adı</ThemedText>
+                  </View>
                   <TextInput
                     style={[
                       styles.input,
-                      {
-                        flex: 1,
-                        backgroundColor: colors.inputBg,
-                        color: colors.text,
-                      },
+                      { backgroundColor: colors.inputBg, color: colors.text },
                     ]}
-                    value={noteText}
-                    onChangeText={setNoteText}
-                    placeholder="Bakım notu ekleyin..."
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Örn: Orkide"
                     placeholderTextColor={colors.placeholder}
-                    returnKeyType="done"
-                    onSubmitEditing={handleAddNote}
                   />
-                  <TouchableOpacity
-                    onPress={handleAddNote}
-                    style={[
-                      styles.addNoteButton,
-                      { backgroundColor: colors.accent },
-                    ]}
-                  >
-                    <Ionicons name="add" size={24} color="#fff" />
-                  </TouchableOpacity>
                 </View>
 
-                <View style={styles.notesContainer}>
-                  {notes.length > 0 ? (
-                    notes.map((note, i) => (
-                      <Animated.View
-                        key={i}
-                        style={[
-                          styles.noteItem,
-                          { backgroundColor: colors.inputBg },
-                        ]}
-                      >
-                        <View style={styles.noteContent}>
-                          <Ionicons
-                            name="water"
-                            size={18}
-                            color={colors.accent}
-                          />
-                          <ThemedText style={styles.noteText}>
-                            {note}
-                          </ThemedText>
-                        </View>
-                        <TouchableOpacity onPress={() => handleRemoveNote(i)}>
-                          <Ionicons
-                            name="close-circle"
-                            size={22}
-                            color={colors.danger}
-                          />
-                        </TouchableOpacity>
-                      </Animated.View>
-                    ))
-                  ) : (
-                    <ThemedText style={styles.emptyNotes}>
-                      Henüz not eklenmedi.
-                    </ThemedText>
-                  )}
+                <View style={styles.fieldContainer}>
+                  <View style={styles.labelContainer}>
+                    <Ionicons name="flask" size={20} color={colors.accent} />
+                    <ThemedText style={styles.label}>Bitki Türü</ThemedText>
+                  </View>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { backgroundColor: colors.inputBg, color: colors.text },
+                    ]}
+                    value={species}
+                    onChangeText={setSpecies}
+                    placeholder="Örn: Phalaenopsis"
+                    placeholderTextColor={colors.placeholder}
+                  />
+                </View>
+
+                <View style={styles.fieldContainer}>
+                  <View style={styles.labelContainer}>
+                    <Ionicons name="create" size={20} color={colors.accent} />
+                    <ThemedText style={styles.label}>Açıklama</ThemedText>
+                  </View>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.textArea,
+                      { backgroundColor: colors.inputBg, color: colors.text },
+                    ]}
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                    placeholder="Biraz açıklama ekleyin..."
+                    placeholderTextColor={colors.placeholder}
+                  />
                 </View>
               </View>
-            </View>
 
-            <ThemedButton
-              title={saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
-              onPress={handleSave}
-              disabled={saving}
-              style={styles.saveBtn}
-              icon={
-                <Ionicons
-                  name="save-outline"
-                  size={20}
-                  color="#fff"
-                  style={{ marginRight: 8 }}
-                />
-              }
-            />
+              <View style={styles.formSection}>
+                <ThemedTitle style={styles.sectionTitle}>
+                  Bakım Notları
+                </ThemedTitle>
+                <ThemedText style={styles.sectionDescription}>
+                  Bitkiniz için özel bakım notları ekleyebilirsiniz.
+                </ThemedText>
 
-            <ThemedButton
-              title="Vazgeç"
-              onPress={() => router.back()}
-              style={styles.cancelBtn}
-              textStyle={{ color: colors.text }}
-            />
+                <View style={styles.fieldContainer}>
+                  <View style={styles.noteRow}>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        {
+                          flex: 1,
+                          backgroundColor: colors.inputBg,
+                          color: colors.text,
+                        },
+                      ]}
+                      value={noteText}
+                      onChangeText={setNoteText}
+                      placeholder="Bakım notu ekleyin..."
+                      placeholderTextColor={colors.placeholder}
+                      returnKeyType="done"
+                      onSubmitEditing={handleAddNote}
+                    />
+                    <TouchableOpacity
+                      onPress={handleAddNote}
+                      style={[
+                        styles.addNoteButton,
+                        { backgroundColor: colors.accent },
+                      ]}
+                    >
+                      <Ionicons name="add" size={24} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.notesContainer}>
+                    {notes.length > 0 ? (
+                      notes.map((note, i) => (
+                        <Animated.View
+                          key={i}
+                          style={[
+                            styles.noteItem,
+                            { backgroundColor: colors.inputBg },
+                          ]}
+                        >
+                          <View style={styles.noteContent}>
+                            <Ionicons
+                              name="water"
+                              size={18}
+                              color={colors.accent}
+                            />
+                            <ThemedText style={styles.noteText}>
+                              {note}
+                            </ThemedText>
+                          </View>
+                          <TouchableOpacity onPress={() => handleRemoveNote(i)}>
+                            <Ionicons
+                              name="close-circle"
+                              size={22}
+                              color={colors.danger}
+                            />
+                          </TouchableOpacity>
+                        </Animated.View>
+                      ))
+                    ) : (
+                      <ThemedText style={styles.emptyNotes}>
+                        Henüz not eklenmedi.
+                      </ThemedText>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
           </Animated.View>
-        </ScrollView>
+        </View>
+        <ThemedButton
+          title={saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+          onPress={handleSave}
+          disabled={saving}
+          style={styles.saveBtn}
+          icon={
+            <Ionicons
+              name="save-outline"
+              size={20}
+              color="#fff"
+              style={{ marginRight: 8 }}
+            />
+          }
+        />
+
+        <ThemedButton
+          title="Vazgeç"
+          onPress={() => router.back()}
+          style={styles.cancelBtn}
+          textStyle={{ color: colors.text }}
+        />
       </KeyboardAvoidingView>
     </ThemedView>
   );
@@ -356,10 +363,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   content: {
+    flex: 1,
     padding: 16,
-    paddingBottom: 30,
+    maxHeight: "80%",
   },
   card: {
+    flex: 1,
     borderRadius: 20,
     padding: 20,
     marginBottom: 20,
@@ -497,18 +506,20 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   saveBtn: {
-    marginTop: 10,
     height: 50,
     borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    marginHorizontal: 10,
+    marginTop: -20,
+    marginBottom: 10,
   },
   cancelBtn: {
-    marginTop: 10,
     backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.2)",
-    height: 46,
+    height: 50,
+    marginHorizontal: 10,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from "react"; // useContext'i buraya ekleyin
+import { useState, useRef, useEffect, useContext } from "react"; // useContext'i buraya ekleyin
 import {
   StyleSheet,
   View,
@@ -18,14 +18,9 @@ import { AuthContext } from "../src/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/Colors";
 import { ThemeContext } from "../src/context/ThemeContext";
-import ThemedView from "../components/ThemedView";
 import ThemedText from "../components/ThemedText";
 import ThemedButton from "../components/ThemedButton";
 import { LinearGradient } from "expo-linear-gradient";
-import { registerForPushNotificationsAsync } from "../src/services/notificationService";
-import { updateUserToken } from "../src/services/firestoreService";
-import * as Notifications from "expo-notifications";
-import { planDailyReminder } from "../src/services/notificationService";
 const { width, height } = Dimensions.get("window");
 
 const slides = [

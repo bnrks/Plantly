@@ -5,8 +5,6 @@ import {
   ScrollView,
   View,
   TouchableOpacity,
-  useColorScheme,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -64,14 +62,14 @@ export default function PlantDetails() {
   };
   function diseaseToStatus(disease) {
     switch (disease) {
-      case "healthy":
-        return "Sağlıklı";
-      case "rust":
-        return "Pas Hastalığı";
-      case "powdery":
-        return "Külleme Hastalığı";
+      case "late_blight":
+        return "Geç yanıklık hastalığına sahip.";
+      case "bacterial_spot":
+        return "Bakteriyel leke hastalığına sahip.";
+      case "early_blight":
+        return "Erken yanıklık hastalığına sahip.";
       default:
-        return "deneme"; // Veya başka bir default metin
+        return "Sağlıklı. Herhangi bir hastalık belirtisi yok. 🙂";
     }
   }
   // TODO: Backend ile entegre edilecek => örnek veri
@@ -90,12 +88,14 @@ export default function PlantDetails() {
   return (
     <ThemedView style={styles.container}>
       {/* Sabit Header */}
+      <Header style={{ marginTop: 10 }} />
+
       <View
         style={[
           styles.headerContainer,
           {
             position: "absolute",
-            top: -10,
+            top: 20,
             left: -10,
             right: 0,
             zIndex: 1,
@@ -121,10 +121,10 @@ export default function PlantDetails() {
           borderRadius: 20,
           marginTop: 5,
           paddingTop: 20,
+          paddingVertical: 10,
         }}
       >
         {/* İçerik kaydırılabilir */}
-        <Header style={{ marginTop: -10 }} />
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Image source={plantexample.image} style={styles.image} />
@@ -199,7 +199,7 @@ export default function PlantDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, paddingTop: 30 },
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",

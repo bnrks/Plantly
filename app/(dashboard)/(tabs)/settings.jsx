@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { StyleSheet, View, Switch, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors } from "../../../constants/Colors";
@@ -9,8 +9,6 @@ import ThemedText from "../../../components/ThemedText";
 import ThemedButton from "../../../components/ThemedButton";
 import ThemedCard from "../../../components/ThemedCard";
 import { AuthContext } from "../../../src/context/AuthContext";
-import * as Notifications from "expo-notifications";
-import { useEffect } from "react";
 
 export default function Settings() {
   const router = useRouter();
@@ -26,7 +24,7 @@ export default function Settings() {
   return (
     <ThemedView style={styles.container}>
       <ThemedCard
-        style={{ padding: 20, height: "90%", borderRadius: 20, marginTop: 10 }}
+        style={{ padding: 20, height: "70%", borderRadius: 20, marginTop: 40 }}
       >
         <ThemedTitle style={styles.header}>Ayarlar</ThemedTitle>
 

@@ -1,20 +1,12 @@
 // app/analysis/results.js
-import React, { useEffect, useState, useContext } from "react";
-import {
-  StyleSheet,
-  View,
-  Image,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { useEffect, useState, useContext } from "react";
+import { StyleSheet, View, Image, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedButton from "../../../components/ThemedButton";
-import Loading from "../../../components/Loading";
 import { classifyImage } from "../../../src/services/inferenceService";
 import { groqService } from "../../../src/services/groqService";
 import {
@@ -138,25 +130,23 @@ export default function AnalysisResults() {
     // plant objesi var ve içi dolu mu kontrol et
     const species = plant?.species || "bilinmeyen tür";
     const notes = plant?.notes?.join(", ") || "not yok";
-
-    switch (cls) {
-      case "rust":
-        const rustRes = await groqChat(
-          `Kullanıcının bitkisi ${confidence} güvenle ${cls} hastalığına sahip. Bitkisinin türü ise ${species}. Kullanıcıya bitkisinin hastalığı, türü ve kullanıcının bitki için aldığı şu notları göz önünde bulundurarak önerilerde bulun: "${notes}".`
-        );
-        return rustRes;
-
-      case "powdery":
-        const powderyRes = await groqChat(
-          `Kullanıcının bitkisi ${confidence} güvenle ${cls} hastalığına sahip. Bitkisinin türü ise ${species}. Kullanıcıya bitkisinin hastalığı, türü ve kullanıcının bitki için aldığı şu notları göz önünde bulundurarak önerilerde bulun: "${notes}".`
-        );
-        return powderyRes;
-
-      default:
-        const res = await groqChat(
-          `Kullanıcının bitkisi ${confidence} güvenle hastalığı yok. Bitkinin türü ise ${species}. Kullanıcıya önerilerde bulun. Bunu yaparken bitkinin türünü ve kullanıcının bitki için aldığı şu notları göz önünde bulundur: "${notes}".`
-        );
-        return res;
+    if (cls === "healthy") {
+      // Healthy scenario
+      return await groqChat(
+        `The user's plant is healthy with a confidence score of ${confidence}. ` +
+          `Plant species: ${species}. ` +
+          `User notes: "${notes}". ` +
+          `Please provide general care and growth recommendations.`
+      );
+    } else {
+      // Disease scenario (regardless of which disease)
+      return await groqChat(
+        `The user's plant is diagnosed with **${cls}** with a confidence score of ${confidence}. ` +
+          `Start by simply explaining: "Bitkinizin sahip olduğu hastalık...(in turkish) " If possible, also include the Turkish name of the disease in parentheses. ` +
+          `Plant species: ${species}. ` +
+          `User notes: "${notes}". ` +
+          `Give care and treatment suggestions appropriate to the disease and plant species.`
+      );
     }
   }
 
@@ -190,26 +180,9 @@ export default function AnalysisResults() {
     if (results) {
       const messages = [
         ...baseMessages,
+
         {
           id: 2,
-          text: `Bitkinizi analiz ettim. ${
-            results.disease === "healthy"
-              ? "Bitkinin sağlıklı görünüyor!"
-              : `Bitkinde ${results.disease} hastalığı tespit ettim.`
-          }`,
-          isUser: false,
-          timestamp: "Şimdi",
-        },
-        {
-          id: 3,
-          text: `Sonuçların doğruluk oranı: ${(
-            results.confidence * 100
-          ).toFixed(0)}%`,
-          isUser: false,
-          timestamp: "Şimdi",
-        },
-        {
-          id: 4,
           text: results.paragraph || "Analiz sonucu hazırlanıyor...",
           isUser: false,
           timestamp: "Şimdi",
@@ -219,7 +192,7 @@ export default function AnalysisResults() {
       if (results.suggestions && results.suggestions.length > 0) {
         const suggestionMessages = results.suggestions.map(
           (suggestion, index) => ({
-            id: 5 + index,
+            id: 3 + index,
             text: `• ${suggestion}`,
             isUser: false,
             timestamp: "Şimdi",
@@ -239,10 +212,18 @@ export default function AnalysisResults() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Üstteki bitki resmi kartını kaldırdım */}
-        <ThemedTitle style={styles.title}>Planty Yaprak Analizi</ThemedTitle>
-        <ThemedCard style={{ padding: 20, borderRadius: 20 }}>
+      {/* Üstteki bitki resmi kartını kaldırdım */}
+      <ThemedTitle style={styles.title}>Planty Yaprak Analizi</ThemedTitle>
+      <ThemedCard
+        style={{ paddingVertical: 25, borderRadius: 20, marginHorizontal: 10 }}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          scrollEventThrottle={16}
+          contentInsetAdjustmentBehavior="automatic"
+        >
           <View style={styles.chatContainer}>
             {messages.map((message) => (
               <View key={message.id} style={styles.messageRow}>
@@ -313,19 +294,22 @@ export default function AnalysisResults() {
               </View>
             ))}
           </View>
-        </ThemedCard>
+        </ScrollView>
+      </ThemedCard>
 
-        <View style={styles.buttons}>
-          <ThemedButton
-            title="Önerileri Kaydet"
-            onPress={() => updateSuggestions()}
-          />
-          <ThemedButton
-            title="Ana Sayfa"
-            onPress={() => router.replace("/home")}
-          />
-        </View>
-      </ScrollView>
+      <View style={styles.buttons}>
+        <ThemedButton
+          title="Önerileri Kaydet"
+          onPress={() => updateSuggestions()}
+        />
+        <ThemedButton
+          title="Ana Sayfa"
+          onPress={() => router.replace("/home")}
+        />
+      </View>
+
+      {/* Alt boşluk ekleyelim */}
+      <View style={styles.bottomSpacer} />
     </ThemedView>
   );
 }
@@ -349,9 +333,9 @@ const LoadingDots = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, paddingTop: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  content: { padding: 20 },
+  content: { padding: 20, marginVertical: 10 },
   imageCard: { borderRadius: 12, overflow: "hidden", marginBottom: 20 },
   image: { width: "100%", height: 250 },
   title: {
@@ -447,5 +431,9 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 12,
     marginBottom: 8,
+  },
+  bottomSpacer: {
+    height: 50, // İstediğiniz yüksekliğe göre ayarlayın
+    width: "100%",
   },
 });

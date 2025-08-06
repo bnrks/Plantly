@@ -1,8 +1,6 @@
 // app/(dashboard)/(tabs)/_layout.jsx
-import React from "react";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useColorScheme } from "react-native";
 import { Colors } from "../../../constants/Colors";
 import { useContext } from "react";
 import { ThemeContext } from "../../../src/context/ThemeContext";

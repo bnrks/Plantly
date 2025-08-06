@@ -85,7 +85,7 @@ const Home = () => {
   };
 
   return (
-    <ThemedView style={{ flex: 1, padding: 20 }} safe={true}>
+    <ThemedView style={{ flex: 1, padding: 20, paddingTop: 10 }} safe={true}>
       <Header />
       <ThemedCard
         style={{
@@ -166,7 +166,7 @@ const Home = () => {
         <FlatList
           data={plantss}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+          contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 20 }}
           showsVerticalScrollIndicator={false}
           scrollEnabled={true}
           renderItem={({ item }) => (
@@ -174,7 +174,16 @@ const Home = () => {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                marginBottom: 10,
+                marginBottom: 18, // kartlar arası boşluk
+                backgroundColor: "#fff", // kart zemin rengi (koyu temadaysan "#18181b" öneririm)
+                borderRadius: 18, // kart yuvarlaklığı
+                shadowColor: "#000", // gölge efekti
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 6,
+                elevation: 5, // android gölge
+                padding: 12, // iç boşluk
+                marginHorizontal: 2, // yana biraz boşluk
               }}
             >
               {/* Bitki Kartı */}
@@ -190,15 +199,23 @@ const Home = () => {
               <TouchableOpacity
                 onPress={() => handleWaterPlant(item.id)}
                 style={{
-                  backgroundColor: theme.thirdBg,
-                  padding: 10,
-                  borderRadius: 10,
+                  backgroundColor: theme.thirdBg || "#34d399",
+                  padding: 13,
+                  borderRadius: 12,
                   marginLeft: 10,
                   alignItems: "center",
                   justifyContent: "center",
+                  shadowColor: "#10b981",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 3,
+                  elevation: 2,
+                  borderWidth: 2,
+                  borderColor: "#fff",
                 }}
+                activeOpacity={0.8}
               >
-                <Ionicons name="checkmark" size={24} color="white" />
+                <Ionicons name="checkmark" size={22} color="white" />
               </TouchableOpacity>
             </View>
           )}

@@ -1,5 +1,4 @@
-import { StyleSheet, View, useColorScheme } from "react-native";
-import React from "react";
+import { StyleSheet, View } from "react-native";
 import { Colors } from "../constants/Colors";
 import { useContext } from "react";
 import { ThemeContext } from "../src/context/ThemeContext";

@@ -1,5 +1,5 @@
 // src/services/firestoreService.js
-import { db } from "./firebaseConfig";
+import { db, storage } from "./firebaseConfig";
 import {
   doc,
   setDoc,
@@ -10,33 +10,10 @@ import {
   updateDoc,
   serverTimestamp,
   deleteDoc,
-  enableIndexedDbPersistence,
 } from "firebase/firestore";
+import { ref, getDownloadURL } from "firebase/storage";
 import { cancelScheduledNotificationAsync } from "expo-notifications";
-import {
-  savePlantNotifId,
-  getPlantNotifId,
-  deletePlantNotifId,
-} from "./notificationStorage";
-// ÖNEMLİ: enableIndexedDbPersistence'ı dosyanın en üstüne taşıyın,
-// diğer firestore işlemlerinden önce çalıştırılmalı
-try {
-  enableIndexedDbPersistence(db)
-    .then(() => console.log("Offline kalıcılık başarıyla etkinleştirildi"))
-    .catch((err) => {
-      if (err.code === "failed-precondition") {
-        console.warn(
-          "IndexedDB kalıcılığı birden fazla sekmede desteklenmiyor"
-        );
-      } else if (err.code === "unimplemented") {
-        console.warn("Tarayıcı IndexedDB'yi desteklemiyor");
-      } else {
-        console.error("Persistence etkinleştirilirken hata:", err);
-      }
-    });
-} catch (e) {
-  console.warn("Persistence zaten etkinleştirilmiş olabilir:", e);
-}
+import { getPlantNotifId, deletePlantNotifId } from "./notificationStorage";
 
 // Diğer Firebase işlevleri
 export const createUserDocument = async (user) => {
@@ -108,8 +85,8 @@ export async function fetchPlantById(useruid, plantId) {
       const plantData = { id: plantSnapshot.id, ...plantSnapshot.data() };
       // Eğer imageUrl yerine imagePath kaydettiyseniz, burada download URL'sini de alın
       if (plantData.imagePath) {
-        const storageRef = firebase.storage().ref(plantData.imagePath);
-        plantData.imageUrl = await storageRef.getDownloadURL();
+        const storageRef = ref(storage, plantData.imagePath);
+        plantData.imageUrl = await getDownloadURL(storageRef);
       }
       return plantData;
     } else {
@@ -227,7 +204,7 @@ export async function fetchPlantsForWatering(useruid, setPlants, setLoading) {
 export async function updatePlantDisease(userId, plantId, disease) {
   const plantRef = doc(db, "users", userId, "plants", plantId);
   await updateDoc(plantRef, {
-    disease: disease, // ör: "rust", "powdery", "healthy"
+    disease: disease,
     diseaseUpdatedAt: serverTimestamp(),
   });
 }

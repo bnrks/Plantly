@@ -1,18 +1,6 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  Pressable,
-  useColorScheme,
-} from "react-native";
+import { useState } from "react";
+import { StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Link, useRouter } from "expo-router";
-import { signin } from "../../src/services/authService";
-import PlantlyLogo from "../../assets/plantly-logo.png";
-import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
 import ThemedCard from "../../components/ThemedCard";
@@ -23,7 +11,6 @@ import ThemedTextInput from "../../components/ThemedTextInput";
 import { LinearGradient } from "expo-linear-gradient";
 import { resetPassword } from "../../src/services/authService";
 const ResetPassword = () => {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
@@ -38,7 +25,6 @@ const ResetPassword = () => {
       if (result.success) {
         console.log("Şifre sıfırlama linki gönderildi");
         setResetSuccess(true);
-        // router.replace("/login");
       } else {
         console.error("Şifre sıfırlama hatası:", result.code);
       }

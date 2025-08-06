@@ -37,7 +37,9 @@ const MyPlants = () => {
     return <Loading>Yükleniyor</Loading>;
   }
   return (
-    <ThemedView style={{ flex: 1, padding: 10, height: "100%" }}>
+    <ThemedView
+      style={{ flex: 1, padding: 10, height: "100%", paddingTop: 10 }}
+    >
       <Header />
       <ThemedCard
         style={{

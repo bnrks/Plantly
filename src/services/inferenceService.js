@@ -2,7 +2,6 @@ export const API_URL =
   "https://learning-partially-rabbit.ngrok-free.app/predict";
 const ping = "https://learning-partially-rabbit.ngrok-free.app/ping";
 import * as FileSystem from "expo-file-system";
-import * as ImageManipulator from "expo-image-manipulator";
 console.log("FETCH →", API_URL);
 
 function pingTEST() {

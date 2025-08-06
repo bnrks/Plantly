@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import { useState, useContext, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  FlatList,
+  Pressable,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
 import ThemedButton from "../../../components/ThemedButton";
-import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@expo/vector-icons";
 import ThemedCard from "../../../components/ThemedCard";
 import { uploadImageAsync } from "../../../src/services/storageService";
@@ -24,6 +25,49 @@ import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import Header from "../../../components/Header";
 import { scheduleWateringNotificationRepeating } from "../../../src/services/notificationService";
+
+// Önceden tanımlı bitki türleri
+const PREDEFINED_SPECIES = [
+  "Aleo Vera",
+  "Monstera Deliciosa",
+  "Kaktüs",
+  "Orkide",
+  "Gül",
+  "Lale",
+  "Zambak",
+  "Çiçek",
+  "Ficus",
+  "Sukulent",
+  "Lavanta",
+  "Begonia",
+  "Petunya",
+  "Krizantem",
+  "Papatya",
+  "Menekşe",
+  "Sardunya",
+  "Karanfil",
+  "Yasemin",
+  "Nergis",
+  "Sümbül",
+  "İris",
+  "Leylak",
+  "Akasya",
+  "Mimoza",
+  "Kamelya",
+  "Azalya",
+  "Rododendron",
+  "Bambu",
+  "Palmiye",
+  "Bonsai",
+  "Kekik",
+  "Fesleğen",
+  "Roka",
+  "Marul",
+  "Domates",
+  "Biber",
+  "Salatalık",
+  "Patlıcan",
+];
 export default function AddPlantScreen({}) {
   const { user } = useContext(AuthContext);
   const router = useRouter();
@@ -35,6 +79,20 @@ export default function AddPlantScreen({}) {
   const [noteText, setNoteText] = useState(""); // geçici not girişi
   const [showOptions, setShowOptions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Tür önerileri için state'ler
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSpecies, setFilteredSpecies] = useState([]);
+  const [touchingSuggestion, setTouchingSuggestion] = useState(false);
+
+  // TextInput ref
+  const speciesInputRef = useRef(null);
+
+  // Species state değişimini izle
+  useEffect(() => {
+    console.log("🔄 Species state güncellendi:", species);
+  }, [species]);
+
   const wateringSchedule = [
     { date: "2025-05-28T09:00:00", plant: "Kaktüs" },
     { date: "2025-05-29T18:00:00", plant: "Orkide" },
@@ -77,6 +135,74 @@ export default function AddPlantScreen({}) {
   const handleRemoveNote = (idx) => {
     setNotes((prev) => prev.filter((_, i) => i !== idx));
   };
+
+  // Tür girişi değiştiğinde çağrılır
+  const handleSpeciesChange = (text) => {
+    console.log("🔤 handleSpeciesChange çağrıldı:", text);
+    setSpecies(text);
+
+    if (text.trim() === "") {
+      console.log("❌ Text boş, suggestions kapatılıyor");
+      setShowSuggestions(false);
+      setFilteredSpecies([]);
+      return;
+    }
+
+    // Girilen metne uygun önerileri filtrele
+    const filtered = PREDEFINED_SPECIES.filter((species) =>
+      species.toLowerCase().includes(text.toLowerCase())
+    );
+
+    console.log("🔍 Filtered species:", filtered.length, "adet");
+    setFilteredSpecies(filtered);
+    setShowSuggestions(filtered.length > 0);
+  };
+
+  // Önerilen türe tıklandığında çağrılır
+  const handleSpeciesSelect = (selectedSpecies) => {
+    console.log("👆 handleSpeciesSelect çağrıldı:", selectedSpecies);
+    console.log("📝 Önceki species değeri:", species);
+
+    setSpecies(selectedSpecies);
+    setShowSuggestions(false);
+    setFilteredSpecies([]);
+    setTouchingSuggestion(false);
+
+    console.log("✅ Species güncellendi:", selectedSpecies);
+
+    // Input'u tekrar focus et
+    setTimeout(() => {
+      if (speciesInputRef.current) {
+        console.log("🔄 Input blur ediliyor");
+        speciesInputRef.current.blur();
+      }
+    }, 100);
+  };
+
+  // Input focus olduğunda çağrılır
+  const handleSpeciesFocus = () => {
+    console.log("🎯 handleSpeciesFocus çağrıldı, mevcut species:", species);
+    if (species.trim() !== "") {
+      handleSpeciesChange(species);
+    }
+  };
+
+  // Input blur olduğunda çağrılır
+  const handleSpeciesBlur = () => {
+    console.log(
+      "😴 handleSpeciesBlur çağrıldı, touchingSuggestion:",
+      touchingSuggestion
+    );
+    // Daha uzun bir delay vererek suggestion'a tıklama işlemini tamamlamasını sağlayalım
+    setTimeout(() => {
+      if (!touchingSuggestion) {
+        console.log("🚫 Suggestions kapatılıyor (blur)");
+        setShowSuggestions(false);
+      } else {
+        console.log("⏳ Blur iptal edildi çünkü suggestion'a dokunuluyor");
+      }
+    }, 500); // Delay'i 500ms'ye çıkardık
+  };
   const handleSave = async () => {
     if (isSaving) return;
     if (!photoUri || !name.trim() || !species.trim()) {
@@ -105,6 +231,7 @@ export default function AddPlantScreen({}) {
       setNotes([]);
       setNoteText("");
       setShowOptions(false);
+      setIsSaving(false); // Kaydetme işlemi tamamlandı
       Alert.alert("Başarılı", "Bitki eklendi.");
       router.replace({
         pathname: "/myPlants",
@@ -119,9 +246,12 @@ export default function AddPlantScreen({}) {
 
   return (
     <ThemedView style={styles.container}>
-      <Header style={{ marginBottom: 0, marginTop: 10 }} />
+      <Header />
       <ThemedCard style={{ maxHeight: "77%", margin: 10, borderRadius: 20 }}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          onScrollBeginDrag={() => setShowSuggestions(false)}
+        >
           <ThemedTitle style={styles.header}>Bitki Ekle</ThemedTitle>
           <ThemedText>Bitkinin fotoğrafını</ThemedText>
 
@@ -185,12 +315,67 @@ export default function AddPlantScreen({}) {
 
           {/* Tür Seçimi */}
           <ThemedText style={styles.label}>Tür</ThemedText>
-          <TextInput
-            style={styles.input}
-            placeholder="Bitkinin türü"
-            value={species}
-            onChangeText={setSpecies}
-          />
+          <View style={styles.speciesContainer}>
+            <TextInput
+              ref={speciesInputRef}
+              style={styles.input}
+              placeholder="Bitkinin türü (örn: Monstera, Kaktüs)"
+              value={species}
+              onChangeText={handleSpeciesChange}
+              onFocus={handleSpeciesFocus}
+              onBlur={handleSpeciesBlur}
+            />
+
+            {/* Öneriler Listesi */}
+            {showSuggestions && filteredSpecies.length > 0 && (
+              <View
+                style={styles.suggestionsContainer}
+                onTouchStart={() => {
+                  console.log("🤏 Container onTouchStart tetiklendi");
+                  setTouchingSuggestion(true);
+                }}
+                onTouchEnd={() => {
+                  console.log("🤚 Container onTouchEnd tetiklendi");
+                  // Biraz delay ile false yap
+                  setTimeout(() => {
+                    console.log("🔄 touchingSuggestion false yapılıyor");
+                    setTouchingSuggestion(false);
+                  }, 300);
+                }}
+              >
+                <ScrollView
+                  style={styles.suggestionsList}
+                  keyboardShouldPersistTaps="always"
+                  nestedScrollEnabled={true}
+                >
+                  {filteredSpecies.slice(0, 5).map((item, index) => (
+                    <Pressable
+                      key={index}
+                      style={({ pressed }) => [
+                        styles.suggestionItem,
+                        pressed && { backgroundColor: "#f5f5f5" },
+                      ]}
+                      onPressIn={() => {
+                        console.log("👇 Pressable onPressIn tetiklendi:", item);
+                        setTouchingSuggestion(true);
+                      }}
+                      onPress={() => {
+                        console.log("🎯 Pressable onPress tetiklendi:", item);
+                        handleSpeciesSelect(item);
+                      }}
+                    >
+                      <Text style={styles.suggestionText}>{item}</Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color="#A0C878"
+                      />
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
 
           {/* Açıklama */}
           <ThemedText style={styles.label}>Açıklama</ThemedText>
@@ -239,7 +424,7 @@ export default function AddPlantScreen({}) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, paddingTop: 10 },
   content: { padding: 20 },
   header: { fontSize: 24, marginTop: 5 },
   label: { marginTop: 16, marginBottom: 8, fontSize: 14 },
@@ -316,6 +501,52 @@ const styles = StyleSheet.create({
   },
   noteText: {
     fontSize: 16,
+    flex: 1,
+  },
+
+  // Tür önerileri stilleri
+  speciesContainer: {
+    position: "relative",
+    zIndex: 1000,
+  },
+  suggestionsContainer: {
+    position: "absolute",
+    top: 52, // input height + 2px margin
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
+    maxHeight: 200,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1001,
+  },
+  suggestionsList: {
+    maxHeight: 200,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    backgroundColor: "#fff",
+  },
+  suggestionText: {
+    fontSize: 16,
+    color: "#333",
     flex: 1,
   },
 });

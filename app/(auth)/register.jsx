@@ -2,8 +2,6 @@ import React, { useState, useContext } from "react";
 import { StyleSheet, Alert, Image } from "react-native";
 import { useRouter, Link } from "expo-router";
 import { signup } from "../../src/services/authService";
-import PlantlyLogo from "../../assets/plantly-logo.png";
-import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
 import ThemedCard from "../../components/ThemedCard";

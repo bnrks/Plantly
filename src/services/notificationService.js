@@ -1,11 +1,7 @@
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
-import {
-  savePlantNotifId,
-  getPlantNotifId,
-  deletePlantNotifId,
-} from "./notificationStorage";
+import { savePlantNotifId } from "./notificationStorage";
 export async function registerForPushNotificationsAsync() {
   console.log("▶️ 1. Başladı registerForPushNotificationsAsync");
 

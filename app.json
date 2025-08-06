@@ -24,7 +24,6 @@
       "edgeToEdgeEnabled": true,
       "package": "com.bnrks.Plantly",
       "googleServicesFile": "./google-services.json",
-      "useNextNotificationsApi": true,
       "permissions": ["POST_NOTIFICATIONS"]
     },
     "web": {
