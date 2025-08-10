@@ -9,6 +9,8 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/config-plugins": "~10.1.1",
+    "@expo/prebuild-config": "~9.0.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-native-picker/picker": "^2.11.0",
@@ -16,12 +18,12 @@
     "expo": "~53.0.9",
     "expo-constants": "~17.1.6",
     "expo-dev-client": "~5.2.4",
-    "expo-device": "~7.1.4",
+    "expo-device": "^7.1.4",
     "expo-image-manipulator": "^13.1.7",
     "expo-image-picker": "~16.1.4",
     "expo-linear-gradient": "^14.1.4",
     "expo-linking": "~7.1.4",
-    "expo-notifications": "~0.31.2",
+    "expo-notifications": "^0.31.4",
     "expo-router": "^5.0.7",
     "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",
@@ -31,9 +33,7 @@
     "react-native": "0.79.5",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-tflite": "^0.0.2",
-    "@expo/config-plugins": "~10.1.1",
-    "@expo/prebuild-config": "~9.0.0"
+    "react-native-tflite": "^0.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

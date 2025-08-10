@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
@@ -19,11 +19,8 @@ import Header from "../../../components/Header";
 import { fetchPlantsForWatering } from "../../../src/services/firestoreService";
 import { updatePlantWatering } from "../../../src/services/firestoreService";
 import { useRouter } from "expo-router";
-import { registerForPushNotificationsAsync } from "../../../src/services/notificationService";
-import { updateUserToken } from "../../../src/services/firestoreService";
-import * as Notifications from "expo-notifications";
-import { planDailyReminder } from "../../../src/services/notificationService";
-
+import { registerForPush } from "../../../src/notifications/registerForPush";
+import { useAuth } from "../../../src/context/AuthContext"; // örnek
 const Home = () => {
   const [plantss, setPlantss] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,25 +32,13 @@ const Home = () => {
   const theme = Colors[selectedTheme] ?? Colors.light;
   const username = user?.displayName || "Kullanıcı";
   const userid = user?.uid || "";
-
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-  });
+  const registeredRef = useRef(false);
   useEffect(() => {
-    if (user) {
-      (async () => {
-        const token = await registerForPushNotificationsAsync();
-        if (token) await updateUserToken(user.uid, token); // Firestore’a yaz
-      })();
+    if (user?.uid && !registeredRef.current) {
+      registeredRef.current = true; // aynı oturumda birden fazla çağrılmasın
+      registerForPush(user.uid).catch(console.warn);
     }
-  }, [user]);
-  useEffect(() => {
-    planDailyReminder(); // Günlük hatırlatıcıları planla
-  }, []);
+  }, [user?.uid]);
   // Kullanıcı yoksa login'e at
   useEffect(() => {
     if (!user) {
@@ -177,11 +162,7 @@ const Home = () => {
                 marginBottom: 18, // kartlar arası boşluk
                 backgroundColor: "#fff", // kart zemin rengi (koyu temadaysan "#18181b" öneririm)
                 borderRadius: 18, // kart yuvarlaklığı
-                shadowColor: "#000", // gölge efekti
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 6,
-                elevation: 5, // android gölge
+
                 padding: 12, // iç boşluk
                 marginHorizontal: 2, // yana biraz boşluk
               }}

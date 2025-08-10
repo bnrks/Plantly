@@ -23,13 +23,20 @@ import Loading from "../../../components/Loading";
 import { deletePlant } from "../../../src/services/firestoreService";
 import Header from "../../../components/Header";
 export default function PlantDetails() {
-  const userid = useContext(AuthContext).user.uid;
+  const { user } = useContext(AuthContext);
   const router = useRouter();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
   const { id } = useLocalSearchParams();
   const [plant, setPlant] = useState({});
   const [loading, setLoading] = useState(true);
+
+  // User yoksa erken return
+  if (!user) {
+    return null;
+  }
+
+  const userid = user.uid;
   useEffect(() => {
     async function getPlant() {
       const info = await fetchPlantById(userid, id);

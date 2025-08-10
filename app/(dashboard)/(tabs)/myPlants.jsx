@@ -13,10 +13,17 @@ import Header from "../../../components/Header";
 const MyPlants = () => {
   const router = useRouter();
   const { refresh } = useLocalSearchParams();
-  const userid = useContext(AuthContext).user.uid;
+  const { user } = useContext(AuthContext);
   const [plantss, setPlantss] = useState([]);
   const [loading, setLoading] = useState(true);
   const [initialFetched, setInitialFetched] = useState(false);
+
+  // User yoksa erken return
+  if (!user) {
+    return null;
+  }
+
+  const userid = user.uid;
 
   useEffect(() => {
     if (!initialFetched && refresh !== "true") {

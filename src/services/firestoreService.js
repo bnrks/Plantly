@@ -12,8 +12,6 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { ref, getDownloadURL } from "firebase/storage";
-import { cancelScheduledNotificationAsync } from "expo-notifications";
-import { getPlantNotifId, deletePlantNotifId } from "./notificationStorage";
 
 // Diğer Firebase işlevleri
 export const createUserDocument = async (user) => {
@@ -68,6 +66,7 @@ export async function fetchPlants(useruid, setPlants, setLoading) {
     setLoading(false); // Yükleme tamamlandığında loading'i kapatın
   }
 }
+
 export async function fetchPlantById(useruid, plantId) {
   try {
     if (!useruid) {
@@ -99,26 +98,27 @@ export async function fetchPlantById(useruid, plantId) {
     return null;
   }
 }
+
 export async function updatePlant(userId, plantId, data) {
   // 1. Bitki dokümanına bir referans oluşturuyoruz
   const plantRef = doc(db, "users", userId, "plants", plantId);
 
-  // 2. updateDoc ile sadece gönderdiğimiz alanları Firestore’da güncelliyoruz.
+  // 2. updateDoc ile sadece gönderdiğimiz alanları Firestore'da güncelliyoruz.
   //    Ayrıca bir "updatedAt" alanı ekleyip değişiklik zamanını kaydediyoruz.
   await updateDoc(plantRef, {
     ...data,
     updatedAt: serverTimestamp(),
   });
 }
+
 export async function deletePlant(userId, plantId) {
   // 1. Bitki dokümanına referans oluştur
-  const notifId = await getPlantNotifId(plantId);
   const plantRef = doc(db, "users", userId, "plants", plantId);
-  if (notifId) await cancelScheduledNotificationAsync(notifId);
-  await deletePlantNotifId(plantId);
+
   // 2. deleteDoc ile dokümanı tamamen sil
   await deleteDoc(plantRef);
 }
+
 export async function updatePlantSuggestions(userId, plantId, suggestions) {
   try {
     // Bitki dokümanına referans oluştur
@@ -137,27 +137,7 @@ export async function updatePlantSuggestions(userId, plantId, suggestions) {
     throw error; // Hatayı çağıran fonksiyona ilet
   }
 }
-// import { setLogLevel } from "firebase/firestore";
-// setLogLevel("debug"); // Geçici olarak ayrıntılı log açın
 
-export async function updateUserToken(userId, token) {
-  try {
-    console.log("▶ userId:", userId);
-    console.log("▶ token :", token);
-
-    const userRef = doc(db, "users", userId);
-    console.log("▶ userRef.path:", userRef.path);
-
-    await updateDoc(userRef, {
-      expoPushToken: token,
-      updatedAt: serverTimestamp(),
-    });
-
-    console.log("✅ Token Firestore’a yazıldı");
-  } catch (error) {
-    console.error("🔥 Firestore write error:", error);
-  }
-}
 export async function updatePlantWatering(userId, plantId) {
   const plantRef = doc(db, "users", userId, "plants", plantId);
   await updateDoc(plantRef, {
@@ -165,6 +145,7 @@ export async function updatePlantWatering(userId, plantId) {
     updatedAt: serverTimestamp(), // Firestore'un kendi server zamanı
   });
 }
+
 export async function fetchPlantsForWatering(useruid, setPlants, setLoading) {
   try {
     setLoading(true);
@@ -201,6 +182,7 @@ export async function fetchPlantsForWatering(useruid, setPlants, setLoading) {
     setLoading(false);
   }
 }
+
 export async function updatePlantDisease(userId, plantId, disease) {
   const plantRef = doc(db, "users", userId, "plants", plantId);
   await updateDoc(plantRef, {

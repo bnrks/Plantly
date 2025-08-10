@@ -22,9 +22,9 @@ import { uploadImageAsync } from "../../../src/services/storageService";
 import { addPlant } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
 import { useRouter } from "expo-router";
-import { Alert } from "react-native";
 import Header from "../../../components/Header";
-import { scheduleWateringNotificationRepeating } from "../../../src/services/notificationService";
+import CustomAlert from "../../../components/CustomAlert";
+import { useCustomAlert } from "../../../src/hooks/useCustomAlert";
 
 // Önceden tanımlı bitki türleri
 const PREDEFINED_SPECIES = [
@@ -71,6 +71,14 @@ const PREDEFINED_SPECIES = [
 export default function AddPlantScreen({}) {
   const { user } = useContext(AuthContext);
   const router = useRouter();
+  const { alertConfig, showSuccess, showError, showWarning, hideAlert } =
+    useCustomAlert();
+
+  // User yoksa erken return
+  if (!user) {
+    return null;
+  }
+
   const [photoUri, setPhotoUri] = useState(null);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
@@ -206,7 +214,7 @@ export default function AddPlantScreen({}) {
   const handleSave = async () => {
     if (isSaving) return;
     if (!photoUri || !name.trim() || !species.trim()) {
-      Alert.alert("Eksik bilgi", "Lütfen fotoğraf, isim ve tür girin.");
+      showWarning("Eksik Bilgi", "Lütfen fotoğraf, isim ve tür girin.");
       return;
     }
     try {
@@ -218,11 +226,7 @@ export default function AddPlantScreen({}) {
       // 2) Firestore'a kaydet
       console.log("addPlant çağrıldı, userId:", user.uid);
       await addPlant(user.uid, { name, species, description, imageUrl, notes });
-      await scheduleWateringNotificationRepeating({
-        id: user.uid,
-        name,
-        species,
-      });
+
       // 3) Formu temizle
       setPhotoUri(null);
       setName("");
@@ -232,20 +236,23 @@ export default function AddPlantScreen({}) {
       setNoteText("");
       setShowOptions(false);
       setIsSaving(false); // Kaydetme işlemi tamamlandı
-      Alert.alert("Başarılı", "Bitki eklendi.");
-      router.replace({
-        pathname: "/myPlants",
-        params: { refresh: "true" }, // burada query param olarak gönderiyoruz
-      }); // Veya hangi sayfaya dönmek istersen
+
+      showSuccess("Başarılı", "Bitki eklendi.", () => {
+        hideAlert();
+        router.replace({
+          pathname: "/myPlants",
+          params: { refresh: "true" }, // burada query param olarak gönderiyoruz
+        }); // Veya hangi sayfaya dönmek istersen
+      });
     } catch (e) {
       console.error(e);
-      Alert.alert("Hata", "Bitki eklenirken bir sorun oluştu.");
+      showError("Hata", "Bitki eklenirken bir sorun oluştu.");
       setIsSaving(false);
     }
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.container} safe={true}>
       <Header />
       <ThemedCard style={{ maxHeight: "77%", margin: 10, borderRadius: 20 }}>
         <ScrollView
@@ -418,6 +425,18 @@ export default function AddPlantScreen({}) {
         onPress={handleSave}
         style={[styles.saveButton, isSaving && { opacity: 0.6 }]}
         disabled={isSaving}
+      />
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+        confirmText={alertConfig.confirmText}
+        cancelText={alertConfig.cancelText}
+        showCancel={alertConfig.showCancel}
       />
     </ThemedView>
   );

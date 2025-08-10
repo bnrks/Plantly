@@ -17,7 +17,7 @@ export default function DashboardTabs() {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute",
-          bottom: 10,
+          bottom: 15,
           height: 63,
           borderRadius: 30,
           borderTopWidth: 0,

@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { StyleSheet, Alert, Image } from "react-native";
+import { StyleSheet, Image } from "react-native";
 import { useRouter, Link } from "expo-router";
 import { signup } from "../../src/services/authService";
 import ThemedText from "../../components/ThemedText";
@@ -10,28 +10,33 @@ import { ThemeContext } from "../../src/context/ThemeContext";
 import ThemedTextInput from "../../components/ThemedTextInput";
 import { LinearGradient } from "expo-linear-gradient";
 import { KeyboardAvoidingView, ScrollView, Platform } from "react-native";
+import CustomAlert from "../../components/CustomAlert";
+import { useCustomAlert } from "../../src/hooks/useCustomAlert";
 export default function Register() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { alertConfig, showSuccess, showError, showWarning, hideAlert } =
+    useCustomAlert();
 
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-      Alert.alert("Şifreler eşleşmiyor!");
+      showWarning("Hata", "Şifreler eşleşmiyor!");
       return;
     }
     try {
       await signup(email.trim(), password, username.trim());
-      Alert.alert("Başarılı", "Kayıt işlemi tamamlandı.");
-
-      router.replace("/login");
+      showSuccess("Başarılı", "Kayıt işlemi tamamlandı.", () => {
+        hideAlert();
+        router.replace("/login");
+      });
     } catch (e) {
-      Alert.alert("Hata", e.message);
+      showError("Hata", e.message);
     }
   };
 
@@ -118,6 +123,18 @@ export default function Register() {
             </Link>
           </ThemedCard>
         </LinearGradient>
+
+        <CustomAlert
+          visible={alertConfig.visible}
+          type={alertConfig.type}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          onConfirm={alertConfig.onConfirm}
+          onCancel={alertConfig.onCancel}
+          confirmText={alertConfig.confirmText}
+          cancelText={alertConfig.cancelText}
+          showCancel={alertConfig.showCancel}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );

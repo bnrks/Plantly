@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { StyleSheet, View, Switch, Alert } from "react-native";
+import { StyleSheet, View, Switch } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
@@ -9,16 +9,32 @@ import ThemedText from "../../../components/ThemedText";
 import ThemedButton from "../../../components/ThemedButton";
 import ThemedCard from "../../../components/ThemedCard";
 import { AuthContext } from "../../../src/context/AuthContext";
+import CustomAlert from "../../../components/CustomAlert";
+import { useCustomAlert } from "../../../src/hooks/useCustomAlert";
 
 export default function Settings() {
   const router = useRouter();
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext);
   const theme = Colors[currentTheme] ?? Colors.light;
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
+  const { alertConfig, showSuccess, showError, hideAlert } = useCustomAlert();
+
+  // User yoksa erken return
+  if (!user) {
+    return null;
+  }
+
   const handleLogout = async () => {
-    Alert.alert("Çıkış yapıldı");
-    router.push("/login");
-    await logout();
+    try {
+      await logout();
+      showSuccess("Başarılı", "Çıkış yapıldı", () => {
+        hideAlert();
+        router.replace("/login");
+      });
+    } catch (error) {
+      console.error("Çıkış yapılırken hata:", error);
+      showError("Hata", "Çıkış yapılırken bir hata oluştu");
+    }
   };
 
   return (
@@ -49,6 +65,18 @@ export default function Settings() {
           />
         </View>
       </ThemedCard>
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+        confirmText={alertConfig.confirmText}
+        cancelText={alertConfig.cancelText}
+        showCancel={alertConfig.showCancel}
+      />
     </ThemedView>
   );
 }

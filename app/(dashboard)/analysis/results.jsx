@@ -21,7 +21,7 @@ import Thinking from "../../../assets/plantly-thinking.png";
 import { AuthContext } from "../../../src/context/AuthContext";
 import { updatePlantDisease } from "../../../src/services/firestoreService";
 export default function AnalysisResults() {
-  const userid = useContext(AuthContext).user.uid;
+  const { user } = useContext(AuthContext);
   const router = useRouter();
   const { photoUri } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
@@ -32,6 +32,13 @@ export default function AnalysisResults() {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
   const [botIcon, setBotIcon] = useState(Asistant);
+
+  // User yoksa erken return
+  if (!user) {
+    return null;
+  }
+
+  const userid = user.uid;
 
   async function getPlant() {
     const info = await fetchPlantById(userid, id);
