@@ -206,8 +206,7 @@ exports.ping = onRequest({ region: "europe-west1" }, (req, res) => {
 // CRON: **4 saatte bir**
 exports.notifyDueWaterings = onSchedule(
   {
-    // İstanbul saatine göre 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
-    schedule: "0 */4 * * *",
+    schedule: "0 */9 * * *",
     timeZone: "Europe/Istanbul",
     region: "europe-west1",
   },
