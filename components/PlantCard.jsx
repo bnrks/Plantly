@@ -10,7 +10,7 @@ const PlantCard = ({ name, description, image, onPress, style }) => {
   const theme = Colors[selectedTheme] ?? Colors.light;
   return (
     <TouchableOpacity
-      style={[styles.card, style, { backgroundColor: theme.fourthBg }]}
+      style={[styles.card, style]}
       activeOpacity={0.8}
       onPress={onPress}
     >

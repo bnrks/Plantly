@@ -1,29 +1,55 @@
-import { StyleSheet, ActivityIndicator } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { StyleSheet, View, Image, Animated } from "react-native";
 import ThemedView from "./ThemedView";
 import ThemedText from "./ThemedText";
 
 const Loading = ({ style, children, ...props }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Giriş animasyonu
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
   return (
-    <ThemedView style={[styles.center, style]} {...props}>
-      <ActivityIndicator size="large" />
-      <ThemedText style={styles.loadingText}>{children}</ThemedText>
-    </ThemedView>
+    <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
+      <ThemedView style={[styles.container, style]} {...props}>
+        <Image
+          source={require("../assets/loading-gif.gif")}
+          style={styles.loadingGif}
+        />
+      </ThemedView>
+    </Animated.View>
   );
 };
 
 export default Loading;
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: {
-    marginTop: 16, // spinner’ın hemen altına biraz boşluk
-    textAlign: "center", // metni ortala
-    fontSize: 22,
-    fontWeight: "bold",
-  },
-  loading: {
-    flex: 1,
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+    backgroundColor: "rgba(0, 0, 0, 0.2)", // Daha koyu overlay
     justifyContent: "center",
     alignItems: "center",
+  },
+  container: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "transparent",
+  },
+
+  loadingGif: {
+    width: 120,
+    height: 120,
   },
 });

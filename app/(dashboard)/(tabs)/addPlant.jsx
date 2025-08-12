@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     width: "90%",
-    marginBottom: 50,
+    marginBottom: 60,
     position: "absolute",
     bottom: 30,
     left: 20,

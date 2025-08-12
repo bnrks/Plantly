@@ -10,8 +10,12 @@ import PlantCard from "../../../components/PlantCard";
 import ThemedButton from "../../../components/ThemedButton";
 import Loading from "../../../components/Loading";
 import Header from "../../../components/Header";
+import { ThemeContext } from "../../../src/context/ThemeContext";
+import { Colors } from "../../../constants/Colors";
 const MyPlants = () => {
   const router = useRouter();
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
   const { refresh } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
   const [plantss, setPlantss] = useState([]);
@@ -70,6 +74,7 @@ const MyPlants = () => {
           renderItem={({ item }) => (
             <PlantCard
               name={item.name}
+              style={{ backgroundColor: theme.fourthBg }}
               description={item.description}
               image={{ uri: item.imageUrl }}
               onPress={() =>
