@@ -21,6 +21,7 @@ import { fetchPlantsForWatering } from "../../../src/services/firestoreService";
 import { updatePlantWatering } from "../../../src/services/firestoreService";
 import { useRouter } from "expo-router";
 import { registerForPush } from "../../../src/notifications/registerForPush";
+import { getAuth } from "firebase/auth";
 const Home = () => {
   const [plantss, setPlantss] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,26 @@ const Home = () => {
     if (!user) {
       router.replace("/login");
     }
+  }, [user]);
+
+  // idToken'ı konsola yazdır
+  useEffect(() => {
+    const getIdToken = async () => {
+      if (user) {
+        try {
+          const auth = getAuth();
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            const idToken = await currentUser.getIdToken();
+            console.log("🔐 Firebase ID Token:", idToken);
+          }
+        } catch (error) {
+          console.error("❌ idToken alma hatası:", error);
+        }
+      }
+    };
+
+    getIdToken();
   }, [user]);
 
   // Bitkileri sadece kullanıcı varsa çek
