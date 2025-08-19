@@ -83,13 +83,14 @@ export default function Analysis() {
     setStep("preview");
   };
 
-  /** 2) Onayla -> Results sayfasına kalıcı URI ile git */
+  /** 2) Onayla -> Chat sayfasına kalıcı URI ile git */
   const confirmPhoto = () => {
     router.push({
-      pathname: "/analysis/results",
+      pathname: "/(dashboard)/(tabs)/chat",
       params: {
-        photoUri,
-        id: id, // Bitki ID'si
+        analysisImage: photoUri,
+        plantId: id, // Bitki ID'si
+        analysisMode: "true",
       },
     });
   };

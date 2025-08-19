@@ -142,6 +142,30 @@ class ChatService {
    * WebSocket mesajını işleme
    */
   processWebSocketMessage(data) {
+    console.log("🔧 processWebSocketMessage çağrıldı, data:", data);
+    console.log("🔧 data.assistant:", data.assistant);
+    console.log("🔧 data.assistant?.content:", data.assistant?.content);
+
+    // Yeni format: { assistant: {...}, diagnosis: {...}, message_id, thread_id }
+    if (data.assistant && data.assistant.content) {
+      const newMessage = {
+        id:
+          data.message_id || data.assistant.message_id || Date.now().toString(),
+        role: "assistant",
+        content: data.assistant.content,
+        timestamp: new Date(),
+      };
+
+      // Eğer diagnosis bilgisi varsa ekle
+      if (data.diagnosis) {
+        newMessage.diagnosis = data.diagnosis;
+      }
+
+      console.log("✅ İşlenmiş mesaj:", newMessage);
+      return newMessage;
+    }
+
+    // Eski format: { type: "message", message: {...} }
     if (data.type === "message" && data.message) {
       // SystemEvent mesajlarını filtreleme (diagnosis objeleri)
       if (data.message.role === "systemEvent") {
@@ -166,6 +190,14 @@ class ChatService {
 
       return newMessage;
     }
+
+    // Thread ready mesajları için
+    if (data.type === "thread_ready") {
+      console.log("🎯 Thread hazır mesajı işlendi");
+      return null;
+    }
+
+    console.log("⚠️ İşlenemeyen mesaj formatı:", data);
     return null;
   }
 

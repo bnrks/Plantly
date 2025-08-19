@@ -8,9 +8,11 @@ import {
   Image,
   Keyboard,
   Modal,
+  Alert,
 } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getAuth } from "firebase/auth";
+import { useLocalSearchParams } from "expo-router";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
@@ -44,6 +46,9 @@ export default function ChatScreen() {
   const { alertConfig, showConfirm, hideAlert } = useCustomAlert();
   const navigation = useNavigation();
 
+  // Analiz parametrelerini al
+  const { analysisImage, plantId, analysisMode } = useLocalSearchParams();
+
   useEffect(() => {
     // Bağlantı durumu dinleyicisi ekle
     const handleConnectionChange = (status, message) => {
@@ -56,7 +61,12 @@ export default function ChatScreen() {
       console.log("📥 Alınan mesaj:", data);
 
       const newMessage = chatService.processWebSocketMessage(data);
-      if (!newMessage) return;
+      if (!newMessage) {
+        console.log("⚠️ Mesaj işlenemedi, null döndü");
+        return;
+      }
+
+      console.log("✅ İşlenmiş mesaj:", newMessage);
 
       setMessages((prev) => {
         // Aynı ID'li mesaj zaten var mı kontrol et
@@ -65,6 +75,8 @@ export default function ChatScreen() {
           console.log("⚠️ Aynı ID'li mesaj zaten mevcut:", newMessage.id);
           return prev;
         }
+
+        console.log("➕ Yeni mesaj ekleniyor:", newMessage.id);
         return [...prev, newMessage];
       });
 
@@ -140,6 +152,79 @@ export default function ChatScreen() {
       }, 1000);
     }
   };
+
+  // Analiz modunda gelinen görüntüyü işle
+  useEffect(() => {
+    if (
+      analysisMode === "true" &&
+      analysisImage &&
+      connectionStatus === "connected"
+    ) {
+      // Analiz modundaki görüntüyü normal chat formatında işle
+      const processAnalysisImage = async () => {
+        try {
+          setIsAnalyzing(true);
+
+          // Kullanıcı mesajını önce ekle
+          const userMessage = chatService.createUserMessage(
+            "Bitkimin analizi için fotoğraf gönderiyorum.",
+            analysisImage
+          );
+          setMessages((prev) => [...prev, userMessage]);
+
+          // Thread henüz yoksa, bekle ve oluştur
+          if (!wsService.threadId) {
+            console.log("🧵 Analiz için thread oluşturuluyor...");
+            await wsService.initializeThread();
+
+            // Thread oluşturulduktan sonra kısa süre bekle
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+
+          // selectedImage formatında hazırla
+          const imageForAnalysis = {
+            uri: analysisImage,
+            type: "image/jpeg",
+          };
+
+          // Normal chat'teki fotoğraf analizi akışını kullan
+          const analysisResult = await chatService.analyzeImage(
+            imageForAnalysis,
+            "Bitkimin analizi için fotoğraf gönderiyorum."
+          );
+
+          // HTTP response'tan gelen sonucu direkt işle
+          if (analysisResult && analysisResult.assistant) {
+            const analysisMessage = {
+              id:
+                analysisResult.message_id ||
+                analysisResult.assistant.message_id ||
+                Date.now().toString(),
+              role: "assistant",
+              content: analysisResult.assistant.content,
+              timestamp: new Date(),
+              diagnosis: analysisResult.diagnosis,
+            };
+
+            console.log("✅ Analiz mesajı ekleniyor:", analysisMessage);
+            setMessages((prev) => [...prev, analysisMessage]);
+          }
+
+          // Scroll to bottom
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        } catch (error) {
+          console.error("❌ Analiz hatası:", error);
+          Alert.alert("Hata", "Fotoğraf analizi yapılırken bir hata oluştu");
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+
+      processAnalysisImage();
+    }
+  }, [analysisMode, analysisImage, connectionStatus]);
 
   // Yeni sohbet başlatma fonksiyonu
   const startNewChat = () => {
@@ -286,7 +371,27 @@ export default function ChatScreen() {
       setMessages((prev) => [...prev, userMessage]);
 
       // Fotoğraf analizi yap
-      await chatService.analyzeImage(selectedImage, inputText);
+      const analysisResult = await chatService.analyzeImage(
+        selectedImage,
+        inputText
+      );
+
+      // HTTP response'tan gelen sonucu direkt işle
+      if (analysisResult && analysisResult.assistant) {
+        const analysisMessage = {
+          id:
+            analysisResult.message_id ||
+            analysisResult.assistant.message_id ||
+            Date.now().toString(),
+          role: "assistant",
+          content: analysisResult.assistant.content,
+          timestamp: new Date(),
+          diagnosis: analysisResult.diagnosis,
+        };
+
+        console.log("✅ Normal chat analiz mesajı ekleniyor:", analysisMessage);
+        setMessages((prev) => [...prev, analysisMessage]);
+      }
 
       // Input ve seçili fotoğrafı temizle
       setInputText("");
@@ -343,7 +448,7 @@ export default function ChatScreen() {
   };
 
   const renderMessage = ({ item }) => {
-    const isUser = item.role === "user";
+    const isUser = item.role === "user" || item.sender === "user";
 
     return (
       <View
@@ -376,8 +481,43 @@ export default function ChatScreen() {
             />
           )}
 
-          {/* Teşhis bilgisi varsa göster */}
-          {item.diagnosis && (
+          {/* Analiz sonucu teşhis bilgisi varsa göster */}
+          {item.type === "analysis" && item.disease && (
+            <View style={styles.diagnosisContainer}>
+              <View style={styles.diagnosisHeader}>
+                <Ionicons name="medical" size={16} color="#4CAF50" />
+                <ThemedText style={styles.diagnosisTitle}>
+                  Teşhis Sonucu
+                </ThemedText>
+              </View>
+              <ThemedText style={styles.diagnosisText}>
+                {String(item.disease).replace(/_/g, " ")}
+                {item.confidence
+                  ? ` (%${Math.round(item.confidence * 100)} güven)`
+                  : ""}
+              </ThemedText>
+            </View>
+          )}
+
+          {/* Analiz önerileri varsa göster */}
+          {item.type === "analysis" && item.suggestions && (
+            <View style={styles.suggestionsContainer}>
+              <View style={styles.suggestionsHeader}>
+                <Ionicons name="bulb" size={16} color="#FF9800" />
+                <ThemedText style={styles.suggestionsTitle}>
+                  Bakım Önerileri
+                </ThemedText>
+              </View>
+              {item.suggestions.map((suggestion, index) => (
+                <ThemedText key={index} style={styles.suggestionText}>
+                  • {suggestion}
+                </ThemedText>
+              ))}
+            </View>
+          )}
+
+          {/* Normal teşhis bilgisi (eski format için uyumluluk) */}
+          {item.diagnosis && !item.type && (
             <View style={styles.diagnosisContainer}>
               <View style={styles.diagnosisHeader}>
                 <Ionicons name="medical" size={16} color="#4CAF50" />
@@ -402,17 +542,16 @@ export default function ChatScreen() {
               isUser ? styles.userMessageText : styles.assistantMessageText,
             ]}
           >
-            {typeof item.content === "string"
-              ? item.content
-              : JSON.stringify(item.content)}
+            {item.text || item.content || ""}
           </ThemedText>
+
           <ThemedText
             style={[
               styles.messageTime,
               isUser ? styles.userMessageTime : styles.assistantMessageTime,
             ]}
           >
-            {item.timestamp.toLocaleTimeString("tr-TR", {
+            {new Date(item.timestamp).toLocaleTimeString("tr-TR", {
               hour: "2-digit",
               minute: "2-digit",
             })}
@@ -1031,6 +1170,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: "#333",
+  },
+  suggestionsContainer: {
+    backgroundColor: "rgba(255, 152, 0, 0.1)",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: "#FF9800",
+  },
+  suggestionsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  suggestionsTitle: {
+    fontWeight: "600",
+    marginLeft: 6,
+    fontSize: 14,
+    color: "#FF9800",
+  },
+  suggestionText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 4,
   },
   textInput: {
     flex: 1,
