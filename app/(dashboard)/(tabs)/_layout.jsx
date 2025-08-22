@@ -13,12 +13,13 @@ export default function DashboardTabs() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: theme.secondBg,
         tabBarInactiveTintColor: theme.text,
         tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute",
-          bottom: 20,
+          bottom: 4,
           height: 70, // 63'ten 70'e çıkardık
           borderRadius: 30,
           borderTopWidth: 0,

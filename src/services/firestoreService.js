@@ -190,3 +190,32 @@ export async function updatePlantDisease(userId, plantId, disease) {
     diseaseUpdatedAt: serverTimestamp(),
   });
 }
+
+// Thread silme fonksiyonu
+export async function deleteThread(userId, threadId) {
+  try {
+    const threadRef = doc(db, "users", userId, "threads", threadId);
+    await deleteDoc(threadRef);
+    console.log(`Thread silindi: ${threadId}`);
+    return true;
+  } catch (error) {
+    console.error("Thread silme hatası:", error);
+    throw error;
+  }
+}
+
+// Thread title güncelleme fonksiyonu
+export async function updateThreadTitle(userId, threadId, title) {
+  try {
+    const threadRef = doc(db, "users", userId, "threads", threadId);
+    await updateDoc(threadRef, {
+      title: title,
+      titleUpdatedAt: serverTimestamp(),
+    });
+    console.log(`Thread title güncellendi: ${threadId} -> ${title}`);
+    return true;
+  } catch (error) {
+    console.error("Thread title güncelleme hatası:", error);
+    throw error;
+  }
+}

@@ -11,7 +11,7 @@ import ThemedTextInput from "../../components/ThemedTextInput";
 import { LinearGradient } from "expo-linear-gradient";
 import { KeyboardAvoidingView, ScrollView, Platform } from "react-native";
 import CustomAlert from "../../components/CustomAlert";
-import { useCustomAlert } from "../../src/hooks/useCustomAlert";
+import { useCustomAlert } from "../../src/hooks/ui/useCustomAlert";
 export default function Register() {
   const router = useRouter();
   const [username, setUsername] = useState("");

@@ -1,4 +1,5 @@
 import { getAuth } from "firebase/auth";
+import { updateThreadTitle } from "./firestoreService";
 
 class WebSocketService {
   constructor() {
@@ -34,6 +35,11 @@ class WebSocketService {
 
   // Bağlantı durumu değişikliklerini bildir
   notifyConnectionListeners(status, message = "") {
+    console.log("📢 Notifying connection listeners:", {
+      status,
+      message,
+      listenersCount: this.connectionListeners.length,
+    });
     this.connectionListeners.forEach((callback) => {
       callback(status, message);
     });
@@ -67,83 +73,118 @@ class WebSocketService {
     } catch (error) {
       console.error("❌ WebSocket bağlantı hatası:", error);
       this.isConnecting = false;
-      this.notifyConnectionListeners("error", "Bağlantı kurulamadı");
+      const errorMessage = error.message || JSON.stringify(error);
+      this.notifyConnectionListeners("error", errorMessage);
     }
   }
 
   async connectWebSocket() {
     return new Promise((resolve, reject) => {
-      // WebSocket bağlantısını kur
-      this.ws = new WebSocket(
-        "wss://learning-partially-rabbit.ngrok-free.app/ws/chat"
-      );
+      try {
+        // WebSocket bağlantısını kur
+        this.ws = new WebSocket(
+          "wss://learning-partially-rabbit.ngrok-free.app/ws/chat"
+        );
 
-      this.ws.onopen = async () => {
-        console.log("✅ WebSocket bağlantısı açıldı");
-        this.isConnected = true;
-        this.isConnecting = false;
-        this.notifyConnectionListeners("connected", "Bağlantı kuruldu");
+        this.ws.onopen = async () => {
+          console.log("✅ WebSocket bağlantısı açıldı");
+          this.isConnected = true;
+          this.isConnecting = false;
+          this.notifyConnectionListeners("connected", "Bağlantı kuruldu");
 
-        // Sadece thread ID varsa init mesajı gönder
-        if (this.threadId) {
+          // Sadece thread ID varsa init mesajı gönder
+          if (this.threadId) {
+            try {
+              const auth = getAuth();
+              const currentUser = auth.currentUser;
+
+              if (!currentUser) {
+                throw new Error("Kullanıcı bulunamadı");
+              }
+
+              const idToken = await currentUser.getIdToken();
+
+              const initMessage = {
+                type: "init",
+                idToken: idToken,
+                thread_id: this.threadId,
+              };
+
+              this.ws.send(JSON.stringify(initMessage));
+              console.log(
+                "🔄 Mevcut thread ile init gönderildi:",
+                this.threadId
+              );
+            } catch (error) {
+              console.error("❌ Init mesajı gönderme hatası:", error);
+            }
+          } else {
+            console.log(
+              "� Thread yok, bağlantı hazır. İlk mesajda thread oluşturulacak."
+            );
+          }
+
+          resolve();
+        };
+
+        this.ws.onmessage = (event) => {
           try {
-            const auth = getAuth();
-            const currentUser = auth.currentUser;
+            const data = JSON.parse(event.data);
+            console.log("📥 WebSocket mesajı alındı:", data);
 
-            if (!currentUser) {
-              throw new Error("Kullanıcı bulunamadı");
+            if (data.type === "thread_ready") {
+              this.threadId = data.thread_id;
+              console.log("🎯 Thread hazır, ID:", this.threadId);
             }
 
-            const idToken = await currentUser.getIdToken();
+            // Eğer mesajda title varsa ve thread_id varsa Firebase'e kaydet
+            if (data.title && data.thread_id && data.type === "message") {
+              this.updateFirebaseTitle(data.thread_id, data.title);
+            }
 
-            const initMessage = {
-              type: "init",
-              idToken: idToken,
-              thread_id: this.threadId,
-            };
-
-            this.ws.send(JSON.stringify(initMessage));
-            console.log("🔄 Mevcut thread ile init gönderildi:", this.threadId);
+            this.notifyMessageListeners(data);
           } catch (error) {
-            console.error("❌ Init mesajı gönderme hatası:", error);
+            console.error("❌ Mesaj parse hatası:", error);
           }
-        } else {
+        };
+
+        this.ws.onerror = (error) => {
+          console.error("❌ WebSocket hatası:", error);
+          console.log("📊 Error details:", {
+            type: typeof error,
+            message: error.message,
+            stack: error.stack,
+            event: error,
+          });
+          this.isConnected = false;
+          this.isConnecting = false;
+          // Hata detaylarını status message olarak gönder
+          const errorMessage = error.message || JSON.stringify(error);
           console.log(
-            "� Thread yok, bağlantı hazır. İlk mesajda thread oluşturulacak."
+            "📡 Sending error to connection listeners:",
+            errorMessage
           );
-        }
+          this.notifyConnectionListeners("error", errorMessage);
+          reject(error);
+        };
 
-        resolve();
-      };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log("📥 WebSocket mesajı alındı:", data);
-
-          if (data.type === "thread_ready") {
-            this.threadId = data.thread_id;
-            console.log("🎯 Thread hazır, ID:", this.threadId);
-          }
-
-          this.notifyMessageListeners(data);
-        } catch (error) {
-          console.error("❌ Mesaj parse hatası:", error);
-        }
-      };
-
-      this.ws.onerror = (error) => {
-        console.error("❌ WebSocket hatası:", error);
-        reject(error);
-      };
-
-      this.ws.onclose = () => {
-        console.log("❌ WebSocket bağlantısı kapandı");
+        this.ws.onclose = () => {
+          console.log("❌ WebSocket bağlantısı kapandı");
+          this.isConnected = false;
+          this.isConnecting = false;
+          this.threadId = null;
+          this.notifyConnectionListeners("disconnected", "Bağlantı kesildi");
+        };
+      } catch (constructorError) {
+        // WebSocket constructor'da oluşan hatalar
+        console.error("❌ WebSocket constructor hatası:", constructorError);
         this.isConnected = false;
         this.isConnecting = false;
-        this.threadId = null;
-        this.notifyConnectionListeners("disconnected", "Bağlantı kesildi");
-      };
+        const errorMessage =
+          constructorError.message || JSON.stringify(constructorError);
+        this.notifyConnectionListeners("error", errorMessage);
+        reject(constructorError);
+      }
     });
   }
 
@@ -207,6 +248,24 @@ class WebSocketService {
 
     console.log("📤 Kullanıcı mesajı gönderiliyor:", message);
     this.sendMessage(message);
+  }
+
+  // Firebase'e thread title'ını güncelle
+  async updateFirebaseTitle(threadId, title) {
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        console.warn("⚠️ Kullanıcı bulunamadı, title güncellenemiyor");
+        return;
+      }
+
+      await updateThreadTitle(currentUser.uid, threadId, title);
+      console.log("✅ Thread title Firebase'e kaydedildi:", title);
+    } catch (error) {
+      console.error("❌ Thread title güncelleme hatası:", error);
+    }
   }
 
   getConnectionStatus() {

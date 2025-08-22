@@ -10,7 +10,7 @@ import ThemedButton from "../../../components/ThemedButton";
 import ThemedCard from "../../../components/ThemedCard";
 import { AuthContext } from "../../../src/context/AuthContext";
 import CustomAlert from "../../../components/CustomAlert";
-import { useCustomAlert } from "../../../src/hooks/useCustomAlert";
+import { useCustomAlert } from "../../../src/hooks/ui/useCustomAlert";
 
 export default function Settings() {
   const router = useRouter();

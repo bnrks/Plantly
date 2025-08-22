@@ -1,7 +1,5 @@
-import { useState, useContext } from "react";
-import { StyleSheet, View, Image, Alert, ScrollView } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+import { useContext } from "react";
+import { View, Image, Alert, ScrollView } from "react-native";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
@@ -12,90 +10,56 @@ import Asistant from "../../../assets/plantly-asistant.png";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
+import {
+  useAnalysisFlow,
+  usePhotoCapture,
+  useImageCache,
+} from "../../../src/hooks";
+import { styles } from "../../../css/analysisStyles";
 
 export default function Analysis() {
-  const [step, setStep] = useState("instruction"); // instruction | preview
-  const [photoUri, setPhotoUri] = useState(null);
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
 
-  /** 1) Kamera aç ve fotoğrafı kalıcı cache/uploads klasörüne kopyala */
-  const takePhoto = async () => {
-    try {
-      // Kamera aç
-      const res = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        quality: 0.4, // ≈300-500 KB
-      });
-      if (res.canceled) return;
+  // Custom hooks
+  const { step, goToPreview, goToInstruction, resetFlow } = useAnalysisFlow();
+  const { photoUri, takePhoto, pickImage, clearPhoto } = usePhotoCapture();
+  const { isProcessing, saveImageToCache } = useImageCache();
 
-      await saveImageToCache(res.assets[0].uri);
-    } catch (e) {
-      console.warn(e);
-      Alert.alert("Hata", "Fotoğraf alınamadı. Tekrar deneyin.");
-    }
-  };
+  /** Görüntüyü analiz için chat'e gönder */
+  const sendToAnalysis = async () => {
+    if (!photoUri) return;
 
-  /** Galeriden fotoğraf seçme */
-  const pickFromGallery = async () => {
-    try {
-      // Galeri izni kontrol et
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("İzin Gerekli", "Galeriye erişim izni vermelisiniz.");
-        return;
-      }
+    const cachedUri = await saveImageToCache(photoUri);
+    if (!cachedUri) return;
 
-      // Galeriyi aç - doğru seçeneği kullan
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // MediaType yerine MediaTypeOptions
-        allowsEditing: true,
-        quality: 0.4,
-      });
-
-      if (result.canceled) return;
-
-      await saveImageToCache(result.assets[0].uri);
-    } catch (e) {
-      console.warn(e);
-      Alert.alert("Hata", "Fotoğraf seçilemedi. Tekrar deneyin.");
-    }
-  };
-
-  /** Görüntüyü önbelleğe kaydetme helper fonksiyonu */
-  const saveImageToCache = async (sourceUri) => {
-    // Kalıcı klasör (/cache/uploads/) -> mutlaka var olsun
-    const cacheDir = FileSystem.cacheDirectory + "uploads/";
-    await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
-
-    // Her seferinde aynı ada yaz: uploads/latest.jpg
-    const destUri = cacheDir + "latest.jpg";
-    await FileSystem.copyAsync({
-      from: sourceUri,
-      to: destUri,
-    });
-    console.log("Fotoğraf kopyalandı:", destUri);
-
-    setPhotoUri(destUri);
-    setStep("preview");
-  };
-
-  /** 2) Onayla -> Chat sayfasına kalıcı URI ile git */
-  const confirmPhoto = () => {
     router.push({
       pathname: "/(dashboard)/(tabs)/chat",
       params: {
-        analysisImage: photoUri,
+        analysisImage: cachedUri,
         plantId: id, // Bitki ID'si
         analysisMode: "true",
       },
     });
   };
 
-  /** 3) UI  */
+  /** 2) Fotoğraf çekiminden preview'a geç */
+  const handlePhotoTaken = async () => {
+    await takePhoto();
+    // takePhoto hook'u photoUri'yi set eder, sonra preview'a geç
+    goToPreview();
+  };
+
+  /** 3) Galeriden fotoğraf seçiminden preview'a geç */
+  const handleGalleryPick = async () => {
+    await pickImage();
+    // pickImage hook'u photoUri'yi set eder, sonra preview'a geç
+    goToPreview();
+  };
+
+  /** 4) UI  */
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -159,7 +123,7 @@ export default function Analysis() {
               <View style={styles.buttonContainer}>
                 <ThemedButton
                   title="Fotoğraf Çek"
-                  onPress={takePhoto}
+                  onPress={handlePhotoTaken}
                   style={styles.button}
                   icon={
                     <Ionicons
@@ -172,7 +136,7 @@ export default function Analysis() {
                 />
                 <ThemedButton
                   title="Galeriden Seç"
-                  onPress={pickFromGallery}
+                  onPress={handleGalleryPick}
                   style={styles.button}
                   icon={
                     <Ionicons
@@ -201,8 +165,9 @@ export default function Analysis() {
               </ThemedText>
               <View style={styles.actionRow}>
                 <ThemedButton
-                  title="Onayla ve Analiz Et"
-                  onPress={confirmPhoto}
+                  title={isProcessing ? "İşleniyor..." : "Onayla ve Analiz Et"}
+                  onPress={sendToAnalysis}
+                  disabled={isProcessing}
                   icon={
                     <Ionicons
                       name="analytics"
@@ -214,7 +179,10 @@ export default function Analysis() {
                 />
                 <ThemedButton
                   title="Tekrar Çek"
-                  onPress={() => setStep("instruction")}
+                  onPress={() => {
+                    clearPhoto();
+                    goToInstruction();
+                  }}
                   style={{ backgroundColor: theme.secondBg }}
                   textStyle={{ color: theme.text }}
                   icon={
@@ -234,106 +202,3 @@ export default function Analysis() {
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 16,
-  },
-  block: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-  assistantContainer: {
-    alignItems: "center",
-    marginVertical: 20,
-  },
-  assistantImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    marginBottom: 10,
-  },
-  infoCard: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
-    width: "100%",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: "center",
-    opacity: 0.7,
-    marginBottom: 16,
-  },
-  divider: {
-    height: 1,
-    width: "100%",
-    backgroundColor: "#e0e0e0",
-    marginVertical: 16,
-  },
-  text: {
-    marginBottom: 24,
-    textAlign: "center",
-    lineHeight: 22,
-  },
-  tipsContainer: {
-    marginBottom: 24,
-    width: "100%",
-  },
-  tipRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  tipText: {
-    marginLeft: 10,
-  },
-  buttonContainer: {
-    gap: 12,
-    width: "100%",
-  },
-  button: {
-    width: "100%",
-    height: 50,
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  previewCard: {
-    padding: 20,
-    borderRadius: 16,
-    marginBottom: 20,
-    width: "100%",
-  },
-  previewTitle: {
-    fontSize: 24,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  preview: {
-    width: "100%",
-    height: 300,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  previewText: {
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  actionRow: {
-    gap: 12,
-    width: "100%",
-  },
-});

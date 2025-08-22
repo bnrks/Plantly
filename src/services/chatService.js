@@ -173,7 +173,8 @@ class ChatService {
         return null;
       }
 
-      const newMessage = {
+      // İlk olarak ana mesajı oluştur
+      const mainMessage = {
         id: data.message.id || Date.now().toString(),
         role: data.message.role,
         content:
@@ -183,12 +184,26 @@ class ChatService {
         timestamp: new Date(),
       };
 
-      // Eğer bu bir fotoğraf analizi cevabıysa, diagnosis bilgisini de ekle
-      if (data.diagnosis) {
-        newMessage.diagnosis = data.diagnosis;
+      // Eğer notes varsa, bunları ayrı bir array olarak döndür
+      if (data.message.notes && Array.isArray(data.message.notes)) {
+        const notesMessage = {
+          id: `${mainMessage.id}_notes`,
+          role: "assistant_notes",
+          content: data.message.notes,
+          timestamp: new Date(),
+          hasActionButton: true,
+        };
+
+        // İki mesajı array olarak döndür
+        return [mainMessage, notesMessage];
       }
 
-      return newMessage;
+      // Eğer bu bir fotoğraf analizi cevabıysa, diagnosis bilgisini de ekle
+      if (data.diagnosis) {
+        mainMessage.diagnosis = data.diagnosis;
+      }
+
+      return mainMessage;
     }
 
     // Thread ready mesajları için
