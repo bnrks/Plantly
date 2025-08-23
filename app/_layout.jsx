@@ -5,7 +5,10 @@ import { Stack } from "expo-router";
 import { ThemeProvider, ThemeContext } from "../src/context/ThemeContext";
 import { Colors } from "../constants/Colors";
 import { AuthProvider } from "../src/context/AuthContext";
+import ErrorBoundary from "../src/components/ErrorBoundary";
+import { AlertSystemProvider } from "../src/context/AlertSystemProvider";
 import * as Notifications from "expo-notifications";
+import { initializeErrorHandlers } from "../src/services/index";
 
 // foreground'da banner göstermek için (global, bir kez!)
 Notifications.setNotificationHandler({
@@ -18,6 +21,9 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
   useEffect(() => {
+    // Error handlers'ı başlat
+    initializeErrorHandlers();
+
     // (Opsiyonel) bildirim tıklamasını yakala -> navigate
     const sub = Notifications.addNotificationResponseReceivedListener(
       (resp) => {
@@ -29,11 +35,15 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <RootInner />
-      </ThemeProvider>
-    </AuthProvider>
+    <ErrorBoundary name="App" level="app">
+      <AlertSystemProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <RootInner />
+          </ThemeProvider>
+        </AuthProvider>
+      </AlertSystemProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -32,25 +32,25 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 8,
-    marginVertical: 8,
+    padding: 6,
+    marginVertical: 6,
     borderRadius: 12,
   },
   image: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     borderRadius: 8,
-    marginRight: 12,
+    marginRight: 10,
   },
   textContainer: {
     flex: 1,
   },
   name: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: 2,
   },
   description: {
-    fontSize: 14,
+    fontSize: 13,
   },
 });

@@ -4,6 +4,8 @@ import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import * as Font from "expo-font";
 import { Slot } from "expo-router";
+import ErrorBoundary from "../../src/components/ErrorBoundary";
+import { AuthErrorFallback } from "../../src/components/ErrorFallbacks";
 
 export default function AuthLayout() {
   const [ready, setReady] = useState(false);
@@ -30,9 +32,17 @@ export default function AuthLayout() {
   }
 
   return (
-    <>
+    <ErrorBoundary
+      fallback={AuthErrorFallback}
+      level="screen"
+      name="Auth Layout"
+      onError={(error, errorInfo) => {
+        console.error("🚨 Auth Layout Error:", error);
+        console.error("📍 Error Info:", errorInfo);
+      }}
+    >
       <StatusBar style="auto" />
       <Slot />
-    </>
+    </ErrorBoundary>
   );
 }

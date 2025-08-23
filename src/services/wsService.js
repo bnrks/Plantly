@@ -1,5 +1,7 @@
 import { getAuth } from "firebase/auth";
 import { updateThreadTitle } from "./firestoreService";
+import webSocketErrorHandler from "./webSocketErrorHandler";
+import globalErrorHandler from "./globalErrorHandler";
 
 class WebSocketService {
   constructor() {
@@ -156,8 +158,21 @@ class WebSocketService {
             stack: error.stack,
             event: error,
           });
+
           this.isConnected = false;
           this.isConnecting = false;
+
+          // Global error handler'a raporla
+          globalErrorHandler.reportWebSocketError(
+            new Error(error.message || "WebSocket connection error"),
+            {
+              errorType: "websocket_connection",
+              errorEvent: error,
+              showToUser: true, // WebSocket hataları kullanıcıya gösterilsin
+              retryable: true,
+            }
+          );
+
           // Hata detaylarını status message olarak gönder
           const errorMessage = error.message || JSON.stringify(error);
           console.log(
@@ -168,11 +183,36 @@ class WebSocketService {
           reject(error);
         };
 
-        this.ws.onclose = () => {
-          console.log("❌ WebSocket bağlantısı kapandı");
+        this.ws.onclose = (event) => {
+          console.log("❌ WebSocket bağlantısı kapandı", {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean,
+          });
+
           this.isConnected = false;
           this.isConnecting = false;
           this.threadId = null;
+
+          // Close event'i global handler'a raporla
+          if (!event.wasClean) {
+            globalErrorHandler.reportWebSocketError(
+              new Error(
+                `WebSocket closed unexpectedly: ${
+                  event.reason || "Unknown reason"
+                }`
+              ),
+              {
+                errorType: "websocket_close",
+                closeCode: event.code,
+                closeReason: event.reason,
+                wasClean: event.wasClean,
+                showToUser: event.code !== 1000, // Normal close değilse kullanıcıya göster
+                retryable: event.code !== 1000,
+              }
+            );
+          }
+
           this.notifyConnectionListeners("disconnected", "Bağlantı kesildi");
         };
       } catch (constructorError) {
@@ -180,6 +220,14 @@ class WebSocketService {
         console.error("❌ WebSocket constructor hatası:", constructorError);
         this.isConnected = false;
         this.isConnecting = false;
+
+        // Global error handler'a raporla
+        globalErrorHandler.reportWebSocketError(constructorError, {
+          errorType: "websocket_constructor",
+          showToUser: true,
+          retryable: true,
+        });
+
         const errorMessage =
           constructorError.message || JSON.stringify(constructorError);
         this.notifyConnectionListeners("error", errorMessage);

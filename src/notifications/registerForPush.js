@@ -29,21 +29,10 @@ export async function registerForPush(uid) {
     if (finalStatus !== "granted") return null;
 
     // EAS projectId -> Expo Push Token
-    console.log("Debug - Constants.expoConfig:", Constants?.expoConfig);
-    console.log(
-      "Debug - Constants.expoConfig.extra:",
-      Constants?.expoConfig?.extra
-    );
-    console.log(
-      "Debug - Constants.expoConfig.extra.eas:",
-      Constants?.expoConfig?.extra?.eas
-    );
 
     const projectId =
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId;
-
-    console.log("Debug - Final projectId:", projectId);
 
     if (!projectId) {
       console.error("Expo Project ID bulunamadı!");
