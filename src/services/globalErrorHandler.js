@@ -4,7 +4,6 @@ import {
   determineChatError,
   formatChatError,
 } from "../exceptions/chat_exceptions";
-import { showCustomErrorAlert } from "./alertService";
 
 class GlobalErrorHandler {
   constructor() {
@@ -14,6 +13,7 @@ class GlobalErrorHandler {
     this.errorCallbacks = []; // Callbacks to notify when errors occur
     this.appStartTime = Date.now(); // App başlangıç zamanını kaydet
     this.lastDomErrorLog = 0; // DOM error log spam'ini önlemek için
+    this.lastFilteredErrorLog = 0; // Filtered error log spam'ini önlemek için
 
     // Initialize global error handlers
     this.initialize();
@@ -98,8 +98,20 @@ class GlobalErrorHandler {
 
   // Report WebSocket errors
   reportWebSocketError(error, context = {}) {
-    console.error("🚨 WebSocket Error:", error);
-    console.error("📍 Context:", context);
+    // Safety check for initialization
+    if (!this.isInitialized) {
+      console.warn(
+        "⚠️ GlobalErrorHandler not initialized yet, queuing error:",
+        error.message
+      );
+      return;
+    }
+
+    // Development modunda detaylı log
+    if (__DEV__) {
+      console.error("🚨 WebSocket Error:", error);
+      console.error("📍 Context:", context);
+    }
 
     const errorReport = {
       type: "websocket",
@@ -112,23 +124,17 @@ class GlobalErrorHandler {
     this.addErrorReport(errorReport);
     this.notifyErrorCallbacks(errorReport);
 
-    // Show user-friendly error for WebSocket issues
-    this.showUserFriendlyError("websocket", error, context);
+    // WebSocket hatalarını kullanıcıya göster (geliştirme modunda değil)
+    if (!__DEV__) {
+      this.showUserFriendlyError("websocket", error, {
+        ...context,
+        showToUser: true,
+      });
+    }
   }
 
   // Report promise rejection errors
   reportPromiseRejection(rejection, context = {}) {
-    // Only log in development mode to avoid spam
-    if (__DEV__) {
-      console.warn("⚠️ Promise Rejection:", rejection?.message || rejection);
-      console.warn("📍 Context:", context);
-
-      // Stack trace varsa detayını da yazdır
-      if (rejection?.stack) {
-        console.warn("📚 Stack Trace:", rejection.stack);
-      }
-    }
-
     // Rejection'ı normalize et
     let errorMessage = "Unknown promise rejection";
     let errorStack = null;
@@ -141,6 +147,32 @@ class GlobalErrorHandler {
     } else if (rejection && typeof rejection === "object") {
       errorMessage =
         rejection.message || rejection.toString() || JSON.stringify(rejection);
+    }
+
+    // Critical promise rejection kontrolü - önce filtreleyerek kontrol et
+    const isCritical = this.isCriticalPromiseRejection(rejection, context);
+
+    // DOM/third-party hataları için erken çıkış
+    if (!isCritical) {
+      // Sadece development modunda ve çok seyrek log'la
+      if (__DEV__ && this.shouldLogFilteredError()) {
+        console.warn(
+          "🔍 Third-party library error filtered:",
+          errorMessage.substring(0, 100)
+        );
+      }
+      return; // Hiçbir şey yapma, loglamaya da error report'a da ekleme
+    }
+
+    // Sadece kritik hatalar için log ve report
+    if (__DEV__) {
+      console.warn("⚠️ Promise Rejection:", rejection?.message || rejection);
+      console.warn("📍 Context:", context);
+
+      // Stack trace varsa detayını da yazdır
+      if (rejection?.stack) {
+        console.warn("📚 Stack Trace:", rejection.stack);
+      }
     }
 
     const errorReport = {
@@ -160,10 +192,7 @@ class GlobalErrorHandler {
     this.notifyErrorCallbacks(errorReport);
 
     // Critical error'ları kullanıcıya göster (ama başlangıçta çok erken değilse)
-    if (
-      this.isCriticalPromiseRejection(rejection, context) &&
-      this.shouldShowStartupError()
-    ) {
+    if (this.shouldShowStartupError()) {
       this.showUserFriendlyError(
         "promise_rejection",
         { message: errorMessage },
@@ -182,6 +211,17 @@ class GlobalErrorHandler {
     const timeSinceStart = now - this.appStartTime;
 
     return timeSinceStart > 5000; // 5 saniye sonra
+  }
+
+  // Filtrelenmiş hataları loglamak için rate limiting
+  shouldLogFilteredError() {
+    const now = Date.now();
+    if (!this.lastFilteredErrorLog || now - this.lastFilteredErrorLog > 30000) {
+      // 30 saniye aralık
+      this.lastFilteredErrorLog = now;
+      return true;
+    }
+    return false;
   }
 
   // Critical promise rejection kontrolü
@@ -207,20 +247,11 @@ class GlobalErrorHandler {
     ];
 
     if (domErrors.some((pattern) => errorMessage.includes(pattern))) {
-      if (__DEV__) {
-        // Sadece bir kez log'la, spam'i önle
-        const now = Date.now();
-        if (!this.lastDomErrorLog || now - this.lastDomErrorLog > 10000) {
-          // 10 saniye aralık
-          console.warn("🔍 DOM manipulation error filtered (React Native)");
-          console.warn("📦 Source: Web library trying to access DOM APIs");
-          this.lastDomErrorLog = now;
-        }
-      }
+      // DOM hatalarını hiç loglama, sessizce filtrele
       return false; // Bu hatayı kullanıcıya gösterme
     }
 
-    // Diğer bilinen third-party library hataları
+    // Firebase Analytics ve diğer bilinen third-party library hataları
     const thirdPartyPatterns = [
       "tflite",
       "tensorflow",
@@ -228,21 +259,21 @@ class GlobalErrorHandler {
       "react-native-",
       "firebase",
       "node_modules",
+      "@firebase/analytics",
+      "gtag",
+      "analytics",
+      "findGtagScriptOnPage",
+      "_initializeAnalytics",
     ];
 
     const isFromKnownThirdParty = thirdPartyPatterns.some(
       (pattern) =>
         errorMessage.toLowerCase().includes(pattern) ||
-        stack.toLowerCase().includes(pattern)
+        (rejection?.stack && rejection?.stack.toLowerCase().includes(pattern))
     );
 
     if (isFromKnownThirdParty) {
-      if (__DEV__) {
-        console.warn(
-          "🔍 Third-party library error detected, not showing to user:",
-          errorMessage
-        );
-      }
+      // Third-party library hatalarını sessizce filtrele
       return false;
     }
 
@@ -279,8 +310,11 @@ class GlobalErrorHandler {
 
   // Report general application errors (Enhanced)
   reportError(error, context = {}) {
-    console.error("🚨 Application Error:", error);
-    console.error("📍 Context:", context);
+    // Development modunda detaylı log
+    if (__DEV__) {
+      console.error("🚨 Application Error:", error);
+      console.error("📍 Context:", context);
+    }
 
     const errorReport = {
       type: context.type || "general",
@@ -302,8 +336,11 @@ class GlobalErrorHandler {
 
   // Report network errors (Enhanced)
   reportNetworkError(error, context = {}) {
-    console.error("🚨 Network Error:", error);
-    console.error("📍 Context:", context);
+    // Development modunda detaylı log
+    if (__DEV__) {
+      console.error("🚨 Network Error:", error);
+      console.error("📍 Context:", context);
+    }
 
     // Use chat exceptions for better error classification
     const classifiedError = determineChatError(error);
@@ -333,8 +370,11 @@ class GlobalErrorHandler {
 
   // Report Firebase/Firestore errors
   reportFirebaseError(error, context = {}) {
-    console.error("🚨 Firebase Error:", error);
-    console.error("📍 Context:", context);
+    // Development modunda detaylı log
+    if (__DEV__) {
+      console.error("🚨 Firebase Error:", error);
+      console.error("📍 Context:", context);
+    }
 
     const errorReport = {
       type: "firebase",
@@ -393,31 +433,22 @@ class GlobalErrorHandler {
     if (!context.showToUser) return;
 
     const userMessages = {
-      websocket:
-        "Bağlantı sorunu yaşanıyor. Lütfen internet bağlantınızı kontrol edin.",
-      network: "İnternet bağlantısı sorunu. Lütfen tekrar deneyin.",
-      firebase: "Veri kaydedilirken bir sorun oluştu. Lütfen tekrar deneyin.",
-      promise_rejection: "Bir işlem tamamlanamadı. Lütfen tekrar deneyin.",
-      general:
-        "Beklenmeyen bir hata oluştu. Lütfen uygulamayı yeniden başlatın.",
+      websocket: "Bağlantı sorunu yaşanıyor. Lütfen daha sonra deneyiniz.",
+      network: "İnternet bağlantısı sorunu. Lütfen daha sonra deneyiniz.",
+      firebase:
+        "Veri kaydedilirken bir sorun oluştu. Lütfen daha sonra deneyiniz.",
+      promise_rejection:
+        "Bir işlem tamamlanamadı. Lütfen daha sonra deneyiniz.",
+      general: "Beklenmeyen bir hata oluştu. Lütfen daha sonra deneyiniz.",
     };
 
     const message = userMessages[type] || userMessages.general;
 
     // Don't show too many alerts in quick succession
     if (this.shouldShowAlert()) {
-      // Önce CustomAlert'i dene, fallback olarak Alert.alert kullan
-      const customAlertShown = showCustomErrorAlert(
-        "Bir Sorun Oluştu",
-        message
-      );
-
-      if (!customAlertShown) {
-        // CustomAlert mevcut değilse eski yöntemi kullan
-        Alert.alert("Bir Sorun Oluştu", message, [
-          { text: "Tamam", style: "default" },
-        ]);
-      }
+      Alert.alert("Bir Sorun Oluştu", message, [
+        { text: "Tamam", style: "default" },
+      ]);
     }
   }
 
@@ -427,25 +458,21 @@ class GlobalErrorHandler {
 
     const firebaseMessages = {
       "auth/network-request-failed": "İnternet bağlantınızı kontrol edin.",
-      "auth/too-many-requests": "Çok fazla deneme yapıldı. Lütfen bekleyin.",
+      "auth/too-many-requests":
+        "Çok fazla deneme yapıldı. Lütfen daha sonra deneyiniz.",
       "firestore/unavailable":
-        "Hizmet şu anda kullanılamıyor. Lütfen tekrar deneyin.",
-      "storage/unknown": "Dosya yüklenirken bir sorun oluştu.",
-      default: "Bir sorun oluştu. Lütfen tekrar deneyin.",
+        "Hizmet şu anda kullanılamıyor. Lütfen daha sonra deneyiniz.",
+      "storage/unknown":
+        "Dosya yüklenirken bir sorun oluştu. Lütfen daha sonra deneyiniz.",
+      default: "Bir sorun oluştu. Lütfen daha sonra deneyiniz.",
     };
 
     const message = firebaseMessages[error.code] || firebaseMessages.default;
 
     if (this.shouldShowAlert()) {
-      // Önce CustomAlert'i dene, fallback olarak Alert.alert kullan
-      const customAlertShown = showCustomErrorAlert("Hizmet Sorunu", message);
-
-      if (!customAlertShown) {
-        // CustomAlert mevcut değilse eski yöntemi kullan
-        Alert.alert("Hizmet Sorunu", message, [
-          { text: "Tamam", style: "default" },
-        ]);
-      }
+      Alert.alert("Hizmet Sorunu", message, [
+        { text: "Tamam", style: "default" },
+      ]);
     }
   }
 
@@ -557,12 +584,11 @@ class GlobalErrorHandler {
   }
 }
 
-// Export singleton instance
+// Create and export singleton instance
 const globalErrorHandler = new GlobalErrorHandler();
 
-// Cleanup old errors periodically
-setInterval(() => {
-  globalErrorHandler.cleanup();
-}, 60 * 60 * 1000); // Every hour
-
+// Both ES6 and CommonJS export formats for compatibility
 export default globalErrorHandler;
+export { globalErrorHandler };
+module.exports = globalErrorHandler;
+module.exports.default = globalErrorHandler;

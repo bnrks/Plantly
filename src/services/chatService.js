@@ -6,6 +6,44 @@ import { db } from "./firebaseConfig";
 
 class ChatService {
   /**
+   * Markdown içindeki JSON'ı parse eder
+   */
+  parseMarkdownJson(content) {
+    try {
+      // Eğer content markdown json formatında ise (```json ... ```)
+      if (typeof content === "string" && content.includes("```json")) {
+        // Markdown'dan JSON kısmını çıkar
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch && jsonMatch[1]) {
+          const jsonString = jsonMatch[1].trim();
+          console.log("🔍 Markdown'dan çıkarılan JSON:", jsonString);
+          return JSON.parse(jsonString);
+        }
+      }
+
+      // Eğer normal JSON string ise
+      if (typeof content === "string") {
+        try {
+          return JSON.parse(content);
+        } catch (e) {
+          // Parse edilemezse content'i döndür
+          return { content: content };
+        }
+      }
+
+      // Eğer zaten obje ise
+      if (typeof content === "object") {
+        return content;
+      }
+
+      return { content: content };
+    } catch (error) {
+      console.error("❌ Markdown JSON parse hatası:", error);
+      return { content: content };
+    }
+  }
+
+  /**
    * Galeriden fotoğraf seçme
    */
   async pickImage() {
@@ -148,17 +186,38 @@ class ChatService {
 
     // Yeni format: { assistant: {...}, diagnosis: {...}, message_id, thread_id }
     if (data.assistant && data.assistant.content) {
+      const parsedContent = this.parseMarkdownJson(data.assistant.content);
+      console.log("🔍 Assistant parsed content:", parsedContent);
+
       const newMessage = {
         id:
           data.message_id || data.assistant.message_id || Date.now().toString(),
         role: "assistant",
-        content: data.assistant.content,
+        content: parsedContent.content || data.assistant.content,
         timestamp: new Date(),
       };
 
       // Eğer diagnosis bilgisi varsa ekle
       if (data.diagnosis) {
         newMessage.diagnosis = data.diagnosis;
+        newMessage.type = "analysis";
+      }
+
+      // Eğer notes varsa ayrı mesaj olarak döndür
+      if (parsedContent.notes && Array.isArray(parsedContent.notes)) {
+        const notesMessage = {
+          id: `${newMessage.id}_notes`,
+          role: "assistant_notes",
+          content: parsedContent.notes,
+          timestamp: new Date(),
+          hasActionButton: true,
+        };
+
+        console.log("✅ İşlenmiş mesajlar (ana + notes):", [
+          newMessage,
+          notesMessage,
+        ]);
+        return [newMessage, notesMessage];
       }
 
       console.log("✅ İşlenmiş mesaj:", newMessage);
@@ -173,36 +232,42 @@ class ChatService {
         return null;
       }
 
+      // İçeriği parse et (markdown JSON olabilir)
+      const parsedContent = this.parseMarkdownJson(data.message.content);
+      console.log("🔍 Message parsed content:", parsedContent);
+
       // İlk olarak ana mesajı oluştur
       const mainMessage = {
         id: data.message.id || Date.now().toString(),
         role: data.message.role,
-        content:
-          typeof data.message.content === "string"
-            ? data.message.content
-            : JSON.stringify(data.message.content),
+        content: parsedContent.content || data.message.content,
         timestamp: new Date(),
       };
 
-      // Eğer notes varsa, bunları ayrı bir array olarak döndür
-      if (data.message.notes && Array.isArray(data.message.notes)) {
+      // Eğer notes varsa ayrı mesaj olarak döndür
+      if (parsedContent.notes && Array.isArray(parsedContent.notes)) {
         const notesMessage = {
           id: `${mainMessage.id}_notes`,
           role: "assistant_notes",
-          content: data.message.notes,
+          content: parsedContent.notes,
           timestamp: new Date(),
           hasActionButton: true,
         };
 
-        // İki mesajı array olarak döndür
+        console.log("✅ İşlenmiş mesajlar (message ana + notes):", [
+          mainMessage,
+          notesMessage,
+        ]);
         return [mainMessage, notesMessage];
       }
 
       // Eğer bu bir fotoğraf analizi cevabıysa, diagnosis bilgisini de ekle
       if (data.diagnosis) {
         mainMessage.diagnosis = data.diagnosis;
+        mainMessage.type = "analysis";
       }
 
+      console.log("✅ İşlenmiş mesaj (message):", mainMessage);
       return mainMessage;
     }
 

@@ -28,12 +28,38 @@ export const useWebSocketConnection = () => {
   }, [user]);
 
   // WebSocket yeniden bağlanma fonksiyonu
-  const reconnectWebSocket = () => {
-    if (user) {
+  const reconnectWebSocket = async () => {
+    if (!user) {
+      console.log("❌ Kullanıcı oturum açmamış, yeniden bağlantı yapılamaz");
+      return;
+    }
+
+    try {
+      console.log("🔄 WebSocket yeniden bağlanıyor...");
+      setConnectionStatus("connecting");
+      setStatusMessage("Yeniden bağlanıyor...");
+
+      // Önce bağlantıyı kes
       wsService.disconnect();
-      setTimeout(() => {
-        wsService.connect();
-      }, 1000);
+
+      // Kısa bir süre bekle
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Yeniden bağlan
+      await wsService.connect();
+
+      console.log("✅ WebSocket yeniden bağlandı");
+    } catch (error) {
+      console.error("❌ WebSocket yeniden bağlantı hatası:", error);
+      setConnectionStatus("error");
+      setStatusMessage("Yeniden bağlantı başarısız");
+
+      // Error'ı global handler'a raporla
+      const {
+        formatWebSocketError,
+      } = require("../../exceptions/chat_exceptions");
+      const errorData = formatWebSocketError(error);
+      console.log("🔧 Formatted reconnect error:", errorData);
     }
   };
 

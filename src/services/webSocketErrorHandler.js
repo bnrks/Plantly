@@ -119,7 +119,7 @@ class WebSocketErrorHandler {
         reason: event.reason,
         wasClean: event.wasClean,
         connectionAttempts: this.connectionAttempts,
-        showToUser: !this.shouldReconnect(event),
+        showToUser: true, // Kullanıcıya göster
       }
     );
 
@@ -152,7 +152,7 @@ class WebSocketErrorHandler {
     globalErrorHandler.reportWebSocketError(error, {
       connectionAttempts: this.connectionAttempts,
       isReconnecting: this.isReconnecting,
-      showToUser: this.connectionAttempts >= this.maxReconnectAttempts,
+      showToUser: true, // Kullanıcıya göster
     });
 
     // Listeners'ı bilgilendir
@@ -182,7 +182,7 @@ class WebSocketErrorHandler {
       type: "timeout",
       connectionAttempts: this.connectionAttempts,
       timeoutMs: this.connectionTimeoutMs,
-      showToUser: this.connectionAttempts >= this.maxReconnectAttempts,
+      showToUser: true, // Kullanıcıya göster
     });
   }
 

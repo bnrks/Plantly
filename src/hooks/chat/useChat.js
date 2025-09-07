@@ -27,42 +27,110 @@ export const useChat = (connectionStatus) => {
       console.log("✅ İşlenmiş mesaj:", processedMessage);
 
       setMessages((prev) => {
+        // Son 5 saniye içinde aynı role'den gelen mesajları kontrol et
+        const now = new Date();
+        const fiveSecondsAgo = new Date(now.getTime() - 5000);
+
         // Eğer array döndüyse (notes varsa), her mesajı ayrı ayrı ekle
         if (Array.isArray(processedMessage)) {
           const newMessages = processedMessage.filter((msg) => {
-            // Aynı ID'li mesaj zaten var mı kontrol et
+            // ID kontrolü
             const existingMessage = prev.find(
               (existingMsg) => existingMsg.id === msg.id
             );
             if (existingMessage) {
-              console.log("⚠️ Aynı ID'li mesaj zaten mevcut:", msg.id);
+              console.log("⚠️ WebSocket duplicate ID engellendi:", msg.id);
               return false;
             }
+
+            // Son 5 saniye içinde aynı role ve content kontrolü
+            if (msg.role === "assistant" || msg.role === "assistant_notes") {
+              const recentSimilar = prev.find(
+                (existingMsg) =>
+                  existingMsg.role === msg.role &&
+                  existingMsg.timestamp &&
+                  new Date(existingMsg.timestamp) > fiveSecondsAgo &&
+                  (existingMsg.content === msg.content ||
+                    (typeof existingMsg.content === "string" &&
+                      typeof msg.content === "string" &&
+                      existingMsg.content.trim() === msg.content.trim()) ||
+                    (Array.isArray(existingMsg.content) &&
+                      Array.isArray(msg.content) &&
+                      JSON.stringify(existingMsg.content) ===
+                        JSON.stringify(msg.content)))
+              );
+              if (recentSimilar) {
+                console.log(
+                  "⚠️ WebSocket duplicate recent content engellendi:",
+                  msg.role,
+                  "time diff:",
+                  now - new Date(recentSimilar.timestamp),
+                  "ms"
+                );
+                return false;
+              }
+            }
+
             return true;
           });
 
           if (newMessages.length > 0) {
             console.log(
-              "➕ Yeni mesajlar ekleniyor:",
+              "➕ WebSocket yeni mesajlar ekleniyor:",
               newMessages.map((m) => m.id)
             );
             return [...prev, ...newMessages];
           }
           return prev;
         } else {
-          // Tek mesaj durumu
+          // Tek mesaj durumu - ID kontrolü
           const existingMessage = prev.find(
             (msg) => msg.id === processedMessage.id
           );
           if (existingMessage) {
             console.log(
-              "⚠️ Aynı ID'li mesaj zaten mevcut:",
+              "⚠️ WebSocket duplicate ID engellendi:",
               processedMessage.id
             );
             return prev;
           }
 
-          console.log("➕ Yeni mesaj ekleniyor:", processedMessage.id);
+          // Son 5 saniye içinde aynı role ve content kontrolü
+          if (
+            processedMessage.role === "assistant" ||
+            processedMessage.role === "assistant_notes"
+          ) {
+            const recentSimilar = prev.find(
+              (existingMsg) =>
+                existingMsg.role === processedMessage.role &&
+                existingMsg.timestamp &&
+                new Date(existingMsg.timestamp) > fiveSecondsAgo &&
+                (existingMsg.content === processedMessage.content ||
+                  (typeof existingMsg.content === "string" &&
+                    typeof processedMessage.content === "string" &&
+                    existingMsg.content.trim() ===
+                      processedMessage.content.trim()) ||
+                  (Array.isArray(existingMsg.content) &&
+                    Array.isArray(processedMessage.content) &&
+                    JSON.stringify(existingMsg.content) ===
+                      JSON.stringify(processedMessage.content)))
+            );
+            if (recentSimilar) {
+              console.log(
+                "⚠️ WebSocket duplicate recent content engellendi:",
+                processedMessage.role,
+                "time diff:",
+                now - new Date(recentSimilar.timestamp),
+                "ms"
+              );
+              return prev;
+            }
+          }
+
+          console.log(
+            "➕ WebSocket yeni mesaj ekleniyor:",
+            processedMessage.id
+          );
           return [...prev, processedMessage];
         }
       });
@@ -83,16 +151,72 @@ export const useChat = (connectionStatus) => {
     };
   }, []);
 
+  // Analiz modunda direkt reconnection yap
+  useEffect(() => {
+    if (analysisMode === "true" && analysisImage) {
+      console.log(
+        "🔍 Analiz modu algılandı, WebSocket reconnection yapılıyor..."
+      );
+
+      const forceReconnect = async () => {
+        try {
+          // Eğer zaten bağlıysa, önce kes
+          if (connectionStatus === "connected") {
+            console.log("🔄 Mevcut bağlantı kesiliyor...");
+            wsService.disconnect();
+
+            // Disconnect işleminin tamamlanmasını bekle
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+
+          // Yeniden bağlan
+          console.log("🔗 Analiz modu için yeniden bağlanılıyor...");
+          await wsService.connect();
+
+          console.log("✅ Analiz modu için WebSocket yeniden bağlandı");
+        } catch (error) {
+          console.error("❌ Analiz modu reconnection hatası:", error);
+        }
+      };
+
+      forceReconnect();
+    }
+  }, [analysisMode, analysisImage]);
+
   // Analiz modunda gelinen görüntüyü işle
   useEffect(() => {
-    if (
-      analysisMode === "true" &&
-      analysisImage &&
-      connectionStatus === "connected"
-    ) {
-      // Analiz modundaki görüntüyü normal chat formatında işle
-      const processAnalysisImage = async () => {
+    const processAnalysisFromMyPlants = async () => {
+      if (
+        analysisMode === "true" &&
+        analysisImage &&
+        connectionStatus === "connected"
+      ) {
         try {
+          console.log("🔍 MyPlants analiz modu başlatılıyor...");
+
+          // Bağlantının stabil olmasını bekle
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Thread henüz yoksa, bekle ve oluştur
+          if (!wsService.threadId) {
+            console.log("🧵 Analiz için thread oluşturuluyor...");
+            await wsService.initializeThread();
+
+            // Thread oluşturulduktan sonra WebSocket'in hazır olmasını bekle
+            let waitCount = 0;
+            while (!wsService.threadId && waitCount < 15) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+              waitCount++;
+              console.log(`⏳ Thread bekleniyor... ${waitCount}/15`);
+            }
+
+            if (!wsService.threadId) {
+              throw new Error("Thread oluşturulamadı - timeout");
+            }
+
+            console.log("✅ Thread oluşturuldu:", wsService.threadId);
+          }
+
           // Kullanıcı mesajını önce ekle
           const userMessage = chatService.createUserMessage(
             "Bitkimin analizi için fotoğraf gönderiyorum.",
@@ -100,14 +224,8 @@ export const useChat = (connectionStatus) => {
           );
           setMessages((prev) => [...prev, userMessage]);
 
-          // Thread henüz yoksa, bekle ve oluştur
-          if (!wsService.threadId) {
-            console.log("🧵 Analiz için thread oluşturuluyor...");
-            await wsService.initializeThread();
-
-            // Thread oluşturulduktan sonra kısa süre bekle
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-          }
+          // Typing indicator'ı göster
+          setIsTyping(true);
 
           // selectedImage formatında hazırla
           const imageForAnalysis = {
@@ -115,41 +233,28 @@ export const useChat = (connectionStatus) => {
             type: "image/jpeg",
           };
 
-          // Normal chat'teki fotoğraf analizi akışını kullan
+          // Analiz başlat
+          console.log("📸 MyPlants analizi başlatılıyor...");
           const analysisResult = await chatService.analyzeImage(
             imageForAnalysis,
             "Bitkimin analizi için fotoğraf gönderiyorum."
           );
 
-          // HTTP response'tan gelen sonucu direkt işle
-          if (analysisResult && analysisResult.assistant) {
-            const analysisMessage = {
-              id:
-                analysisResult.message_id ||
-                analysisResult.assistant.message_id ||
-                Date.now().toString(),
-              role: "assistant",
-              content: analysisResult.assistant.content,
-              timestamp: new Date(),
-              diagnosis: analysisResult.diagnosis,
-            };
+          console.log("✅ MyPlants analizi tamamlandı:", analysisResult);
 
-            console.log("✅ Analiz mesajı ekleniyor:", analysisMessage);
-            setMessages((prev) => [...prev, analysisMessage]);
-          }
-
-          // Scroll to bottom
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, 100);
+          // WebSocket mesajlarını bekle, HTTP response'u işleme
         } catch (error) {
-          console.error("❌ Analiz hatası:", error);
-          Alert.alert("Hata", "Fotoğraf analizi yapılırken bir hata oluştu");
+          console.error("❌ MyPlants analiz hatası:", error);
+          setIsTyping(false); // Hata durumunda typing indicator'ı kapat
+          Alert.alert(
+            "Analiz Hatası",
+            "Bitki analizi yapılırken bir hata oluştu. Lütfen tekrar deneyin."
+          );
         }
-      };
+      }
+    };
 
-      processAnalysisImage();
-    }
+    processAnalysisFromMyPlants();
   }, [analysisMode, analysisImage, connectionStatus]);
 
   const sendMessage = async () => {
@@ -190,15 +295,29 @@ export const useChat = (connectionStatus) => {
     setIsTyping(false);
   };
 
-  const startNewChat = () => {
-    // Chat'i temizle
-    clearChat();
+  const startNewChat = async () => {
+    try {
+      console.log("🆕 Yeni sohbet başlatılıyor...");
 
-    // WebSocket'i yeniden başlat ve yeni thread oluştur
-    wsService.disconnect();
-    setTimeout(() => {
-      wsService.connect();
-    }, 500);
+      // Chat'i temizle
+      clearChat();
+
+      // WebSocket'i yeniden başlat ve yeni thread oluştur
+      wsService.disconnect();
+
+      // Kısa bir süre bekle
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Yeniden bağlan
+      await wsService.connect();
+
+      console.log("✅ Yeni sohbet başlatıldı");
+    } catch (error) {
+      console.error("❌ Yeni sohbet başlatma hatası:", error);
+
+      // Error'ı rethrow et ki üst seviyede yakalanabilsin
+      throw error;
+    }
   };
 
   return {

@@ -27,7 +27,12 @@ export const useImageHandling = (
   };
 
   const analyzeImage = async (inputText) => {
-    if (!selectedImage || connectionStatus !== "connected") return;
+    if (!selectedImage || connectionStatus !== "connected") {
+      console.log(
+        "⚠️ Image analizi iptal edildi - image yok veya bağlantı yok"
+      );
+      return;
+    }
 
     try {
       setIsAnalyzing(true);
@@ -51,21 +56,15 @@ export const useImageHandling = (
         inputText
       );
 
-      // HTTP response'tan gelen sonucu direkt işle
-      if (analysisResult && analysisResult.assistant) {
-        const analysisMessage = {
-          id:
-            analysisResult.message_id ||
-            analysisResult.assistant.message_id ||
-            Date.now().toString(),
-          role: "assistant",
-          content: analysisResult.assistant.content,
-          timestamp: new Date(),
-          diagnosis: analysisResult.diagnosis,
-        };
+      console.log("📥 Analiz sonucu:", analysisResult);
 
-        console.log("✅ Normal chat analiz mesajı ekleniyor:", analysisMessage);
-        setMessages((prev) => [...prev, analysisMessage]);
+      // WebSocket mesajları useChat hook'unda işleniyor
+      // HTTP response'dan mesaj eklemeye gerek yok
+      if (
+        analysisResult &&
+        (analysisResult.assistant || analysisResult.message_id)
+      ) {
+        console.log("✅ Analiz başarılı, WebSocket mesajları bekleniyor...");
       }
 
       // Input ve seçili fotoğrafı temizle
@@ -77,7 +76,12 @@ export const useImageHandling = (
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     } catch (error) {
+      console.error("🚨 Fotoğraf analizi hatası:", error);
       Alert.alert("Hata", "Fotoğraf analizi yapılırken bir hata oluştu");
+
+      // Error durumunda da input ve image'ı temizle
+      setInputText("");
+      setSelectedImage(null);
     } finally {
       setIsAnalyzing(false);
     }

@@ -11,6 +11,29 @@ class WebSocketService {
     this.threadId = null;
     this.connectionListeners = [];
     this.messageListeners = [];
+    this.heartbeatInterval = null;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+    this.reconnectDelay = 3000; // 3 saniye
+  }
+
+  // Heartbeat mekanizması - Devre dışı
+  startHeartbeat() {
+    // Heartbeat devre dışı bırakıldı - gereksiz bağlantı açılıp kapanmasını önlemek için
+    console.log("💓 Heartbeat devre dışı");
+  }
+
+  stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  // Otomatik yeniden bağlanma - Devre dışı
+  async autoReconnect() {
+    console.log("🔄 Otomatik reconnect devre dışı - manuel reconnect gerekli");
+    this.notifyConnectionListeners("disconnected", "Bağlantı kesildi");
   }
 
   // Bağlantı durumu değişikliklerini dinlemek için
@@ -92,7 +115,10 @@ class WebSocketService {
           console.log("✅ WebSocket bağlantısı açıldı");
           this.isConnected = true;
           this.isConnecting = false;
+          this.reconnectAttempts = 0; // Reset retry counter
           this.notifyConnectionListeners("connected", "Bağlantı kuruldu");
+
+          // Heartbeat kaldırıldı - gereksiz ping/pong trafiğini önlemek için
 
           // Sadece thread ID varsa init mesajı gönder
           if (this.threadId) {
@@ -192,7 +218,7 @@ class WebSocketService {
 
           this.isConnected = false;
           this.isConnecting = false;
-          this.threadId = null;
+          this.stopHeartbeat(); // Heartbeat'i durdur
 
           // Close event'i global handler'a raporla
           if (!event.wasClean) {
@@ -207,13 +233,18 @@ class WebSocketService {
                 closeCode: event.code,
                 closeReason: event.reason,
                 wasClean: event.wasClean,
-                showToUser: event.code !== 1000, // Normal close değilse kullanıcıya göster
-                retryable: event.code !== 1000,
+                showToUser: false, // Kullanıcıya gösterme
+                retryable: false, // Otomatik retry yapma
               }
             );
           }
 
           this.notifyConnectionListeners("disconnected", "Bağlantı kesildi");
+
+          // Otomatik reconnect kaldırıldı - kullanıcı manuel olarak bağlansın
+          console.log(
+            "ℹ️ Otomatik reconnect devre dışı - manuel bağlantı gerekli"
+          );
         };
       } catch (constructorError) {
         // WebSocket constructor'da oluşan hatalar
@@ -269,13 +300,15 @@ class WebSocketService {
   }
 
   disconnect() {
+    this.stopHeartbeat(); // Heartbeat'i durdur
+
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
     this.isConnected = false;
     this.isConnecting = false;
-    this.threadId = null;
+    this.reconnectAttempts = 0; // Reset retry counter
   }
 
   // Mesaj gönderme

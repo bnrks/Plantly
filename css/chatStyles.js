@@ -80,6 +80,7 @@ export const chatStyles = StyleSheet.create({
     height: 80,
     marginBottom: 16,
     opacity: 0.8,
+    marginTop: 40,
   },
   welcomeText: {
     fontSize: 18,
@@ -232,21 +233,28 @@ export const chatStyles = StyleSheet.create({
     elevation: 2,
   },
   selectedImageContainer: {
-    marginBottom: 8,
-    position: "relative",
+    position: "absolute",
+    bottom: 145, // Input container'ın biraz üstünde
+    left: 40,
+    zIndex: 10,
   },
   selectedImagePreview: {
     width: 100,
     height: 100,
     borderRadius: 12,
-    marginHorizontal: 16,
   },
   removeImageButton: {
     position: "absolute",
     top: -8,
-    right: 8,
+    right: -8, // Resim preview'nun sağ üst köşesinin biraz dışına
     backgroundColor: "rgba(255,255,255,0.9)",
     borderRadius: 12,
+    zIndex: 1, // Resmin üstünde görünmesi için
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
   imageButton: {
     padding: 8,

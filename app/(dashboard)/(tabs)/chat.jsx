@@ -53,9 +53,11 @@ export default function ChatScreen() {
       "📊 State Change - showConnectionError:",
       showConnectionError,
       "wsError:",
-      wsError
+      wsError ? "exists" : "null",
+      "connectionStatus:",
+      connectionStatus
     );
-  }, [showConnectionError, wsError]);
+  }, [showConnectionError, wsError, connectionStatus]);
 
   // Analysis parametrelerini al
   const { analysisImage, plantId, analysisMode } = useLocalSearchParams();
@@ -169,8 +171,14 @@ export default function ChatScreen() {
       }
     } else if (connectionStatus === "connected") {
       // Bağlantı kurulduğunda error'u temizle
+      console.log("✅ Connection başarılı, error state temizleniyor...");
+      console.log("🔧 Önceki wsError:", wsError);
+      console.log("🔧 Önceki showConnectionError:", showConnectionError);
+
       setWsError(null);
       setShowConnectionError(false);
+
+      console.log("🎯 Error state temizlendi");
     }
   }, [connectionStatus, statusMessage]);
 
@@ -179,9 +187,33 @@ export default function ChatScreen() {
     showConfirm(
       "Yeni Sohbet",
       "Yeni bir sohbet başlatmak istediğinize emin misiniz? Mevcut konuşma geçmişi kaybolacak.",
-      () => {
-        startNewChatFromHook();
-        hideAlert();
+      async () => {
+        try {
+          await startNewChatFromHook();
+          hideAlert();
+          console.log("✅ Yeni sohbet başarıyla başlatıldı");
+        } catch (error) {
+          console.error("❌ Yeni sohbet başlatma hatası:", error);
+          hideAlert();
+
+          // Error'ı format et ve göster
+          const errorData = formatChatError(
+            error,
+            "Yeni sohbet başlatma hatası"
+          );
+          setWsError(errorData);
+          setShowConnectionError(true);
+
+          // CustomAlert ile de göster
+          showConfirm(
+            "Sohbet Hatası",
+            "Yeni sohbet başlatırken bir hata oluştu. Lütfen tekrar deneyin.",
+            () => hideAlert(),
+            () => hideAlert(),
+            "Tamam",
+            null
+          );
+        }
       },
       () => {
         hideAlert();
@@ -190,10 +222,45 @@ export default function ChatScreen() {
   };
 
   // WebSocket hata handler fonksiyonları
-  const handleRetryConnection = () => {
-    setWsError(null);
-    setShowConnectionError(false);
-    reconnectWebSocket();
+  const handleRetryConnection = async () => {
+    try {
+      console.log("🔄 Retry connection başlatılıyor...");
+      setWsError(null);
+      setShowConnectionError(false);
+
+      // Reconnect işlemini await et
+      await reconnectWebSocket();
+
+      console.log("✅ Retry connection başarılı");
+
+      // Bağlantı başarılı olduktan sonra error state'ini kesin olarak temizle
+      setWsError(null);
+      setShowConnectionError(false);
+      console.log("🎯 Retry sonrası error state kesin olarak temizlendi");
+    } catch (error) {
+      console.error("❌ Retry connection hatası:", error);
+
+      // Error'ı format et ve göster
+      const errorData = formatChatError(error, "Yeniden bağlantı hatası");
+      setWsError(errorData);
+      setShowConnectionError(true);
+
+      // CustomAlert ile de göster
+      showConfirm(
+        "Bağlantı Hatası",
+        "Yeniden bağlantı sırasında bir hata oluştu. Lütfen tekrar deneyin.",
+        () => {
+          hideAlert();
+          // Tekrar denemek isterse
+          handleRetryConnection();
+        },
+        () => {
+          hideAlert();
+        },
+        "Tekrar Dene",
+        "İptal"
+      );
+    }
   };
 
   const handleCloseConnectionError = () => {
@@ -423,7 +490,7 @@ export default function ChatScreen() {
                 {/* Yeniden Bağlan Butonu */}
                 <TouchableOpacity
                   style={styles.reconnectButton}
-                  onPress={reconnectWebSocket}
+                  onPress={handleRetryConnection}
                 >
                   <Ionicons name="refresh" size={18} color={theme.text} />
                 </TouchableOpacity>
@@ -497,7 +564,8 @@ export default function ChatScreen() {
                     <>
                       {console.log("🎨 Rendering ShowError component:", {
                         showConnectionError,
-                        wsError,
+                        wsError: wsError ? "exists" : "null",
+                        connectionStatus,
                       })}
                       <ShowError
                         title={wsError.title}
@@ -516,19 +584,7 @@ export default function ChatScreen() {
                   {/* Chat Başlığı - Sadece mesaj yokken ve hata yokken göster */}
                   {messages.length === 0 && !showConnectionError && (
                     <View style={styles.chatHeader}>
-                      <View style={styles.headerContent}>
-                        <View style={styles.headerIcon}>
-                          <Ionicons name="leaf" size={24} color="#4CAF50" />
-                        </View>
-                        <ThemedTitle style={styles.title}>
-                          🌱 Plantly AI Asistan
-                        </ThemedTitle>
-                        <ThemedText style={styles.subtitle}>
-                          Bitkilerinizin uzmanı yanınızda! Hastalık teşhisi,
-                          bakım önerileri ve daha fazlası için fotoğraf çekin
-                          veya soru sorun.
-                        </ThemedText>
-                      </View>
+                      <View style={styles.headerContent}></View>
                     </View>
                   )}
 
@@ -556,6 +612,17 @@ export default function ChatScreen() {
                     }}
                     ListEmptyComponent={
                       <View style={styles.emptyChat}>
+                        <View style={styles.headerIcon}>
+                          <Ionicons name="leaf" size={24} color="#4CAF50" />
+                        </View>
+                        <ThemedTitle style={styles.title}>
+                          🌱 Plantly AI Asistan
+                        </ThemedTitle>
+                        <ThemedText style={styles.subtitle}>
+                          Bitkilerinizin uzmanı yanınızda! Hastalık teşhisi,
+                          bakım önerileri ve daha fazlası için fotoğraf çekin
+                          veya soru sorun.
+                        </ThemedText>
                         <Image
                           source={require("../../../assets/plantly-asistant.png")}
                           style={styles.welcomeAvatar}
@@ -570,34 +637,41 @@ export default function ChatScreen() {
                     }
                   />
 
+                  {/* Seçili fotoğraf önizlemesi - Absolute positioned */}
+                  {selectedImage && (
+                    <View
+                      style={[
+                        styles.selectedImageContainer,
+                        isKeyboardVisible && { bottom: 140, left: 40 }, // Klavye açıkken daha yukarı
+                      ]}
+                    >
+                      <Image
+                        source={{ uri: selectedImage.uri }}
+                        style={styles.selectedImagePreview}
+                      />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={removeSelectedImage}
+                      >
+                        <Ionicons
+                          name="close-circle"
+                          size={24}
+                          color="#E53935"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
                   {/* Mesaj Input Alanı */}
                   <View
                     style={[
                       styles.inputContainer,
-                      isKeyboardVisible && { marginBottom: 84 },
+                      isKeyboardVisible && {
+                        marginBottom: selectedImage ? 60 : 100,
+                      },
                     ]}
                     onLayout={(e) => setInputPad(e.nativeEvent.layout.height)}
                   >
-                    {/* Seçili fotoğraf önizlemesi */}
-                    {selectedImage && (
-                      <View style={styles.selectedImageContainer}>
-                        <Image
-                          source={{ uri: selectedImage.uri }}
-                          style={styles.selectedImagePreview}
-                        />
-                        <TouchableOpacity
-                          style={styles.removeImageButton}
-                          onPress={removeSelectedImage}
-                        >
-                          <Ionicons
-                            name="close-circle"
-                            size={24}
-                            color="#E53935"
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    )}
-
                     <View
                       style={[
                         styles.inputWrapper,
