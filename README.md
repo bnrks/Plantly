@@ -9,6 +9,11 @@
   ![Expo](https://img.shields.io/badge/Expo-53.0.22-000020.svg)
   ![Firebase](https://img.shields.io/badge/Firebase-9.22.0-orange.svg)
   ![License](https://img.shields.io/badge/License-MIT-green.svg)
+  
+  [![Download APK](https://img.shields.io/badge/Download-APK-brightgreen.svg)](https://github.com/bnrks/Plantly/releases/latest/download/plantly.apk)
+  
+  **🔗 Related Repositories:**
+  - 🤖 [AI Server Backend](https://github.com/bnrks/plantly-ai-server) - AI hastalık tespiti ve chat servisleri
 </div>
 
 ## 📱 Uygulama Hakkında
@@ -42,8 +47,11 @@ Plantly, bitki severler için geliştirilmiş kapsamlı bir bitki bakım uygulam
   - Firestore (Veritabanı)
   - Cloud Storage (Görsel saklama)
   - Cloud Functions (Sunucu tarafı işlemler)
+- **Custom AI Server** - [Plantly AI Server](https://github.com/bnrks/plantly-ai-server)
+  - Bitki hastalığı tespit modeli
+  - AI Chat servisleri
+  - Görsel analiz pipeline
 - **Groq SDK** (0.22.0) - AI model entegrasyonu
-- **Custom AI Pipeline** - Bitki hastalığı tespit modeli
 
 ### Diğer Teknolojiler
 
@@ -196,6 +204,7 @@ Plantly/
 
 - **Model Tipi**: Convolutional Neural Network (CNN)
 - **Eğitim Verisi**: 50,000+ bitki görüntüsü
+- **Repository**: [Plantly AI Server](https://github.com/bnrks/plantly-ai-server)
 - **Tespit Edilen Hastalıklar**:
   - Geç yanıklık (Late Blight)
   - Erken yanıklık (Early Blight)
@@ -206,6 +215,7 @@ Plantly/
 
 - **Platform**: Groq API
 - **Model**: LLaMA-based language model
+- **Repository**: [Plantly AI Server](https://github.com/bnrks/plantly-ai-server)
 - **Özelleştirme**: Bahçıvanlık ve bitki bakımı domain knowledge
 - **Dil Desteği**: Türkçe optimizasyonu
 
@@ -263,33 +273,7 @@ npm run test:e2e
 - Bundle size optimizasyonu
 - Offline-first yaklaşım
 
-## 🚧 Gelecek Özellikler
-
-- [ ] Çok dilli destek (İngilizce, İspanyolca)
-- [ ] Sosyal özellikler (bitki paylaşımı)
-- [ ] IoT sensor entegrasyonu
-- [ ] Augmented Reality bitki tanıma
-- [ ] Market place (bitki satış/alım)
-- [ ] Bahçe planlama araçları
-- [ ] Hava durumu entegrasyonu
-- [ ] Gelişmiş analitik dashboard
-
-## 🤝 Katkıda Bulunma
-
-1. Fork edin
-2. Feature branch oluşturun (`git checkout -b feature/AmazingFeature`)
-3. Değişikliklerinizi commit edin (`git commit -m 'Add some AmazingFeature'`)
-4. Branch'inizi push edin (`git push origin feature/AmazingFeature`)
-5. Pull Request oluşturun
-
-### Geliştirme Kuralları
-
-- ESLint ve Prettier kullanın
-- Commit mesajlarında conventional commit standartını takip edin
-- Test coverage %80'in üzerinde tutun
-- Component dokümantasyonu ekleyin
-
-## 📝 Lisans
+## Lisans
 
 Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
