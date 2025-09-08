@@ -13,7 +13,7 @@
   [![Download APK](https://img.shields.io/badge/Download-APK-brightgreen.svg)](https://github.com/bnrks/Plantly/releases/latest/download/plantly.apk)
   
   **🔗 Related Repositories:**
-  - 🤖 [AI Server Backend](https://github.com/bnrks/plantly-ai-server) - AI hastalık tespiti ve chat servisleri
+  - 🤖 [AI Server Backend](https://github.com/bnrks/plantly-server) - AI hastalık tespiti ve chat servisleri
 </div>
 
 ## 📱 Uygulama Hakkında
@@ -203,8 +203,8 @@ Plantly/
 ### Hastalık Tespit Modeli
 
 - **Model Tipi**: Convolutional Neural Network (CNN)
-- **Eğitim Verisi**: 50,000+ bitki görüntüsü
-- **Repository**: [Plantly AI Server](https://github.com/bnrks/plantly-ai-server)
+- **Eğitim Verisi**: 20k+ bitki görüntüsü
+- **Repository**: [Plantly AI Server](https://github.com/bnrks/plantly-server)
 - **Tespit Edilen Hastalıklar**:
   - Geç yanıklık (Late Blight)
   - Erken yanıklık (Early Blight)
@@ -214,8 +214,8 @@ Plantly/
 ### Chat AI
 
 - **Platform**: Groq API
-- **Model**: LLaMA-based language model
-- **Repository**: [Plantly AI Server](https://github.com/bnrks/plantly-ai-server)
+- **Model**: gpt-oss-20b
+- **Repository**: [Plantly AI Server](https://github.com/bnrks/plantly-server)
 - **Özelleştirme**: Bahçıvanlık ve bitki bakımı domain knowledge
 - **Dil Desteği**: Türkçe optimizasyonu
 
@@ -280,21 +280,6 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 ## 👨‍💻 Geliştirici
 
 **bnrks** - [GitHub](https://github.com/bnrks)
-
-## 📞 İletişim
-
-- Email: contact@plantlyapp.com
-- LinkedIn: [Plantly Official](https://linkedin.com/company/plantly)
-- Website: [www.plantlyapp.com](https://www.plantlyapp.com)
-
-## 🙏 Teşekkürler
-
-- Firebase ekibine backend altyapısı için
-- Expo topluluğuna geliştirme araçları için
-- AI/ML topluluğuna model desteği için
-- Beta test kullanıcılarına geri bildirimler için
-
----
 
 <div align="center">
   <p>⭐ Beğendiyseniz yıldız vermeyi unutmayın!</p>
