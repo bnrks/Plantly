@@ -282,7 +282,7 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 **bnrks** - [GitHub](https://github.com/bnrks)
 
 ##  APK Link
- [GitHub](https://drive.google.com/file/d/1_avucqfeILIrGrNzb-rhqZLyDqlhQe8S/view?usp=sharing)
+ [Drive](https://drive.google.com/file/d/1_avucqfeILIrGrNzb-rhqZLyDqlhQe8S/view?usp=sharing)
 <div align="center">
   <p>⭐ Beğendiyseniz yıldız vermeyi unutmayın!</p>
   <p>🌱 Bitki severler için yapıldı ❤️</p>
