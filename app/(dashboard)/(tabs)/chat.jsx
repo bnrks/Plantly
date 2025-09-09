@@ -154,7 +154,7 @@ export default function ChatScreen() {
 
     if (connectionStatus === "disconnected" || connectionStatus === "error") {
       // Bağlantı koptuğunda mesajları temizle (yeni thread başlayacak)
-      setMessages([]);
+      setMessages(() => []);
       setInputText("");
       setSelectedImage(null);
       setIsTyping(false);
@@ -181,6 +181,22 @@ export default function ChatScreen() {
       console.log("🎯 Error state temizlendi");
     }
   }, [connectionStatus, statusMessage]);
+
+  // Messages state değişikliklerini debug et (preview build sorunları için)
+  useEffect(() => {
+    console.log("🔧 Chat Messages Updated - Count:", messages.length);
+    console.log(
+      "🔧 Messages IDs:",
+      messages.map((m) => m.id)
+    );
+
+    // Preview build'de FlatList'i force update et
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: false });
+      }, 100);
+    }
+  }, [messages]);
 
   // Yeni sohbet başlatma fonksiyonu
   const startNewChat = () => {
@@ -607,6 +623,7 @@ export default function ChatScreen() {
                     }
                     ListFooterComponent={renderTypingIndicator}
                     removeClippedSubviews={false}
+                    extraData={messages.length} // Preview build için ekstra re-render trigger
                     maintainVisibleContentPosition={{
                       minIndexForVisible: 0,
                     }}

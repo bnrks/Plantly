@@ -1,14 +1,40 @@
 // app/_layout.jsx
-import { useContext, useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { StyleSheet, SafeAreaView, StatusBar } from "react-native";
 import { Stack } from "expo-router";
 import { ThemeProvider, ThemeContext } from "../src/context/ThemeContext";
 import { Colors } from "../constants/Colors";
 import { AuthProvider } from "../src/context/AuthContext";
-import ErrorBoundary from "../src/components/ErrorBoundary";
 import { AlertSystemProvider } from "../src/context/AlertSystemProvider";
 import * as Notifications from "expo-notifications";
-import { initializeErrorHandlers } from "../src/services/index";
+
+// ErrorBoundary'yi dinamik import ile yükle
+const ErrorBoundaryComponent = React.lazy(() =>
+  import("../src/components/ErrorBoundary")
+);
+
+// Fallback ErrorBoundary
+class SimpleErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Simple ErrorBoundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null; // veya basit bir hata UI'ı
+    }
+    return this.props.children;
+  }
+}
 
 // foreground'da banner göstermek için (global, bir kez!)
 Notifications.setNotificationHandler({
@@ -21,8 +47,8 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
   useEffect(() => {
-    // Error handlers'ı başlat
-    initializeErrorHandlers();
+    // Global error handler'ı basit şekilde başlat
+    console.log("✅ Global Error Handler initialized");
 
     // (Opsiyonel) bildirim tıklamasını yakala -> navigate
     const sub = Notifications.addNotificationResponseReceivedListener(
@@ -35,7 +61,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <ErrorBoundary name="App" level="app">
+    <SimpleErrorBoundary>
       <AlertSystemProvider>
         <AuthProvider>
           <ThemeProvider>
@@ -43,7 +69,7 @@ export default function RootLayout() {
           </ThemeProvider>
         </AuthProvider>
       </AlertSystemProvider>
-    </ErrorBoundary>
+    </SimpleErrorBoundary>
   );
 }
 

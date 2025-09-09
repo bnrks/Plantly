@@ -27,6 +27,11 @@ export const useChat = (connectionStatus) => {
       console.log("✅ İşlenmiş mesaj:", processedMessage);
 
       setMessages((prev) => {
+        console.log(
+          "🔧 WebSocket setMessages - Önceki mesaj sayısı:",
+          prev.length
+        );
+
         // Son 5 saniye içinde aynı role'den gelen mesajları kontrol et
         const now = new Date();
         const fiveSecondsAgo = new Date(now.getTime() - 5000);
@@ -63,6 +68,10 @@ export const useChat = (connectionStatus) => {
                 console.log(
                   "⚠️ WebSocket duplicate recent content engellendi:",
                   msg.role,
+                  "existing ID:",
+                  recentSimilar.id,
+                  "new ID:",
+                  msg.id,
                   "time diff:",
                   now - new Date(recentSimilar.timestamp),
                   "ms"
@@ -79,8 +88,11 @@ export const useChat = (connectionStatus) => {
               "➕ WebSocket yeni mesajlar ekleniyor:",
               newMessages.map((m) => m.id)
             );
-            return [...prev, ...newMessages];
+            const finalResult = [...prev, ...newMessages];
+            console.log("🔧 WebSocket final mesaj sayısı:", finalResult.length);
+            return finalResult;
           }
+          console.log("🔧 WebSocket hiç yeni mesaj eklenmedi");
           return prev;
         } else {
           // Tek mesaj durumu - ID kontrolü
@@ -119,6 +131,10 @@ export const useChat = (connectionStatus) => {
               console.log(
                 "⚠️ WebSocket duplicate recent content engellendi:",
                 processedMessage.role,
+                "existing ID:",
+                recentSimilar.id,
+                "new ID:",
+                processedMessage.id,
                 "time diff:",
                 now - new Date(recentSimilar.timestamp),
                 "ms"

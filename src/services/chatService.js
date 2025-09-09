@@ -224,6 +224,37 @@ class ChatService {
       return newMessage;
     }
 
+    // Alternatif format kontrolleri - bazen assistant obje olarak değil direkt content olarak gelebilir
+    if (data.content && typeof data.content === "string") {
+      console.log("🔍 Direkt content formatı algılandı");
+      const parsedContent = this.parseMarkdownJson(data.content);
+
+      const newMessage = {
+        id: data.message_id || Date.now().toString(),
+        role: "assistant",
+        content: parsedContent.content || data.content,
+        timestamp: new Date(),
+      };
+
+      if (data.diagnosis) {
+        newMessage.diagnosis = data.diagnosis;
+        newMessage.type = "analysis";
+      }
+
+      if (parsedContent.notes && Array.isArray(parsedContent.notes)) {
+        const notesMessage = {
+          id: `${newMessage.id}_notes`,
+          role: "assistant_notes",
+          content: parsedContent.notes,
+          timestamp: new Date(),
+          hasActionButton: true,
+        };
+        return [newMessage, notesMessage];
+      }
+
+      return newMessage;
+    }
+
     // Eski format: { type: "message", message: {...} }
     if (data.type === "message" && data.message) {
       // SystemEvent mesajlarını filtreleme (diagnosis objeleri)

@@ -34,16 +34,25 @@ export default {
     extra: {
       router: {},
       eas: {
-        projectId: process.env.EXPO_PROJECT_ID,
+        projectId:
+          process.env.EXPO_PROJECT_ID || "49ba9225-cd41-4e90-9343-711093409f10",
       },
       firebase: {
-        apiKey: process.env.FIREBASE_API_KEY,
-        authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.FIREBASE_APP_ID,
-        measurementId: process.env.FIREBASE_MEASUREMENT_ID,
+        apiKey:
+          process.env.FIREBASE_API_KEY ||
+          "AIzaSyBC4KJsYshPdihaFZNvieGZ_jCOLtNNsck",
+        authDomain:
+          process.env.FIREBASE_AUTH_DOMAIN || "plantly-fae5e.firebaseapp.com",
+        projectId: process.env.FIREBASE_PROJECT_ID || "plantly-fae5e",
+        storageBucket:
+          process.env.FIREBASE_STORAGE_BUCKET ||
+          "plantly-fae5e.firebasestorage.app",
+        messagingSenderId:
+          process.env.FIREBASE_MESSAGING_SENDER_ID || "250730263332",
+        appId:
+          process.env.FIREBASE_APP_ID ||
+          "1:250730263332:web:8951fd8ef2863b380539b1",
+        measurementId: process.env.FIREBASE_MEASUREMENT_ID || "G-SGE1ETE4HF",
       },
     },
     owner: "bnrks",

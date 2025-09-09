@@ -2,6 +2,7 @@
 
 # dependencies
 node_modules/
+android/
 groqConfig.js
 .env
 eas.json
@@ -21,7 +22,6 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
-android/
 
 # Metro
 .metro-health-check*
@@ -41,3 +41,4 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 *.json
+src/services/firebaseConfig.js

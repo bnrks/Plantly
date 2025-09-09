@@ -16,14 +16,32 @@ import Constants from "expo-constants";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: Constants?.expoConfig?.extra?.firebase?.apiKey,
-  authDomain: Constants?.expoConfig?.extra?.firebase?.authDomain,
-  projectId: Constants?.expoConfig?.extra?.firebase?.projectId,
-  storageBucket: Constants?.expoConfig?.extra?.firebase?.storageBucket,
-  messagingSenderId: Constants?.expoConfig?.extra?.firebase?.messagingSenderId,
-  appId: Constants?.expoConfig?.extra?.firebase?.appId,
-  measurementId: Constants?.expoConfig?.extra?.firebase?.measurementId,
+  apiKey:
+    Constants?.expoConfig?.extra?.firebase?.apiKey ||
+    "AIzaSyBC4KJsYshPdihaFZNvieGZ_jCOLtNNsck",
+  authDomain:
+    Constants?.expoConfig?.extra?.firebase?.authDomain ||
+    "plantly-fae5e.firebaseapp.com",
+  projectId:
+    Constants?.expoConfig?.extra?.firebase?.projectId || "plantly-fae5e",
+  storageBucket:
+    Constants?.expoConfig?.extra?.firebase?.storageBucket ||
+    "plantly-fae5e.firebasestorage.app",
+  messagingSenderId:
+    Constants?.expoConfig?.extra?.firebase?.messagingSenderId || "250730263332",
+  appId:
+    Constants?.expoConfig?.extra?.firebase?.appId ||
+    "1:250730263332:web:8951fd8ef2863b380539b1",
+  measurementId:
+    Constants?.expoConfig?.extra?.firebase?.measurementId || "G-SGE1ETE4HF",
 };
+
+// Debug logging
+console.log("🔥 Firebase Config:", {
+  projectId: firebaseConfig.projectId,
+  hasApiKey: !!firebaseConfig.apiKey,
+  hasAuthDomain: !!firebaseConfig.authDomain,
+});
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

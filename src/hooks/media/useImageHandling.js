@@ -37,10 +37,29 @@ export const useImageHandling = (
     try {
       setIsAnalyzing(true);
 
+      // Preview build debug
+      console.log("🔧 analyzeImage başlıyor");
+      console.log("🔧 Thread ID mevcut durumu:", wsService.threadId);
+
       // Eğer henüz thread yoksa, thread oluştur
       if (!wsService.threadId) {
         console.log("🧵 Fotoğraf analizi için thread oluşturuluyor...");
         await wsService.initializeThread();
+
+        // Thread oluşturulduktan sonra bekle
+        let waitCount = 0;
+        while (!wsService.threadId && waitCount < 10) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          waitCount++;
+          console.log(`⏳ Thread oluşturma bekleniyor... ${waitCount}/10`);
+        }
+
+        if (!wsService.threadId) {
+          console.error("❌ Thread oluşturulamadı!");
+          throw new Error("Thread oluşturulamadı");
+        }
+
+        console.log("✅ Thread oluşturuldu:", wsService.threadId);
       }
 
       // Kullanıcı mesajını ekle (fotoğraf ve metin)
@@ -48,7 +67,18 @@ export const useImageHandling = (
         inputText,
         selectedImage.uri
       );
-      setMessages((prev) => [...prev, userMessage]);
+
+      console.log("➕ Kullanıcı mesajı ekleniyor:", userMessage.id);
+
+      setMessages((prev) => {
+        console.log(
+          "🔧 setMessages çağrıldı - Önceki:",
+          prev.length,
+          "Yeni:",
+          prev.length + 1
+        );
+        return [...prev, userMessage];
+      });
 
       // Fotoğraf analizi yap
       const analysisResult = await chatService.analyzeImage(
@@ -58,8 +88,8 @@ export const useImageHandling = (
 
       console.log("📥 Analiz sonucu:", analysisResult);
 
-      // WebSocket mesajları useChat hook'unda işleniyor
-      // HTTP response'dan mesaj eklemeye gerek yok
+      // WebSocket mesajları zaten useChat hook'unda işleniyor
+      // HTTP response'dan ayrıca mesaj eklemeye gerek yok
       if (
         analysisResult &&
         (analysisResult.assistant || analysisResult.message_id)
