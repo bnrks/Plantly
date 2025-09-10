@@ -10,7 +10,7 @@
   ![Firebase](https://img.shields.io/badge/Firebase-9.22.0-orange.svg)
   ![License](https://img.shields.io/badge/License-MIT-green.svg)
   
-  [![Download APK](https://img.shields.io/badge/Download-APK-brightgreen.svg)](https://github.com/bnrks/Plantly/releases/latest/download/plantly.apk)
+  [![Download APK](https://img.shields.io/badge/Download-APK-brightgreen.svg)](https://drive.google.com/file/d/1_avucqfeILIrGrNzb-rhqZLyDqlhQe8S/view?usp=sharing)
   
   **🔗 Related Repositories:**
   - 🤖 [AI Server Backend](https://github.com/bnrks/plantly-server) - AI hastalık tespiti ve chat servisleri
@@ -281,6 +281,8 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 **bnrks** - [GitHub](https://github.com/bnrks)
 
+##  APK Link
+ [Drive](https://drive.google.com/file/d/1_avucqfeILIrGrNzb-rhqZLyDqlhQe8S/view?usp=sharing)
 <div align="center">
   <p>⭐ Beğendiyseniz yıldız vermeyi unutmayın!</p>
   <p>🌱 Bitki severler için yapıldı ❤️</p>
