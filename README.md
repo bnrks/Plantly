@@ -283,6 +283,7 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 ##  APK Link
  [Drive](https://drive.google.com/file/d/1_avucqfeILIrGrNzb-rhqZLyDqlhQe8S/view?usp=sharing)
+ [If you want to try it please contact me via email](mailto:burakturan113@gmail.com)
 <div align="center">
   <p>⭐ Beğendiyseniz yıldız vermeyi unutmayın!</p>
   <p>🌱 Bitki severler için yapıldı ❤️</p>
