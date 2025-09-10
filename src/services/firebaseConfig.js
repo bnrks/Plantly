@@ -17,23 +17,19 @@ import Constants from "expo-constants";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey:
-    Constants?.expoConfig?.extra?.firebase?.apiKey ||
-    "AIzaSyBC4KJsYshPdihaFZNvieGZ_jCOLtNNsck",
+    Constants?.expoConfig?.extra?.firebase?.apiKey,
   authDomain:
-    Constants?.expoConfig?.extra?.firebase?.authDomain ||
-    "plantly-fae5e.firebaseapp.com",
+    Constants?.expoConfig?.extra?.firebase?.authDomain,
   projectId:
-    Constants?.expoConfig?.extra?.firebase?.projectId || "plantly-fae5e",
+    Constants?.expoConfig?.extra?.firebase?.projectId,
   storageBucket:
-    Constants?.expoConfig?.extra?.firebase?.storageBucket ||
-    "plantly-fae5e.firebasestorage.app",
+    Constants?.expoConfig?.extra?.firebase?.storageBucket,
   messagingSenderId:
-    Constants?.expoConfig?.extra?.firebase?.messagingSenderId || "250730263332",
+    Constants?.expoConfig?.extra?.firebase?.messagingSenderId,
   appId:
-    Constants?.expoConfig?.extra?.firebase?.appId ||
-    "1:250730263332:web:8951fd8ef2863b380539b1",
+    Constants?.expoConfig?.extra?.firebase?.appId,
   measurementId:
-    Constants?.expoConfig?.extra?.firebase?.measurementId || "G-SGE1ETE4HF",
+    Constants?.expoConfig?.extra?.firebase?.measurementId,
 };
 
 // Debug logging
