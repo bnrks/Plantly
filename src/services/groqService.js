@@ -1,7 +1,7 @@
 export async function groqService(prompt) {
   try {
     const res = await fetch(
-      "https://learning-partially-rabbit.ngrok-free.app/groq-chat",
+      "https://learning-partially-rabbit.ngrok-free.app/groq-chat", // You should change this to your actual backend URL
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

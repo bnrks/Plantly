@@ -135,7 +135,7 @@ class ChatService {
 
       // API'ye gönder
       const response = await fetch(
-        "https://learning-partially-rabbit.ngrok-free.app/chat/analyze-image",
+        "https://learning-partially-rabbit.ngrok-free.app/chat/analyze-image", // You should change this to your actual backend URL
         {
           method: "POST",
           headers: {

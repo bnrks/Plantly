@@ -1,6 +1,6 @@
 export const API_URL =
-  "https://learning-partially-rabbit.ngrok-free.app/predict";
-const ping = "https://learning-partially-rabbit.ngrok-free.app/ping";
+  "https://learning-partially-rabbit.ngrok-free.app/predict"; // You should change this to your actual backend URL
+const ping = "https://learning-partially-rabbit.ngrok-free.app/ping"; // You should change this to your actual backend URL
 import * as FileSystem from "expo-file-system";
 console.log("FETCH →", API_URL);
 

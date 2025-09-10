@@ -108,7 +108,7 @@ class WebSocketService {
       try {
         // WebSocket bağlantısını kur
         this.ws = new WebSocket(
-          "wss://learning-partially-rabbit.ngrok-free.app/ws/chat"
+          "wss://learning-partially-rabbit.ngrok-free.app/ws/chat" // You should change this to your actual backend URL
         );
 
         this.ws.onopen = async () => {
