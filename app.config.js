@@ -25,7 +25,7 @@ export default {
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
-      package: "com.bnrks.plantly",
+      package: "com.bnrks.Plantly",
       googleServicesFile: "./google-services.json",
     },
     web: {

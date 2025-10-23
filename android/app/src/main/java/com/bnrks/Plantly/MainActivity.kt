@@ -1,4 +1,4 @@
-package com.bnrks.Plantly
+package com.bnrks.plantly
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
