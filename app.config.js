@@ -4,7 +4,7 @@ export default {
   expo: {
     scheme: "plantly",
     name: "Plantly",
-    slug: "Plantly",
+    slug: "plantly",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -17,6 +17,7 @@ export default {
     },
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.bnrks.plantly", 
     },
     android: {
       adaptiveIcon: {
@@ -24,7 +25,7 @@ export default {
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
-      package: "com.bnrks.Plantly",
+      package: "com.bnrks.plantly",
       googleServicesFile: "./google-services.json",
     },
     web: {
@@ -35,24 +36,21 @@ export default {
       router: {},
       eas: {
         projectId:
-          process.env.EXPO_PROJECT_ID || "49ba9225-cd41-4e90-9343-711093409f10",
+          process.env.EXPO_PROJECT_ID,
       },
       firebase: {
         apiKey:
-          process.env.FIREBASE_API_KEY ||
-          "AIzaSyBC4KJsYshPdihaFZNvieGZ_jCOLtNNsck",
+          process.env.FIREBASE_API_KEY,
         authDomain:
-          process.env.FIREBASE_AUTH_DOMAIN || "plantly-fae5e.firebaseapp.com",
-        projectId: process.env.FIREBASE_PROJECT_ID || "plantly-fae5e",
+          process.env.FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.FIREBASE_PROJECT_ID,
         storageBucket:
-          process.env.FIREBASE_STORAGE_BUCKET ||
-          "plantly-fae5e.firebasestorage.app",
+          process.env.FIREBASE_STORAGE_BUCKET,
         messagingSenderId:
-          process.env.FIREBASE_MESSAGING_SENDER_ID || "250730263332",
+          process.env.FIREBASE_MESSAGING_SENDER_ID,
         appId:
-          process.env.FIREBASE_APP_ID ||
-          "1:250730263332:web:8951fd8ef2863b380539b1",
-        measurementId: process.env.FIREBASE_MEASUREMENT_ID || "G-SGE1ETE4HF",
+          process.env.FIREBASE_APP_ID,
+        measurementId: process.env.FIREBASE_MEASUREMENT_ID,
       },
     },
     owner: "bnrks",
