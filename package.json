@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.1.2",
-    "@react-native-community/netinfo": "^11.4.1",
-    "@react-native-picker/picker": "^2.11.0",
+    "@react-native-community/netinfo": "11.4.1",
+    "@react-native-picker/picker": "2.11.1",
     "dotenv": "^16.5.0",
     "expo": "~53.0.23",
     "expo-constants": "~17.1.6",
@@ -29,6 +29,7 @@
     "groq-sdk": "^0.22.0",
     "react": "19.0.0",
     "react-native": "0.79.6",
+    "react-native-edge-to-edge": "1.6.0",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1"
   },

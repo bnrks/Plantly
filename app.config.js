@@ -31,7 +31,7 @@ export default {
     web: {
       favicon: "./assets/favicon.png",
     },
-    plugins: ["expo-router"],
+    plugins: ["expo-router","react-native-edge-to-edge"],
     extra: {
       router: {},
       eas: {
