@@ -8,7 +8,15 @@ const ThemedTitle = ({ style, children, ...props }) => {
 
   return (
     <Text
-      style={[{ color: theme.title, fontSize: 24, fontWeight: "bold" }, style]}
+      style={[
+        {
+          color: theme.title,
+          fontSize: 24,
+          fontFamily: "CommeRegular",
+          fontWeight: "700",
+        },
+        style,
+      ]}
       {...props}
     >
       {children}

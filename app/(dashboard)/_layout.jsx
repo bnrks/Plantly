@@ -1,4 +1,4 @@
-// app/(dashboard)/_layout.jsx
+﻿// app/(dashboard)/_layout.jsx
 import { Stack, useRouter } from "expo-router";
 import { useContext, useEffect } from "react";
 import { AuthContext } from "../../src/context/AuthContext";
@@ -12,7 +12,7 @@ export default function DashboardLayout() {
   useEffect(() => {
     // Loading bittikten sonra user yoksa login'e yönlendir
     if (!loading && !user) {
-      console.log("🚪 User yok, login sayfasına yönlendiriliyor");
+      console.log("User yok, login sayfasına yönlendiriliyor");
       router.replace("/login");
     }
   }, [user, loading, router]);
@@ -28,8 +28,8 @@ export default function DashboardLayout() {
       level="screen"
       name="Dashboard Layout"
       onError={(error, errorInfo) => {
-        console.error("🚨 Dashboard Layout Error:", error);
-        console.error("📍 Error Info:", errorInfo);
+        console.error("Dashboard Layout Error:", error);
+        console.error("Error Info:", errorInfo);
       }}
     >
       <Stack screenOptions={{ headerShown: false }}>
@@ -38,6 +38,12 @@ export default function DashboardLayout() {
 
         {/* 2. Sonra detay ekranı */}
         <Stack.Screen name="plant/details" options={{ title: "Detay" }} />
+        <Stack.Screen name="education" options={{ title: "Eğitimler" }} />
+        <Stack.Screen
+          name="education/module"
+          options={{ title: "Eğitim Modülü" }}
+        />
+        <Stack.Screen name="profile" options={{ title: "Profil" }} />
       </Stack>
     </ErrorBoundary>
   );

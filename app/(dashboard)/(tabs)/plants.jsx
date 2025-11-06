@@ -12,7 +12,7 @@ import Loading from "../../../components/Loading";
 import Header from "../../../components/Header";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
-const MyPlants = () => {
+const Plants = () => {
   const router = useRouter();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
@@ -40,7 +40,7 @@ const MyPlants = () => {
     if (refresh === "true") {
       setLoading(true);
       fetchPlants(userid, setPlantss, setLoading);
-      router.replace({ pathname: "/myPlants" });
+      router.replace({ pathname: "/(dashboard)/(tabs)/plants" });
     }
   }, [refresh]);
 
@@ -104,6 +104,6 @@ const MyPlants = () => {
   );
 };
 
-export default MyPlants;
+export default Plants;
 
 const styles = StyleSheet.create({});

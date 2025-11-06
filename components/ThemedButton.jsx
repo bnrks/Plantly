@@ -31,7 +31,13 @@ const ThemedButton = ({
       onPress={handlePress}
       {...props}
     >
-      <Text style={[styles.text, { color: theme.background }, textStyle]}>
+      <Text
+        style={[
+          styles.text,
+          { color: theme.background, fontFamily: "CommeRegular" },
+          textStyle,
+        ]}
+      >
         {title}
       </Text>
     </Pressable>

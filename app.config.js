@@ -7,7 +7,7 @@ export default {
     slug: "plantly",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/app_icon.png",
+    icon: "./assets/app_icon2.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
@@ -21,7 +21,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/app_icon.png",
+        foregroundImage: "./assets/app_icon2.png",
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,

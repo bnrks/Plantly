@@ -1,9 +1,10 @@
-import {
+﻿import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   FlatList,
+  ScrollView,
 } from "react-native";
 import React, { useState, useEffect, useContext, useRef } from "react";
 import ThemedCard from "../../../components/ThemedCard";
@@ -31,7 +32,7 @@ const Home = () => {
   const topTrainings = [
     {
       id: "starter",
-      title: "Başlangıç Rehberi",
+      title: "Baslangic Rehberi",
       duration: "15 dk",
     },
     {
@@ -41,30 +42,30 @@ const Home = () => {
     },
     {
       id: "diagnosis",
-      title: "Hastalık Dedektifi",
+      title: "Hastalik Dedektifi",
       duration: "18 dk",
     },
   ];
   const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
-  const username = user?.displayName || "Kullanıcı";
+  const username = user?.displayName || "Kullanici";
   const userid = user?.uid || "";
   const registeredRef = useRef(false);
   useEffect(() => {
     if (user?.uid && !registeredRef.current) {
-      registeredRef.current = true; // aynı oturumda birden fazla çağrılmasın
+      registeredRef.current = true; // ensure we register push notifications once per session
       registerForPush(user.uid).catch(console.warn);
     }
   }, [user?.uid]);
-  // Kullanıcı yoksa login'e at
+  // If no user is present redirect to login
   useEffect(() => {
     if (!user) {
       router.replace("/login");
     }
   }, [user]);
 
-  // idToken'ı konsola yazdır
+  // Helper to log the Firebase id token
   useEffect(() => {
     const getIdToken = async () => {
       if (user) {
@@ -73,10 +74,10 @@ const Home = () => {
           const currentUser = auth.currentUser;
           if (currentUser) {
             const idToken = await currentUser.getIdToken();
-            console.log("🔐 Firebase ID Token:", idToken);
+            console.log("Firebase ID Token:", idToken);
           }
         } catch (error) {
-          console.error("❌ idToken alma hatası:", error);
+          console.error("idToken alma hatasi:", error);
         }
       }
     };
@@ -84,7 +85,7 @@ const Home = () => {
     getIdToken();
   }, [user]);
 
-  // Bitkileri sadece kullanıcı varsa çek
+  // Fetch plants only when user exists
   useEffect(() => {
     if (user && !initialFetched && userid) {
       setLoading(true);
@@ -100,74 +101,84 @@ const Home = () => {
     try {
       await updatePlantWatering(userid, plantId);
     } catch (e) {
-      console.error("Sulama güncelleme hatası:", e);
+      console.error("Sulama guncelleme hatasi:", e);
     }
   };
 
   return (
     <>
-      <ThemedView style={{ flex: 1, padding: 20, paddingTop: 10 }} safe={true}>
-        <Header />
-        <ThemedCard
-          style={{
-            height: "20%",
-            width: "55%",
-            alignSelf: "flex-start",
-            justifyContent: "center",
+      <ThemedView style={{ flex: 1 }} safe={true}>
+        <ScrollView
+          contentContainerStyle={{
             paddingHorizontal: 20,
-            borderRadius: 20,
+            paddingTop: 10,
+            paddingBottom: 80,
           }}
+          showsVerticalScrollIndicator={false}
         >
-          <View
+          <Header />
+          <ThemedCard
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
+              height: "14%",
+              width: "100%",
+              justifyContent: "center",
+              paddingHorizontal: 20,
+              borderRadius: 20,
+              marginTop: 12,
             }}
           >
-            <View style={{ width: "100%" }}>
-              <ThemedTitle style={{ fontSize: 20 }}>
-                Merhaba, {username}
-              </ThemedTitle>
-              <ThemedText>{notificationCount} tane bildirimin var.</ThemedText>
-            </View>
-            <TouchableOpacity onPress={() => alert("Bildirimler")}>
-              <View style={{ position: "relative" }}>
-                <Ionicons
-                  name="notifications-outline"
-                  size={28}
-                  color="black"
-                />
-                {notificationCount > 0 && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: -4,
-                      right: -4,
-                      backgroundColor: "red",
-                      borderRadius: 10,
-                      width: 18,
-                      height: 18,
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <View style={{ width: "80%" }}>
+                <ThemedTitle style={{ fontSize: 20 }}>
+                  Merhaba, {username}
+                </ThemedTitle>
+                <ThemedText>
+                  {notificationCount} tane bildirimin var.
+                </ThemedText>
+              </View>
+              <TouchableOpacity onPress={() => alert("Bildirimler")}>
+                <View style={{ position: "relative" }}>
+                  <Ionicons
+                    name="notifications-outline"
+                    size={28}
+                    color="black"
+                  />
+                  {notificationCount > 0 && (
+                    <View
                       style={{
-                        color: "white",
-                        fontSize: 10,
-                        fontWeight: "bold",
+                        position: "absolute",
+                        top: -4,
+                        right: -4,
+                        backgroundColor: "red",
+                        borderRadius: 10,
+                        width: 18,
+                        height: 18,
+                        justifyContent: "center",
+                        alignItems: "center",
                       }}
                     >
-                      {notificationCount}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          </View>
-        </ThemedCard>
-        {/* Orta kısım */}
+                      <Text
+                        style={{
+                          color: "white",
+                          fontSize: 10,
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {notificationCount}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
+          </ThemedCard>
+        {/* Orta kisim */}
         <ThemedCard
           style={{
             flex: 1,
@@ -181,7 +192,7 @@ const Home = () => {
           <ThemedTitle style={{ fontSize: 20, padding: 20 }}>
             Bitkilerim
           </ThemedTitle>
-          {/* Kullanıcıya açıklama */}
+          {/* Kullaniciya aciklama */}
           <ThemedText
             style={{
               fontSize: 15,
@@ -190,7 +201,7 @@ const Home = () => {
               marginBottom: 10,
             }}
           >
-            Suladığın bitkileri işaretlemeyi unutma!
+            Suladn bitkileri iaretlemeyi unutma!
           </ThemedText>
 
           <FlatList
@@ -198,16 +209,16 @@ const Home = () => {
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 20 }}
             showsVerticalScrollIndicator={false}
-            scrollEnabled={true}
+            scrollEnabled={false}
             renderItem={({ item }) => (
               <View
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  backgroundColor: "#fff", // kart zemin rengi (koyu temadaysan "#18181b" öneririm)
-                  borderRadius: 18, // kart yuvarlaklığı
+                  backgroundColor: "#fff",
+                  borderRadius: 18,
 
-                  marginHorizontal: 2, // yana biraz boşluk
+                  marginHorizontal: 2,
                 }}
               >
                 <View
@@ -228,7 +239,7 @@ const Home = () => {
                       name={item.name}
                       description={item.description}
                       image={{ uri: item.imageUrl }}
-                      onPress={() => console.log(item.name, "tıklandı")}
+                      onPress={() => console.log(item.name, "tiklandi")}
                     />
                   </View>
                   <TouchableOpacity
@@ -256,10 +267,90 @@ const Home = () => {
             )}
           />
         </ThemedCard>
+
+        <ThemedCard
+          style={{
+            width: "100%",
+            marginTop: 20,
+            borderRadius: 20,
+            paddingVertical: 18,
+            paddingHorizontal: 20,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
+            }}
+          >
+            <ThemedTitle style={{ fontSize: 20 }}>Goz At</ThemedTitle>
+            <TouchableOpacity
+              onPress={() => router.push("/(dashboard)/education")}
+            >
+              <ThemedText
+                style={{
+                  color: theme.thirdBg,
+                  fontWeight: "600",
+                }}
+              >
+                Tum egitimler
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+
+          <ThemedText style={{ color: "#888", marginBottom: 14 }}>
+            Top egitimler
+          </ThemedText>
+
+          {topTrainings.map((item, index) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() =>
+                router.push({
+                  pathname: "/(dashboard)/education/module",
+                  params: { id: item.id },
+                })
+              }
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: theme.secondBg,
+                borderRadius: 16,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                marginBottom: index === topTrainings.length - 1 ? 0 : 10,
+                borderWidth: 1,
+                borderColor:
+                  selectedTheme === "dark"
+                    ? "rgba(255,255,255,0.12)"
+                    : "rgba(0,0,0,0.05)",
+              }}
+              activeOpacity={0.85}
+            >
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <ThemedTitle style={{ fontSize: 16 }}>
+                  {item.title}
+                </ThemedTitle>
+                <ThemedText style={{ color: "#888", marginTop: 4 }}>
+                  {item.duration}  Egitim Modulu
+                </ThemedText>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={theme.thirdBg}
+              />
+            </TouchableOpacity>
+          ))}
+        </ThemedCard>
+        </ScrollView>
       </ThemedView>
 
-      {/* Loading Overlay - En üstte, tüm ekranı kaplar */}
-      {loading && <Loading>Bitkiler yükleniyor...</Loading>}
+      {/* Loading overlay */}
+      {loading && <Loading>Bitkiler yukleniyor...</Loading>}
     </>
   );
 };
@@ -267,3 +358,14 @@ const Home = () => {
 export default Home;
 
 const styles = StyleSheet.create({});
+
+
+
+
+
+
+
+
+
+
+

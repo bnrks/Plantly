@@ -8,7 +8,15 @@ const ThemedText = ({ style, children, ...props }) => {
 
   return (
     <Text
-      style={[{ color: theme.text, fontSize: 17, alignSelf: "start" }, style]}
+      style={[
+        {
+          color: theme.text,
+          fontSize: 17,
+          alignSelf: "flex-start",
+          fontFamily: "CommeRegular",
+        },
+        style,
+      ]}
       {...props}
     >
       {children}

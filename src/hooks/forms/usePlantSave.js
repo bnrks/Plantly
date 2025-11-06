@@ -40,7 +40,7 @@ export const usePlantSave = (
       showSuccess("Başarılı", "Bitki eklendi.", () => {
         hideAlert();
         router.replace({
-          pathname: "/myPlants",
+          pathname: "/(dashboard)/(tabs)/plants",
           params: { refresh: "true" },
         });
       });

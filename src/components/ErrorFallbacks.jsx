@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import ThemedView from "../../components/ThemedView";
 import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
+import ThemedTitle from "../../components/ThemedTitle";
 import ThemedCard from "../../components/ThemedCard";
 import { Colors } from "../../constants/Colors";
 import { ThemeContext } from "../context/ThemeContext";
@@ -80,7 +81,9 @@ export const PlantErrorFallback = ({ error, onRetry, onReset }) => {
           />
           <ThemedButton
             title="Bitkilerim"
-            onPress={() => router.replace("/(dashboard)/(tabs)/myPlants")}
+            onPress={() =>
+              router.replace("/(dashboard)/(tabs)/plants")
+            }
             style={[styles.button, styles.secondaryButton]}
             textStyle={{ color: theme.text }}
             icon={<Ionicons name="leaf" size={18} color={theme.text} />}
@@ -211,7 +214,16 @@ const styles = StyleSheet.create({
 
 // Dashboard Error Fallback
 export function DashboardErrorFallback({ error, resetError, retryFunction }) {
-  const { theme } = useContext(ThemeContext);
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
+  const themedColors = {
+    background: theme.background,
+    card: theme.secondBg,
+    error: theme.danger ?? Colors.warning,
+    text: theme.text,
+    textSecondary: selectedTheme === "dark" ? "#B0B0B0" : "#666666",
+    border: selectedTheme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)",
+  };
   const router = useRouter();
 
   const handleGoHome = () => {
@@ -229,27 +241,27 @@ export function DashboardErrorFallback({ error, resetError, retryFunction }) {
 
   return (
     <ThemedView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[styles.container, { backgroundColor: themedColors.background }]}
     >
       <ThemedView
-        style={[styles.content, { backgroundColor: theme.colors.card }]}
+        style={[styles.content, { backgroundColor: themedColors.card }]}
       >
-        <ThemedText style={[styles.icon, { color: theme.colors.error }]}>
+        <ThemedText style={[styles.icon, { color: themedColors.error }]}>
           🏠
         </ThemedText>
 
-        <ThemedTitle style={[styles.title, { color: theme.colors.error }]}>
+        <ThemedTitle style={[styles.title, { color: themedColors.error }]}>
           Dashboard Hatası
         </ThemedTitle>
 
-        <ThemedText style={[styles.message, { color: theme.colors.text }]}>
+        <ThemedText style={[styles.message, { color: themedColors.text }]}>
           Dashboard yüklenirken bir sorun oluştu. Ana sayfaya dönerek devam
           edebilirsiniz.
         </ThemedText>
 
         {__DEV__ && (
           <ThemedText
-            style={[styles.debugText, { color: theme.colors.textSecondary }]}
+            style={[styles.debugText, { color: themedColors.textSecondary }]}
           >
             Hata: {error?.message || "Bilinmeyen hata"}
           </ThemedText>
@@ -266,11 +278,11 @@ export function DashboardErrorFallback({ error, resetError, retryFunction }) {
             onPress={handleRestart}
             style={[
               styles.secondaryButton,
-              { borderColor: theme.colors.border },
+              { borderColor: themedColors.border },
             ]}
           >
             <ThemedText
-              style={[styles.buttonText, { color: theme.colors.text }]}
+              style={[styles.buttonText, { color: themedColors.text }]}
             >
               🔄 Yeniden Dene
             </ThemedText>
@@ -283,7 +295,16 @@ export function DashboardErrorFallback({ error, resetError, retryFunction }) {
 
 // Auth Error Fallback
 export function AuthErrorFallback({ error, resetError, retryFunction }) {
-  const { theme } = useContext(ThemeContext);
+  const { theme: selectedTheme } = useContext(ThemeContext);
+  const theme = Colors[selectedTheme] ?? Colors.light;
+  const themedColors = {
+    background: theme.background,
+    card: theme.secondBg,
+    error: theme.danger ?? Colors.warning,
+    text: theme.text,
+    textSecondary: selectedTheme === "dark" ? "#B0B0B0" : "#666666",
+    border: selectedTheme === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.1)",
+  };
   const router = useRouter();
 
   const handleGoLogin = () => {
@@ -300,26 +321,26 @@ export function AuthErrorFallback({ error, resetError, retryFunction }) {
 
   return (
     <ThemedView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[styles.container, { backgroundColor: themedColors.background }]}
     >
       <ThemedView
-        style={[styles.content, { backgroundColor: theme.colors.card }]}
+        style={[styles.content, { backgroundColor: themedColors.card }]}
       >
-        <ThemedText style={[styles.icon, { color: theme.colors.error }]}>
+        <ThemedText style={[styles.icon, { color: themedColors.error }]}>
           🔐
         </ThemedText>
 
-        <ThemedTitle style={[styles.title, { color: theme.colors.error }]}>
+        <ThemedTitle style={[styles.title, { color: themedColors.error }]}>
           Giriş Hatası
         </ThemedTitle>
 
-        <ThemedText style={[styles.message, { color: theme.colors.text }]}>
+        <ThemedText style={[styles.message, { color: themedColors.text }]}>
           Giriş ekranı yüklenirken bir sorun oluştu. Lütfen tekrar deneyin.
         </ThemedText>
 
         {__DEV__ && (
           <ThemedText
-            style={[styles.debugText, { color: theme.colors.textSecondary }]}
+            style={[styles.debugText, { color: themedColors.textSecondary }]}
           >
             Hata: {error?.message || "Bilinmeyen hata"}
           </ThemedText>
@@ -336,11 +357,11 @@ export function AuthErrorFallback({ error, resetError, retryFunction }) {
             onPress={handleRestart}
             style={[
               styles.secondaryButton,
-              { borderColor: theme.colors.border },
+              { borderColor: themedColors.border },
             ]}
           >
             <ThemedText
-              style={[styles.buttonText, { color: theme.colors.text }]}
+              style={[styles.buttonText, { color: themedColors.text }]}
             >
               🔄 Yeniden Dene
             </ThemedText>

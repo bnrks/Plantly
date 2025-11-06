@@ -112,7 +112,10 @@ export default function EditPlant() {
         notes,
       });
       Alert.alert("Başarılı", "Bitki güncellendi.");
-      router.replace({ pathname: "/myPlants", params: { refresh: "true" } });
+      router.replace({
+        pathname: "/(dashboard)/(tabs)/plants",
+        params: { refresh: "true" },
+      });
     } catch {
       Alert.alert("Hata", "Güncelleme sırasında bir sorun oluştu.");
       setSaving(false);

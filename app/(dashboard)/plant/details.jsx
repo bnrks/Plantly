@@ -49,7 +49,7 @@ export default function PlantDetails() {
     deletePlant(userid, id)
       .then(() => {
         router.push({
-          pathname: "/myPlants",
+          pathname: "/(dashboard)/(tabs)/plants",
           params: { refresh: "true" },
         });
       })
