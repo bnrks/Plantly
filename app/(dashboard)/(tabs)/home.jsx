@@ -28,6 +28,23 @@ const Home = () => {
   const [initialFetched, setInitialFetched] = useState(false);
   const router = useRouter();
   const notificationCount = plantss.length;
+  const topTrainings = [
+    {
+      id: "starter",
+      title: "Başlangıç Rehberi",
+      duration: "15 dk",
+    },
+    {
+      id: "watering",
+      title: "Sulama Akademisi",
+      duration: "10 dk",
+    },
+    {
+      id: "diagnosis",
+      title: "Hastalık Dedektifi",
+      duration: "18 dk",
+    },
+  ];
   const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
@@ -94,7 +111,8 @@ const Home = () => {
         <ThemedCard
           style={{
             height: "20%",
-            width: "100%",
+            width: "55%",
+            alignSelf: "flex-start",
             justifyContent: "center",
             paddingHorizontal: 20,
             borderRadius: 20,
@@ -107,7 +125,7 @@ const Home = () => {
               alignItems: "center",
             }}
           >
-            <View style={{ width: "80%" }}>
+            <View style={{ width: "100%" }}>
               <ThemedTitle style={{ fontSize: 20 }}>
                 Merhaba, {username}
               </ThemedTitle>
