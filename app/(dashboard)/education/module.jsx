@@ -1,26 +1,23 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useContext, useMemo } from "react";
-import { StyleSheet, View } from "react-native";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { StyleSheet, View, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
-import ThemedButton from "../../../components/ThemedButton";
 import BackButton from "../../../components/BackButton";
 import Header from "../../../components/Header";
 import ScreenContainer from "../../../components/ScreenContainer";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
+import EducationModuleSkeleton from "../../../components/skeletons/EducationModuleSkeleton";
+import { fetchEducationModules } from "../../../src/services/firestoreService";
 
-const moduleDescriptions = {
-  starter:
-    "Bitki bakiminin temel adimlarini ogrenmek icin hazirlanan ozet.",
-  watering:
-    "Sulama sikligi, su kalitesi ve toprak nemini izleme ipuclari.",
+const fallbackDescriptions = {
+  starter: "Bitki bakiminin temel adimlarini ogrenmek icin hazirlanan ozet.",
+  watering: "Sulama sikligi, su kalitesi ve toprak nemini izleme ipuclari.",
   light: "Bitkiler icin dogru konumlandirma ve yapay isik kullanimi.",
-  diagnosis:
-    "Yaprak, govde ve kok belirtilerinden yola cikarak erken teshis.",
-  seasonal:
-    "Mevsim gecislerinde yapilacak bakim, budama ve ortam ayarlari.",
+  diagnosis: "Yaprak, govde ve kok belirtilerinden yola cikarak erken teshis.",
+  seasonal: "Mevsim gecislerinde yapilacak bakim, budama ve ortam ayarlari.",
 };
 
 export default function EducationModuleScreen() {
@@ -28,32 +25,87 @@ export default function EducationModuleScreen() {
   const params = useLocalSearchParams();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
+  const [loading, setLoading] = useState(true);
+  const [moduleData, setModuleData] = useState(null);
 
   const moduleId = params.id ?? "starter";
-  const description =
-    moduleDescriptions[moduleId] ??
-    "Bu modul icin ayrintilar yakinda eklenecek. Simdilik ozet bilgileri inceleyebilirsin.";
 
   const accent = useMemo(
     () => (selectedTheme === "dark" ? theme.title : theme.thirdBg),
     [selectedTheme, theme]
   );
 
+  useEffect(() => {
+    const loadModule = async () => {
+      try {
+        const modules = await fetchEducationModules();
+        const current =
+          modules?.find((m) => m.id === moduleId) ||
+          modules?.find((m) => m.moduleName === moduleId);
+
+        if (current) {
+          setModuleData({
+            title: current.moduleName || "Egitim Modulu",
+            description:
+              current.content ||
+              fallbackDescriptions[moduleId] ||
+              "Bu modul icin ayrintilar yakinda eklenecek.",
+            banner: current.bannerLink ? { uri: current.bannerLink } : null,
+          });
+        } else {
+          setModuleData({
+            title: "Egitim materyalleri yakinda",
+            description:
+              fallbackDescriptions[moduleId] ||
+              "Bu modul icin ayrintilar yakinda eklenecek. Simdilik ozet bilgileri inceleyebilirsin.",
+            banner: null,
+          });
+        }
+      } catch (error) {
+        console.warn("Modul verisi cekilirken hata:", error);
+        setModuleData({
+          title: "Egitim materyalleri yakinda",
+          description:
+            fallbackDescriptions[moduleId] ||
+            "Modul icerigini hazirliyoruz. Su an icin ozet bilgileri inceleyebilirsin.",
+          banner: null,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadModule();
+  }, [moduleId]);
+
+  if (loading) {
+    return <EducationModuleSkeleton />;
+  }
+
+  if (!moduleData) {
+    return null;
+  }
+
   return (
     <ScreenContainer>
       <View style={styles.topBar}>
         <BackButton />
       </View>
-      <Header style={styles.headerImage} />
+      {moduleData.banner ? (
+        <Image source={moduleData.banner} style={styles.bannerImage} />
+      ) : (
+        <Header style={styles.headerImage} />
+      )}
 
       <View
         style={[
           styles.hero,
           {
-            backgroundColor:
+            backgroundColor: theme.secondBg,
+            borderColor:
               selectedTheme === "dark"
-                ? "rgba(255,255,255,0.12)"
-                : theme.fourthBg,
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.06)",
           },
         ]}
       >
@@ -63,9 +115,14 @@ export default function EducationModuleScreen() {
           color={accent}
           style={{ marginBottom: 12 }}
         />
-        <ThemedTitle style={styles.heroTitle}>Egitim materyalleri yakinda</ThemedTitle>
-        <ThemedText style={[styles.heroSubtitle, { color: theme.text }]}>
-          Modul iceriğini hazirliyoruz. Su an icin asagidaki ozetle calismaya baslayabilirsin.
+        <ThemedTitle style={styles.heroTitle}>
+          {moduleData.title || "Egitim materyalleri yakinda"}
+        </ThemedTitle>
+        <ThemedText
+          style={[styles.heroSubtitle, { color: theme.text }]}
+          numberOfLines={0}
+        >
+          {moduleData.description}
         </ThemedText>
       </View>
 
@@ -81,22 +138,12 @@ export default function EducationModuleScreen() {
           },
         ]}
       >
-        <ThemedTitle style={styles.cardTitle}>Bu modulde neler var?</ThemedTitle>
-        <ThemedText style={[styles.cardText, { color: theme.text }]}>
-          {description}
+        <ThemedText
+          style={[styles.cardText, { color: theme.text }]}
+          numberOfLines={0}
+        >
+          {moduleData.description}
         </ThemedText>
-
-        <ThemedButton
-          title="Bildirim al"
-          onPress={() => router.push("/(dashboard)/(tabs)/chat")}
-          style={[
-            styles.notifyButton,
-            {
-              backgroundColor: accent,
-            },
-          ]}
-          textStyle={{ color: theme.background }}
-        />
       </View>
     </ScreenContainer>
   );
@@ -113,19 +160,27 @@ const styles = StyleSheet.create({
     marginTop: 0,
     marginBottom: 16,
   },
+  bannerImage: {
+    width: "100%",
+    height: 140,
+    borderRadius: 16,
+    marginBottom: 16,
+    resizeMode: "cover",
+  },
   hero: {
     borderRadius: 24,
     padding: 20,
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 20,
+    borderWidth: 1,
   },
   heroTitle: {
     fontSize: 20,
     marginBottom: 8,
-    textAlign: "center",
+    textAlign: "left",
   },
   heroSubtitle: {
-    textAlign: "center",
+    textAlign: "justify",
     lineHeight: 20,
   },
   card: {
@@ -141,8 +196,6 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 14,
     lineHeight: 20,
-  },
-  notifyButton: {
-    marginTop: 20,
+    textAlign: "justify",
   },
 });

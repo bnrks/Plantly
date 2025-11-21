@@ -12,8 +12,8 @@ import ThemedCard from "../../../components/ThemedCard";
 import ThemedTitle from "../../../components/ThemedTitle";
 import PlantCard from "../../../components/PlantCard";
 import ThemedButton from "../../../components/ThemedButton";
-import Loading from "../../../components/Loading";
 import ScreenContainer from "../../../components/ScreenContainer";
+import PlantsSkeleton from "../../../components/skeletons/PlantsSkeleton";
 
 const Plants = () => {
   const router = useRouter();
@@ -46,7 +46,7 @@ const Plants = () => {
   }, [refresh, router, userid]);
 
   if (loading) {
-    return <Loading>Bitkiler yukleniyor...</Loading>;
+    return <PlantsSkeleton />;
   }
 
   return (

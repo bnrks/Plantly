@@ -10,7 +10,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -27,6 +26,7 @@ import {
 } from "../../../src/services/firestoreService";
 import { Colors } from "../../../constants/Colors";
 import Header from "../../../components/Header";
+import EditPlantSkeleton from "../../../components/skeletons/EditPlantSkeleton";
 
 export default function EditPlant() {
   const router = useRouter();
@@ -123,14 +123,7 @@ export default function EditPlant() {
   };
 
   if (loading) {
-    return (
-      <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.accent} />
-        <ThemedText style={styles.loadingText}>
-          Bitki bilgileri yükleniyor...
-        </ThemedText>
-      </ThemedView>
-    );
+    return <EditPlantSkeleton />;
   }
 
   return (
@@ -355,15 +348,6 @@ export default function EditPlant() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
   },
   content: {
     flex: 1,

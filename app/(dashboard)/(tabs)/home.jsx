@@ -13,10 +13,10 @@ import { getAuth } from "firebase/auth";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
-import Loading from "../../../components/Loading";
 import PlantCard from "../../../components/PlantCard";
 import Header from "../../../components/Header";
 import ScreenContainer from "../../../components/ScreenContainer";
+import HomeSkeleton from "../../../components/skeletons/HomeSkeleton";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { AuthContext } from "../../../src/context/AuthContext";
@@ -90,6 +90,10 @@ const Home = () => {
       console.error("Sulama guncelleme hatasi:", e);
     }
   };
+
+  if (loading) {
+    return <HomeSkeleton />;
+  }
 
   return (
     <>
@@ -217,9 +221,6 @@ const Home = () => {
           ))}
         </ThemedCard>
       </ScreenContainer>
-
-      {/* Loading overlay */}
-      {loading && <Loading>Bitkiler yukleniyor...</Loading>}
     </>
   );
 };

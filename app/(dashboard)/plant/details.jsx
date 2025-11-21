@@ -19,7 +19,7 @@ import { useContext } from "react";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { fetchPlantById } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
-import Loading from "../../../components/Loading";
+import PlantDetailsSkeleton from "../../../components/skeletons/PlantDetailsSkeleton";
 import { deletePlant } from "../../../src/services/firestoreService";
 import Header from "../../../components/Header";
 export default function PlantDetails() {
@@ -90,7 +90,7 @@ export default function PlantDetails() {
     notes: plant.notes || ["Not yok."],
   };
   if (loading) {
-    return <Loading>Yükleniyor</Loading>;
+    return <PlantDetailsSkeleton />;
   }
   return (
     <ThemedView style={styles.container}>

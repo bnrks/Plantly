@@ -1,4 +1,4 @@
-﻿// app/(dashboard)/_layout.jsx
+// app/(dashboard)/_layout.jsx
 import { Stack, useRouter } from "expo-router";
 import { useContext, useEffect } from "react";
 import { AuthContext } from "../../src/context/AuthContext";
@@ -10,14 +10,14 @@ export default function DashboardLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    // Loading bittikten sonra user yoksa login'e yönlendir
+    // Loading bittikten sonra user yoksa login'e yonlendir
     if (!loading && !user) {
-      console.log("User yok, login sayfasına yönlendiriliyor");
+      console.log("User yok, login sayfasina yonlendiriliyor");
       router.replace("/login");
     }
   }, [user, loading, router]);
 
-  // Loading durumunda veya user yoksa boş component döndür
+  // Loading durumunda veya user yoksa bos component dondur
   if (loading || !user) {
     return null;
   }
@@ -33,17 +33,20 @@ export default function DashboardLayout() {
       }}
     >
       <Stack screenOptions={{ headerShown: false }}>
-        {/* 1. Önce tüm tab'ları gösteren grup */}
+        {/* 1. Once tum tab'lari gosteren grup */}
         <Stack.Screen name="(tabs)" />
 
-        {/* 2. Sonra detay ekranı */}
+        {/* 2. Sonra detay ekrani */}
         <Stack.Screen name="plant/details" options={{ title: "Detay" }} />
-        <Stack.Screen name="education" options={{ title: "Eğitimler" }} />
+        <Stack.Screen
+          name="education/index"
+          options={{ title: "Egitimler" }}
+        />
         <Stack.Screen
           name="education/module"
-          options={{ title: "Eğitim Modülü" }}
+          options={{ title: "Egitim Modulu" }}
         />
-        <Stack.Screen name="profile" options={{ title: "Profil" }} />
+        <Stack.Screen name="profile/index" options={{ title: "Profil" }} />
       </Stack>
     </ErrorBoundary>
   );

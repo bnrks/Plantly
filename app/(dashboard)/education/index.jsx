@@ -1,4 +1,4 @@
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
   Image,
@@ -15,6 +15,8 @@ import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
 import BackButton from "../../../components/BackButton";
 import ScreenContainer from "../../../components/ScreenContainer";
+import EducationListSkeleton from "../../../components/skeletons/EducationListSkeleton";
+import { fetchEducationModules } from "../../../src/services/firestoreService";
 
 const { width } = Dimensions.get("window");
 
@@ -62,6 +64,8 @@ export default function EducationScreen() {
   const router = useRouter();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
+  const [loading, setLoading] = useState(true);
+  const [modules, setModules] = useState([]);
 
   const accentColor = useMemo(
     () => (selectedTheme === "dark" ? theme.title : theme.thirdBg),
@@ -69,6 +73,41 @@ export default function EducationScreen() {
   );
 
   const cardWidth = useMemo(() => width - 32, []);
+
+  useEffect(() => {
+    const fallbackImages = MODULES.map((m) => m.image);
+
+    const loadModules = async () => {
+      try {
+        const fetched = await fetchEducationModules();
+        const source = fetched && fetched.length > 0 ? fetched : MODULES;
+
+        const normalized = source.map((item, idx) => ({
+          id: item.id || item.moduleName || `module-${idx}`,
+          title: item.moduleName || item.title || "Egitim Modulu",
+          description: item.content || item.description || "",
+          duration: item.duration || "",
+          image:
+            item.bannerLink && item.bannerLink.length > 0
+              ? { uri: item.bannerLink }
+              : item.image || fallbackImages[idx % fallbackImages.length],
+        }));
+
+        setModules(normalized);
+      } catch (error) {
+        console.warn("Moduller cekilirken hata olustu, fallback kullaniliyor:", error);
+        setModules(MODULES);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadModules();
+  }, []);
+
+  if (loading) {
+    return <EducationListSkeleton />;
+  }
 
   const handleModulePress = (moduleId) =>
     router.push({
@@ -104,14 +143,14 @@ export default function EducationScreen() {
         </View>
 
         <FlatList
-          data={MODULES}
+          data={modules}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.listContent,
             { paddingBottom: 32, alignItems: "center" },
           ]}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <TouchableOpacity
               onPress={() => handleModulePress(item.id)}
               activeOpacity={0.9}
@@ -145,17 +184,19 @@ export default function EducationScreen() {
                     </ThemedText>
                   </View>
 
-                  <View style={styles.durationTag}>
-                    <Ionicons
-                      name="time-outline"
-                      size={16}
-                      color={accentColor}
-                      style={{ marginRight: 4 }}
-                    />
-                    <ThemedText style={[styles.durationText, { color: accentColor }]}>
-                      {item.duration}
-                    </ThemedText>
-                  </View>
+                  {item.duration ? (
+                    <View style={styles.durationTag}>
+                      <Ionicons
+                        name="time-outline"
+                        size={16}
+                        color={accentColor}
+                        style={{ marginRight: 4 }}
+                      />
+                      <ThemedText style={[styles.durationText, { color: accentColor }]}>
+                        {item.duration}
+                      </ThemedText>
+                    </View>
+                  ) : null}
                 </View>
               </View>
             </TouchableOpacity>

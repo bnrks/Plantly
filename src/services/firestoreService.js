@@ -219,3 +219,39 @@ export async function updateThreadTitle(userId, threadId, title) {
     throw error;
   }
 }
+
+
+/**
+ * Firestore'da modules koleksiyonundan egitim modullerini ceker.
+ * setModules ve setLoading verilirse state'leri otomatik gunceller, ayrica modulleri dondurur.
+ */
+export async function fetchEducationModules(setModules, setLoading) {
+  try {
+    setLoading?.(true);
+
+    const snapshot = await getDocs(collection(db, "modules"));
+    const modules = snapshot.docs.map((docSnap) => {
+      const data = docSnap.data() || {};
+      return {
+        id: docSnap.id,
+        moduleName: data.module_name ?? "",
+        content: data.content ?? "",
+        bannerLink: data.banner_link ?? "",
+      };
+    });
+
+    if (setModules) {
+      setModules(modules);
+    }
+
+    return modules;
+  } catch (error) {
+    console.error("Egitim modulleri cekilirken hata olustu:", error);
+    if (setModules) {
+      setModules([]);
+    }
+    throw error;
+  } finally {
+    setLoading?.(false);
+  }
+}
