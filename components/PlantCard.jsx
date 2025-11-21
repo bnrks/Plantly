@@ -19,7 +19,9 @@ const PlantCard = ({ name, description, image, onPress, style }) => {
 
       {/* SAĞDA İSİM + AÇIKLAMA */}
       <View style={styles.textContainer}>
-        <ThemedTitle style={(theme.title, styles.name)}>{name}</ThemedTitle>
+        <ThemedTitle style={[styles.name, { color: theme.title }]}>
+          {name}
+        </ThemedTitle>
         <ThemedText style={styles.description}>{description}</ThemedText>
       </View>
     </TouchableOpacity>

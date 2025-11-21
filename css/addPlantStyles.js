@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export const addPlantStyles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 10 },
+  container: { flex: 1, paddingTop: 24, paddingHorizontal: 20 },
   content: { padding: 20 },
   header: {
     fontSize: 28,

@@ -1,12 +1,12 @@
 import { StyleSheet, View, Image } from "react-native";
 import { useContext } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import ThemedView from "../../../components/ThemedView";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
 import Header from "../../../components/Header";
 import BackButton from "../../../components/BackButton";
+import ScreenContainer from "../../../components/ScreenContainer";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
 
@@ -45,13 +45,8 @@ export default function ProfileScreen() {
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   return (
-    <ThemedView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      safe
-    >
-      <View style={styles.topBar}>
-        <BackButton />
-      </View>
+    <ScreenContainer scrollable topSpacing={24} bottomSpacing={80}>
+      <BackButton style={styles.backButton} />
       <Header style={styles.headerImage} />
 
       <ThemedCard
@@ -156,7 +151,7 @@ export default function ProfileScreen() {
           </View>
         ))}
       </ThemedCard>
-    </ThemedView>
+    </ScreenContainer>
   );
 }
 
@@ -190,20 +185,14 @@ function SummaryItem({ icon, label, value, color }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 16,
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginBottom: 8,
+  backButton: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 10,
   },
   headerImage: {
-    marginTop: 0,
+    marginTop: 16,
     marginBottom: 12,
   },
   profileCard: {
@@ -211,6 +200,7 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
     paddingHorizontal: 24,
     borderRadius: 24,
+    marginTop: 8,
   },
   avatarWrapper: {
     width: 82,
@@ -232,6 +222,7 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 14,
     marginBottom: 16,
+    textAlign: "center",
   },
   metaRow: {
     flexDirection: "row",
