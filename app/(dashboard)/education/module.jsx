@@ -2,12 +2,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useContext, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
 import ThemedButton from "../../../components/ThemedButton";
 import BackButton from "../../../components/BackButton";
 import Header from "../../../components/Header";
+import ScreenContainer from "../../../components/ScreenContainer";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
 
@@ -40,7 +40,7 @@ export default function EducationModuleScreen() {
   );
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: theme.background }]}>
+    <ScreenContainer>
       <View style={styles.topBar}>
         <BackButton />
       </View>
@@ -98,16 +98,11 @@ export default function EducationModuleScreen() {
           textStyle={{ color: theme.background }}
         />
       </View>
-    </ThemedView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
