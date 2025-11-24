@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export const addPlantStyles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 24, paddingHorizontal: 20 },
+  container: { flex: 1, paddingHorizontal: 20 },
   content: { padding: 20 },
   header: {
     fontSize: 28,
@@ -36,19 +36,22 @@ export const addPlantStyles = StyleSheet.create({
     borderRadius: 12,
     padding: 32,
     alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "#F8FDF6",
     marginTop: 8,
   },
   photoText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     marginTop: 8,
     color: "#A0C878",
+    textAlign: "center",
   },
   photoSubtext: {
     fontSize: 14,
     opacity: 0.7,
     marginTop: 4,
+    textAlign: "center",
   },
   previewContainer: {
     position: "relative",
@@ -141,12 +144,9 @@ export const addPlantStyles = StyleSheet.create({
     paddingTop: 16,
   },
   saveButton: {
-    width: "90%",
+    width: "100%",
     marginBottom: 60,
-    position: "absolute",
-    bottom: 30,
-    left: 20,
-    right: 20,
+    borderRadius: 16,
   },
   // Not ekleme satırı
   noteInputRow: {

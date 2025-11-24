@@ -29,6 +29,7 @@ import { useSpeciesSuggestions } from "../../../src/hooks/forms/useSpeciesSugges
 import { useNotes } from "../../../src/hooks/forms/useNotes";
 import { usePlantForm } from "../../../src/hooks/forms/usePlantForm";
 import { usePlantSave } from "../../../src/hooks/forms/usePlantSave";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AddPlantScreen({}) {
   const { user } = useContext(AuthContext);
@@ -37,6 +38,7 @@ export default function AddPlantScreen({}) {
     useCustomAlert();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
+  const insets = useSafeAreaInsets();
 
   // User yoksa erken return
   if (!user) {
@@ -125,8 +127,12 @@ export default function AddPlantScreen({}) {
   };
 
   return (
-    <ThemedView style={styles.container} safe={true}>
+    <ThemedView
+      style={[styles.container, { paddingTop: insets.top + 16 }]}
+      safe={true}
+    >
       <Header />
+      <ThemedTitle style={styles.header}>Yeni Bitki Ekle</ThemedTitle>
       <ThemedCard
         style={{
           maxHeight: "70%",
@@ -139,22 +145,11 @@ export default function AddPlantScreen({}) {
           contentContainerStyle={styles.content}
           onScrollBeginDrag={() => hideSuggestions()}
         >
-          <ThemedTitle style={styles.header}>Bitki Ekle</ThemedTitle>
-          <ThemedText style={styles.subtitle}>
-            Yeni bitkini ekle ve takip et
-          </ThemedText>
+          
+          
 
           {/* Fotoğraf Ekleme + */}
-          <ThemedText style={styles.label}>
-            <Ionicons
-              name="camera"
-              size={16}
-              color={theme.thirdBg}
-              style={{ marginRight: 13 }}
-            />
-            Fotoğraf
-          </ThemedText>
-
+         
           {/* Fotoğraf varsa fotoğrafı göster, yoksa ekleme alanını göster */}
           {photoUri ? (
             <Pressable
@@ -436,12 +431,19 @@ export default function AddPlantScreen({}) {
         </ScrollView>
       </ThemedCard>
       {/* Kaydet Butonu */}
-      <ThemedButton
-        title={isSaving ? "Kaydediliyor…" : "Kaydet"}
-        onPress={onSave}
-        style={[styles.saveButton, isSaving && { opacity: 0.6 }]}
-        disabled={isSaving}
-      />
+      <View style={{ paddingHorizontal: 20, paddingBottom: 24, paddingTop: 8 }}>
+        <ThemedButton
+          title={isSaving ? "Kaydediliyor…" : "Kaydet"}
+          onPress={onSave}
+          style={[
+            styles.saveButton,
+            isSaving && { opacity: 0.6 },
+            { backgroundColor: theme.thirdBg },
+          ]}
+          textStyle={{ fontSize: 18, fontWeight: "700" }}
+          disabled={isSaving}
+        />
+      </View>
 
       <CustomAlert
         visible={alertConfig.visible}

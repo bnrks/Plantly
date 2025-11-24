@@ -30,15 +30,15 @@ const HomeSkeleton = () => {
       <ThemedCard style={styles.listCard}>
         <SkeletonBox width="45%" height={18} style={styles.cardTitle} />
         <SkeletonBox width="70%" height={14} style={styles.cardDescription} />
-        <View style={styles.plantList}>
+        <View style={styles.plantListHorizontal}>
           {skeletonPlants.map((key) => (
-            <View style={styles.plantRow} key={`plant-skeleton-${key}`}>
-              <SkeletonBox width={72} height={72} borderRadius={16} />
-              <View style={styles.plantText}>
+            <View style={styles.plantCard} key={`plant-skeleton-${key}`}>
+              <SkeletonBox width="100%" height={110} />
+              <View style={styles.plantInfo}>
                 <SkeletonBox width="70%" height={16} />
                 <SkeletonBox width="50%" height={12} />
+                <SkeletonBox width="40%" height={12} />
               </View>
-              <SkeletonBox width={42} height={42} borderRadius={14} />
             </View>
           ))}
         </View>
@@ -49,28 +49,29 @@ const HomeSkeleton = () => {
           <SkeletonBox width="50%" height={18} />
           <SkeletonBox width={80} height={14} />
         </View>
-        <SkeletonBox
-          width="35%"
-          height={12}
-          style={styles.discoverySubtitle}
-        />
-        <View style={styles.trainingList}>
-          {skeletonTrainings.map((key) => (
-            <View style={styles.trainingRow} key={`training-skeleton-${key}`}>
-              <View style={styles.trainingText}>
-                <SkeletonBox width="70%" height={16} />
-                <SkeletonBox width="50%" height={12} />
-              </View>
-              <SkeletonBox width={18} height={18} borderRadius={9} />
-            </View>
-          ))}
-        </View>
+        <FlatListLikeRow data={skeletonTrainings} />
       </ThemedCard>
     </ScreenContainer>
   );
 };
 
 export default HomeSkeleton;
+
+const FlatListLikeRow = ({ data }) => {
+  return (
+    <View style={styles.educationList}>
+      {data.map((key) => (
+        <View style={styles.educationCard} key={`edu-skeleton-${key}`}>
+          <SkeletonBox width="100%" height={110} />
+          <View style={styles.educationInfo}>
+            <SkeletonBox width="70%" height={16} />
+            <SkeletonBox width="90%" height={12} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   homeContent: {
@@ -102,19 +103,21 @@ const styles = StyleSheet.create({
   cardDescription: {
     marginHorizontal: 20,
     marginTop: 10,
+    marginBottom: 10,
   },
-  plantList: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    gap: 12,
-  },
-  plantRow: {
+  plantListHorizontal: {
     flexDirection: "row",
-    alignItems: "center",
+    paddingHorizontal: 20,
     gap: 12,
   },
-  plantText: {
-    flex: 1,
+  plantCard: {
+    width: 200,
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.05)",
+  },
+  plantInfo: {
+    padding: 10,
     gap: 6,
   },
   discoveryCard: {
@@ -128,23 +131,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
   },
-  discoverySubtitle: {
-    marginBottom: 14,
-  },
-  trainingList: {
-    gap: 10,
-  },
-  trainingRow: {
+  educationList: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    gap: 12,
+    paddingTop: 8,
   },
-  trainingText: {
-    flex: 1,
+  educationCard: {
+    width: 200,
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.05)",
+  },
+  educationInfo: {
+    padding: 10,
     gap: 6,
-    paddingRight: 12,
   },
 });

@@ -10,7 +10,6 @@ const ThemedText = ({ style, children, ...props }) => {
     <Text
       style={[
         {
-          color: theme.text,
           fontSize: 17,
           alignSelf: "flex-start",
           fontFamily: "CommeRegular",

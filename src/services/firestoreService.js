@@ -10,8 +10,9 @@ import {
   updateDoc,
   serverTimestamp,
   deleteDoc,
+  increment,
 } from "firebase/firestore";
-import { ref, getDownloadURL } from "firebase/storage";
+import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 
 // Diğer Firebase işlevleri
 export const createUserDocument = async (user) => {
@@ -141,8 +142,9 @@ export async function updatePlantSuggestions(userId, plantId, suggestions) {
 export async function updatePlantWatering(userId, plantId) {
   const plantRef = doc(db, "users", userId, "plants", plantId);
   await updateDoc(plantRef, {
-    lastWatered: new Date(), // Son sulama zamanı (timestamp olarak kaydediyoruz)
-    updatedAt: serverTimestamp(), // Firestore'un kendi server zamanı
+    lastWatered: new Date(),
+    updatedAt: serverTimestamp(),
+    wateringCount: increment(1),
   });
 }
 
@@ -253,5 +255,104 @@ export async function fetchEducationModules(setModules, setLoading) {
     throw error;
   } finally {
     setLoading?.(false);
+  }
+}
+
+/**
+ * Kullanici profil bilgilerini ve en cok sulanan favori bitkiyi dondurur.
+ * favoritePlant: { id, name, description, imageUrl, wateringCount } veya null
+ */
+export async function fetchUserProfileWithFavorite(userId) {
+  if (!userId) {
+    console.warn("Kullanici ID yok, profil bilgisi cekilemiyor.");
+    return null;
+  }
+
+  try {
+    const userDocRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userDocRef);
+    const userData = userSnap.exists() ? userSnap.data() : {};
+
+    const plantsSnap = await getDocs(collection(db, "users", userId, "plants"));
+    let favoritePlant = null;
+    let plantCount = plantsSnap.size || 0;
+
+    plantsSnap.forEach((docSnap) => {
+      const data = docSnap.data() || {};
+      const wateringCount =
+        typeof data.wateringCount === "number" ? data.wateringCount : 0;
+
+      if (!favoritePlant || wateringCount > favoritePlant.wateringCount) {
+        favoritePlant = {
+          id: docSnap.id,
+          name: data.name || "",
+          description: data.description || "",
+          imageUrl: data.imageUrl || "",
+          wateringCount,
+        };
+      }
+    });
+
+    return {
+      displayName: userData.displayName || "",
+      email: userData.email || "",
+      wateringStreak: userData.wateringStreak ?? 0,
+      favoritePlant,
+      plantCount,
+      completedModules: userData.completedModules ?? null,
+      userPictureUrl: userData.userPictureUrl || "",
+    };
+  } catch (error) {
+    console.error("Kullanici profili cekilirken hata olustu:", error);
+    throw error;
+  }
+}
+
+/**
+ * Kullanicinin toplam bitki sayisini dondurur.
+ */
+export async function fetchUserPlantCount(userId) {
+  if (!userId) {
+    console.warn("Kullanici ID yok, bitki sayisi cekilemiyor.");
+    return 0;
+  }
+
+  try {
+    const plantsSnap = await getDocs(collection(db, "users", userId, "plants"));
+    return plantsSnap.size || 0;
+  } catch (error) {
+    console.error("Bitki sayisi cekilirken hata olustu:", error);
+    throw error;
+  }
+}
+
+/**
+ * Profil resmini Firebase Storage'a yukler, userPictureUrl olarak user dokumanina kaydeder ve download URL dondurur.
+ * @param {string} userId
+ * @param {string} fileUri - cihazdan secilen resim uri'si
+ */
+export async function uploadProfilePicture(userId, fileUri) {
+  if (!userId || !fileUri) {
+    console.warn("Profil resmi yuklenemedi: userId veya fileUri eksik.");
+    return null;
+  }
+
+  try {
+    const response = await fetch(fileUri);
+    const blob = await response.blob();
+
+    const storageRef = ref(storage, `users/profile_pictures/${userId}/avatar.jpg`);
+    await uploadBytes(storageRef, blob);
+
+    const downloadUrl = await getDownloadURL(storageRef);
+    await updateDoc(doc(db, "users", userId), {
+      userPictureUrl: downloadUrl,
+      updatedAt: serverTimestamp(),
+    });
+
+    return downloadUrl;
+  } catch (error) {
+    console.error("Profil resmi yuklenirken hata olustu:", error);
+    throw error;
   }
 }

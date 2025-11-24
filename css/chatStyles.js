@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 export const chatStyles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 16,
+    paddingTop: 0,
   },
   statusContainer: {
     paddingHorizontal: 16,

@@ -102,7 +102,6 @@ const Plants = () => {
           { backgroundColor: theme.thirdBg || "#537354" },
         ]}
         textStyle={{ fontSize: 18 }}
-        icon={<Ionicons name="add-circle" size={22} color="#ffffff" />}
       />
     </ScreenContainer>
   );
@@ -142,5 +141,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderRadius: 32,
     paddingVertical: 14,
+    position: "absolute",
+    bottom:-55,
+    alignSelf: "center",
+    width: "90%",
+    
   },
 });

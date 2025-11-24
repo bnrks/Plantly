@@ -1,5 +1,6 @@
-import { StyleSheet, View, Image } from "react-native";
-import { useContext } from "react";
+import { StyleSheet, View, Image, TouchableOpacity } from "react-native";
+import { useContext, useEffect, useState } from "react";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedTitle from "../../../components/ThemedTitle";
@@ -9,40 +10,89 @@ import BackButton from "../../../components/BackButton";
 import ScreenContainer from "../../../components/ScreenContainer";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
-
-const DUMMY_USER = {
-  name: "Deneme Kullanicisi",
-  email: "deneme@example.com",
-  joinedAt: "12 Mart 2024",
-  streak: 7,
-  favoritePlant: "Aloe Vera",
-  completedModules: 3,
-};
-
-const QUICK_ACTIONS = [
-  {
-    key: "editProfile",
-    title: "Profili Duzenle",
-    description: "Bilgilerini guncelle",
-    icon: "create-outline",
-  },
-  {
-    key: "notifications",
-    title: "Bildirim Ayarlari",
-    description: "Hatirlaticilari ozellestir",
-    icon: "notifications-outline",
-  },
-  {
-    key: "achievements",
-    title: "Basarilarim",
-    description: "Kazandigin rozetleri incele",
-    icon: "trophy-outline",
-  },
-];
+import {
+  fetchUserProfileWithFavorite,
+  fetchUserPlantCount,
+  uploadProfilePicture,
+} from "../../../src/services/firestoreService";
+import { AuthContext } from "../../../src/context/AuthContext";
+import ProfileSkeleton from "../../../components/skeletons/ProfileSkeleton";
 
 export default function ProfileScreen() {
+  const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
+
+  const [profile, setProfile] = useState({
+    displayName: "",
+    wateringStreak: 0,
+    plantCount: null,
+    favoritePlant: null,
+    completedModules: null,
+    userPictureUrl: "",
+  });
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user?.uid) return;
+      setLoading(true);
+      try {
+        const [profileData, plantCount] = await Promise.all([
+          fetchUserProfileWithFavorite(user.uid),
+          fetchUserPlantCount(user.uid),
+        ]);
+
+        if (profileData) {
+          setProfile((prev) => ({
+            ...prev,
+            ...profileData,
+            plantCount,
+          }));
+        }
+      } catch (error) {
+        console.error("Profil bilgisi cekilirken hata:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [user?.uid]);
+
+  const handleChangePhoto = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) return;
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+        aspect: [1, 1],
+      });
+
+      if (result.canceled || !result.assets?.[0]?.uri) return;
+      if (!user?.uid) return;
+
+      setUploading(true);
+      const downloadUrl = await uploadProfilePicture(user.uid, result.assets[0].uri);
+      if (downloadUrl) {
+        setProfile((prev) => ({ ...prev, userPictureUrl: downloadUrl }));
+      }
+    } catch (error) {
+      console.error("Profil resmi guncellenirken hata:", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (loading) {
+    return <ProfileSkeleton />;
+  }
+
+  const favorite = profile.favoritePlant;
 
   return (
     <ScreenContainer scrollable topSpacing={24} bottomSpacing={80}>
@@ -57,27 +107,46 @@ export default function ProfileScreen() {
       >
         <View style={styles.avatarWrapper}>
           <Image
-            source={require("../../../assets/plantly-logo.png")}
+            source={
+              profile.userPictureUrl
+                ? { uri: profile.userPictureUrl }
+                : require("../../../assets/plantly-logo.png")
+            }
             style={styles.avatar}
-            resizeMode="contain"
+            resizeMode="cover"
           />
+          <TouchableOpacity
+            style={styles.editAvatar}
+            onPress={handleChangePhoto}
+            disabled={uploading}
+            activeOpacity={0.85}
+          >
+            <Ionicons
+              name={uploading ? "time-outline" : "create-outline"}
+              size={18}
+              color={theme.background}
+            />
+          </TouchableOpacity>
         </View>
-        <ThemedTitle style={styles.userName}>{DUMMY_USER.name}</ThemedTitle>
-        <ThemedText style={[styles.email, { color: theme.text }]}>
-          {DUMMY_USER.email}
-        </ThemedText>
+        <ThemedTitle style={styles.userName}>
+          {profile.displayName || "Kullanici"}
+        </ThemedTitle>
 
         <View style={styles.metaRow}>
           <MetaItem
-            icon="calendar-outline"
-            label="Aramiza katildi"
-            value={DUMMY_USER.joinedAt}
+            icon="flame-outline"
+            label="Sulama serisi"
+            value={`${profile.wateringStreak} gun`}
             color={theme.thirdBg}
           />
           <MetaItem
-            icon="flame-outline"
-            label="Sulama serisi"
-            value={`${DUMMY_USER.streak} gun`}
+            icon="leaf-outline"
+            label="Bitki sayisi"
+            value={
+              typeof profile.plantCount === "number"
+                ? `${profile.plantCount}`
+                : "-"
+            }
             color={theme.thirdBg}
           />
         </View>
@@ -89,18 +158,22 @@ export default function ProfileScreen() {
           { backgroundColor: theme.secondBg },
         ]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Bakim Ozeti</ThemedTitle>
+        <ThemedTitle style={styles.sectionTitle}>Profil Ozeti</ThemedTitle>
         <View style={styles.summaryRow}>
-          <SummaryItem
-            icon="leaf-outline"
-            label="Favori Bitki"
-            value={DUMMY_USER.favoritePlant}
-            color={theme.thirdBg}
-          />
           <SummaryItem
             icon="reader-outline"
             label="Tamamlanan Egitim"
-            value={`${DUMMY_USER.completedModules} modul`}
+            value={
+              typeof profile.completedModules === "number"
+                ? `${profile.completedModules} modul`
+                : "-"
+            }
+            color={theme.thirdBg}
+          />
+          <SummaryItem
+            icon="water-outline"
+            label="Sulama serisi"
+            value={`${profile.wateringStreak} gun`}
             color={theme.thirdBg}
           />
         </View>
@@ -112,44 +185,33 @@ export default function ProfileScreen() {
           { backgroundColor: theme.secondBg },
         ]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Hizli Islemler</ThemedTitle>
-        {QUICK_ACTIONS.map((action, idx) => (
-          <View
-            key={action.key}
-            style={[
-              styles.actionRow,
-              {
-                borderBottomWidth: idx === QUICK_ACTIONS.length - 1 ? 0 : StyleSheet.hairlineWidth,
-                borderBottomColor:
-                  selectedTheme === "dark"
-                    ? "rgba(255,255,255,0.12)"
-                    : "rgba(0,0,0,0.08)",
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.actionIconWrapper,
-                { backgroundColor: theme.fourthBg },
-              ]}
-            >
-              <Ionicons name={action.icon} size={20} color={theme.thirdBg} />
+        <ThemedTitle style={styles.sectionTitle}>Favori Bitki</ThemedTitle>
+        {favorite ? (
+          <View style={styles.favoriteCard}>
+            <View style={[styles.favoriteIcon, { backgroundColor: theme.fourthBg }]}>
+              {favorite.imageUrl ? (
+                <Image
+                  source={{ uri: favorite.imageUrl }}
+                  style={styles.favoriteImage}
+                />
+              ) : (
+                <Ionicons name="leaf" size={28} color={theme.thirdBg} />
+              )}
             </View>
             <View style={{ flex: 1 }}>
-              <ThemedTitle style={styles.actionTitle}>
-                {action.title}
+              <ThemedTitle style={styles.favoriteTitle}>
+                {favorite.name || "Favori bitki"}
               </ThemedTitle>
-              <ThemedText style={[styles.actionDescription, { color: theme.text }]}>
-                {action.description}
+              <ThemedText style={[styles.favoriteSubtitle, { color: theme.text }]}>
+                {favorite.description || "En cok ilgilendigigin bitki"}
               </ThemedText>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={theme.text}
-            />
           </View>
-        ))}
+        ) : (
+          <ThemedText style={[styles.favoriteSubtitle, { color: theme.text }]}>
+            Henuz favori bitkin yok.
+          </ThemedText>
+        )}
       </ThemedCard>
     </ScreenContainer>
   );
@@ -214,6 +276,20 @@ const styles = StyleSheet.create({
   avatar: {
     width: 54,
     height: 54,
+    borderRadius: 27,
+  },
+  editAvatar: {
+    position: "absolute",
+    bottom: -6,
+    right: -6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#537354",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   userName: {
     fontSize: 22,
@@ -283,25 +359,30 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 16,
   },
-  actionRow: {
+  favoriteCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    gap: 14,
+    gap: 12,
+    paddingVertical: 12,
   },
-  actionIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  favoriteIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 2,
+    overflow: "hidden",
   },
-  actionTitle: {
-    fontSize: 16,
+  favoriteTitle: {
+    fontSize: 18,
+    marginBottom: 4,
   },
-  actionDescription: {
-    fontSize: 13,
-    marginTop: 4,
+  favoriteSubtitle: {
+    fontSize: 14,
+  },
+  favoriteImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
   },
 });

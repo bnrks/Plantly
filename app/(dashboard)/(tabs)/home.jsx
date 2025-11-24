@@ -13,15 +13,16 @@ import { getAuth } from "firebase/auth";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
-import PlantCard from "../../../components/PlantCard";
 import Header from "../../../components/Header";
 import ScreenContainer from "../../../components/ScreenContainer";
 import HomeSkeleton from "../../../components/skeletons/HomeSkeleton";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { AuthContext } from "../../../src/context/AuthContext";
-import { fetchPlantsForWatering, updatePlantWatering } from "../../../src/services/firestoreService";
+import { fetchPlantsForWatering, updatePlantWatering, fetchEducationModules } from "../../../src/services/firestoreService";
 import { registerForPush } from "../../../src/notifications/registerForPush";
+import HomePlantCard from "../../../components/HomePlantCard";
+import HomeEducationCard from "../../../components/HomeEducationCard";
 
 const Home = () => {
   const [plantss, setPlantss] = useState([]);
@@ -29,10 +30,25 @@ const Home = () => {
   const [initialFetched, setInitialFetched] = useState(false);
   const router = useRouter();
   const notificationCount = plantss.length;
-  const topTrainings = [
-    { id: "starter", title: "Baslangic Rehberi", duration: "15 dk" },
-    { id: "watering", title: "Sulama Akademisi", duration: "10 dk" },
-    { id: "diagnosis", title: "Hastalik Dedektifi", duration: "18 dk" },
+  const fallbackModules = [
+    {
+      id: "starter",
+      moduleName: "Baslangic Rehberi",
+      content: "Temel bakim ipuclari.",
+      bannerLink: "../../../assets/onboarding-1.png",
+    },
+    {
+      id: "watering",
+      moduleName: "Sulama Akademisi",
+      content: "Sulama ve nem kontrolu.",
+      bannerLink: "../../../assets/onboarding-2.png",
+    },
+    {
+      id: "diagnosis",
+      moduleName: "Hastalik Dedektifi",
+      content: "Erken teshis ipuclari.",
+      bannerLink: "../../../assets/onboarding-4.png",
+    },
   ];
   const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
@@ -40,6 +56,7 @@ const Home = () => {
   const username = user?.displayName || "Kullanici";
   const userid = user?.uid || "";
   const registeredRef = useRef(false);
+  const [modules, setModules] = useState([]);
 
   useEffect(() => {
     if (user?.uid && !registeredRef.current) {
@@ -79,6 +96,40 @@ const Home = () => {
       setInitialFetched(true);
     }
   }, [user, userid, initialFetched]);
+
+  useEffect(() => {
+    const loadModules = async () => {
+      try {
+        const data = await fetchEducationModules();
+        const normalized =
+          data && data.length > 0
+            ? data.map((m) => ({
+                id: m.id,
+                title: m.moduleName || "Egitim",
+                description: m.content || "",
+                banner: m.bannerLink || null,
+              }))
+            : fallbackModules.map((m) => ({
+                id: m.id,
+                title: m.moduleName,
+                description: m.content,
+                banner: m.bannerLink,
+              }));
+        setModules(normalized);
+      } catch (error) {
+        console.error("Egitimler yuklenirken hata:", error);
+        const normalizedFallback = fallbackModules.map((m) => ({
+          id: m.id,
+          title: m.moduleName,
+          description: m.content,
+          banner: m.bannerLink,
+        }));
+        setModules(normalizedFallback);
+      }
+    };
+
+    loadModules();
+  }, []);
 
   if (!user) return null;
 
@@ -137,88 +188,61 @@ const Home = () => {
           <FlatList
             data={plantss}
             keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            contentContainerStyle={styles.plantList}
-            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.plantListHorizontal}
+            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             renderItem={({ item }) => (
-              <View style={styles.plantRow}>
-                <PlantCard
-                  name={item.name}
-                  description={item.description}
-                  image={{ uri: item.imageUrl }}
-                  style={[styles.plantCard, { backgroundColor: theme.fourthBg }]}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/plant/details",
-                      params: { id: item.id },
-                    })
-                  }
-                />
-                <TouchableOpacity
-                  onPress={() => handleWaterPlant(item.id)}
-                  style={[
-                    styles.waterButton,
-                    { backgroundColor: theme.thirdBg || "#34d399" },
-                  ]}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons name="water" size={22} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
+              <HomePlantCard
+                name={item.name}
+                description={item.description}
+                imageUrl={item.imageUrl}
+                wateringLabel={item.lastWatered ? "Bugun" : "-"}
+                themeName={selectedTheme}
+                onPress={() =>
+                  router.push({
+                    pathname: "/plant/details",
+                    params: { id: item.id },
+                  })
+                }
+                onWaterPress={() => handleWaterPlant(item.id)}
+              />
             )}
           />
         </ThemedCard>
 
         <ThemedCard style={styles.discoveryCard}>
           <View style={styles.discoveryHeader}>
-            <ThemedTitle style={{ fontSize: 20 }}>Goz At</ThemedTitle>
+            <ThemedTitle style={{ fontSize: 20 }}>Egitimlere Goz At</ThemedTitle>
             <TouchableOpacity
               onPress={() => router.push("/(dashboard)/education")}
             >
-              <ThemedText style={styles.linkText}>Tum egitimler</ThemedText>
+              <ThemedText style={styles.linkText}>Tumunu Gor</ThemedText>
             </TouchableOpacity>
           </View>
 
-          <ThemedText style={{ color: "#888", marginBottom: 14 }}>
-            Top egitimler
-          </ThemedText>
-
-          {topTrainings.map((item, index) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() =>
-                router.push({
-                  pathname: "/(dashboard)/education/module",
-                  params: { id: item.id },
-                })
-              }
-              style={[
-                styles.trainingRow,
-                {
-                  backgroundColor: theme.secondBg,
-                  borderColor:
-                    selectedTheme === "dark"
-                      ? "rgba(255,255,255,0.12)"
-                      : "rgba(0,0,0,0.05)",
-                  marginBottom: index === topTrainings.length - 1 ? 0 : 10,
-                },
-              ]}
-            >
-              <View style={{ flex: 1, paddingRight: 12 }}>
-                <ThemedTitle style={{ fontSize: 16 }}>
-                  {item.title}
-                </ThemedTitle>
-                <ThemedText style={{ color: "#888", marginTop: 4 }}>
-                  {item.duration} • Egitim Modulu
-                </ThemedText>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={theme.thirdBg}
+          <FlatList
+            data={modules}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.educationList}
+            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            renderItem={({ item }) => (
+              <HomeEducationCard
+                title={item.title}
+                description={item.description}
+                banner={item.banner}
+                themeName={selectedTheme}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(dashboard)/education/module",
+                    params: { id: item.id },
+                  })
+                }
               />
-            </TouchableOpacity>
-          ))}
+            )}
+          />
         </ThemedCard>
       </ScreenContainer>
     </>
@@ -283,24 +307,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 10,
   },
-  plantRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+  plantListHorizontal: {
+    paddingHorizontal: 20,
+    paddingBottom: 10,
   },
-  plantCard: {
-    flex: 1,
-  },
-  waterButton: {
-    padding: 13,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#10b981",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 2,
+  educationList: {
+    paddingHorizontal: 20,
+    paddingBottom: 6,
   },
   discoveryCard: {
     borderRadius: 20,

@@ -5,7 +5,7 @@ import Header from "../Header";
 import ThemedCard from "../ThemedCard";
 import SkeletonBox from "./SkeletonBox";
 
-const placeholderPlants = [0, 1, 2];
+const placeholderPlants = [0, 1, 2, 3];
 
 const PlantsSkeleton = () => {
   return (
@@ -17,21 +17,21 @@ const PlantsSkeleton = () => {
       <Header />
 
       <ThemedCard style={styles.card}>
-        <SkeletonBox width="40%" height={18} style={styles.cardTitle} />
-        <View style={styles.list}>
+        <SkeletonBox width="45%" height={20} style={styles.cardTitle} />
+        <View style={styles.grid}>
           {placeholderPlants.map((key) => (
-            <View style={styles.row} key={`plant-placeholder-${key}`}>
-              <SkeletonBox width={50} height={50} borderRadius={12} />
-              <View style={styles.rowText}>
-                <SkeletonBox width="70%" height={14} />
-                <SkeletonBox width="50%" height={12} />
+            <View style={styles.plantCard} key={`plant-placeholder-${key}`}>
+              <SkeletonBox width="100%" height={110} />
+              <View style={styles.info}>
+                <SkeletonBox width="70%" height={16} />
+                <SkeletonBox width="60%" height={12} />
               </View>
             </View>
           ))}
         </View>
       </ThemedCard>
 
-      <SkeletonBox width="100%" height={54} borderRadius={16} />
+      <SkeletonBox width="100%" height={58} borderRadius={20} />
     </ScreenContainer>
   );
 };
@@ -50,18 +50,21 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginVertical: 20,
   },
-  list: {
-    paddingHorizontal: 20,
+  grid: {
+    paddingHorizontal: 16,
     paddingBottom: 20,
-    gap: 14,
-  },
-  row: {
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
     gap: 12,
   },
-  rowText: {
-    flex: 1,
+  plantCard: {
+    width: "48%",
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.04)",
+  },
+  info: {
+    padding: 10,
     gap: 6,
   },
 });

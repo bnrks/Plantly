@@ -34,25 +34,25 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 6,
+    padding: 12, // Increased padding
     marginVertical: 6,
     borderRadius: 12,
   },
   image: {
-    width: 50,
-    height: 50,
+    width: 100, // Doubled width
+    height: 100, // Doubled height
     borderRadius: 8,
-    marginRight: 10,
+    marginRight: 20, // Adjusted margin
   },
   textContainer: {
     flex: 1,
   },
   name: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "bold",
     marginBottom: 2,
   },
   description: {
-    fontSize: 13,
+    fontSize: 15,
   },
 });

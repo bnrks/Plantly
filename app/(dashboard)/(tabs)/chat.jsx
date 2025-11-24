@@ -34,6 +34,7 @@ import { useChatHistory } from "../../../src/hooks/chat/useChatHistory";
 import { usePlantSelection } from "../../../src/hooks/chat/usePlantSelection";
 import { useKeyboardVisibility } from "../../../src/hooks/ui/useKeyboardVisibility";
 import { chatStyles as styles } from "../../../css/chatStyles";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
   const [inputPad, setInputPad] = useState(140);
@@ -46,6 +47,7 @@ export default function ChatScreen() {
   // WebSocket error state
   const [wsError, setWsError] = useState(null);
   const [showConnectionError, setShowConnectionError] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // Debug için state değişikliklerini takip et
   useEffect(() => {
@@ -478,7 +480,10 @@ export default function ChatScreen() {
         console.error("📍 Error Info:", errorInfo);
       }}
     >
-      <ThemedView style={styles.container}>
+      <ThemedView
+        style={[styles.container, { paddingTop: insets.top + 16 }]}
+        safe={false}
+      >
         <Header />
         <KeyboardAvoidingView
           style={{ flex: 1 }}
