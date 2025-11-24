@@ -1,6 +1,7 @@
 import { StyleSheet, FlatList, View } from "react-native";
 import { useState, useEffect, useContext } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 import { fetchPlants } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
@@ -52,12 +53,13 @@ const Plants = () => {
   return (
     <ScreenContainer
       scrollable
-      contentContainerStyle={{ gap: 16 }}
-      bottomSpacing={100}
+      contentContainerStyle={styles.container}
+      bottomSpacing={120}
+      paddingHorizontal={0}
     >
       <Header />
 
-      <ThemedCard style={styles.card}>
+      <ThemedCard style={[styles.card, { backgroundColor: theme.secondBg }]}>
         <ThemedTitle style={styles.cardTitle}>Bitkilerim</ThemedTitle>
 
         <FlatList
@@ -71,7 +73,10 @@ const Plants = () => {
               name={item.name}
               description={item.description}
               image={{ uri: item.imageUrl }}
-              style={[styles.plantCard, { backgroundColor: theme.fourthBg }]}
+              style={[
+                styles.plantCard,
+                { backgroundColor: theme.fourthBg },
+              ]}
               onPress={() =>
                 router.push({
                   pathname: "/plant/details",
@@ -85,15 +90,19 @@ const Plants = () => {
               Hic bitkin yok
             </ThemedTitle>
           }
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         />
       </ThemedCard>
 
       <ThemedButton
         title="Yeni Bitki Ekle"
         onPress={() => router.push("../addPlant")}
-        style={styles.addButton}
+        style={[
+          styles.addButton,
+          { backgroundColor: theme.thirdBg || "#537354" },
+        ]}
         textStyle={{ fontSize: 18 }}
+        icon={<Ionicons name="add-circle" size={22} color="#ffffff" />}
       />
     </ScreenContainer>
   );
@@ -102,25 +111,36 @@ const Plants = () => {
 export default Plants;
 
 const styles = StyleSheet.create({
+  container: {
+    gap: 16,
+    paddingHorizontal: 16,
+  },
   card: {
     width: "100%",
-    borderRadius: 20,
+    borderRadius: 26,
+    paddingHorizontal: 0,
+    paddingVertical: 18,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 22,
+    fontWeight: "700",
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingBottom: 10,
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 20,
-    gap: 8,
+    gap: 12,
   },
   plantCard: {
     marginVertical: 0,
+    borderRadius: 20,
+    padding: 12,
   },
   addButton: {
-    marginTop: 16,
-    marginBottom: 20,
+    marginTop: 12,
+    marginBottom: 24,
+    borderRadius: 32,
+    paddingVertical: 14,
   },
 });
