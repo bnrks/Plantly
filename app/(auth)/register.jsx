@@ -14,7 +14,6 @@ import CustomAlert from "../../components/CustomAlert";
 import { useCustomAlert } from "../../src/hooks/ui/useCustomAlert";
 export default function Register() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,15 +24,27 @@ export default function Register() {
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   const handleRegister = async () => {
+    if (!email.trim()) {
+      showWarning("Hata", "Lütfen e-posta adresinizi girin!");
+      return;
+    }
+    if (password.length < 6) {
+      showWarning("Hata", "Şifre en az 6 karakter olmalıdır!");
+      return;
+    }
     if (password !== confirmPassword) {
       showWarning("Hata", "Şifreler eşleşmiyor!");
       return;
     }
     try {
-      await signup(email.trim(), password, username.trim());
-      showSuccess("Başarılı", "Kayıt işlemi tamamlandı.", () => {
+      const userCredential = await signup(email.trim(), password);
+      const userId = userCredential.user.uid;
+      showSuccess("Başarılı", "Kayıt işlemi başarılı! Şimdi kullanıcı adınızı girelim.", () => {
         hideAlert();
-        router.replace("/login");
+        router.replace({
+          pathname: "/enterUsername",
+          params: { userId: userId }
+        });
       });
     } catch (e) {
       showError("Hata", e.message);
@@ -73,13 +84,6 @@ export default function Register() {
               Kayıt Ol
             </ThemedText>
 
-            <ThemedTextInput
-              style={styles.input}
-              placeholder="Kullanıcı Adı"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-            />
             <ThemedTextInput
               style={styles.input}
               placeholder="E-posta"

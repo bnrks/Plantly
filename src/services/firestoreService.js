@@ -20,9 +20,49 @@ export const createUserDocument = async (user) => {
   await setDoc(userRef, {
     uid: user.uid,
     email: user.email,
-    displayName: user.displayName || "",
-    createdAt: new Date(),
+    displayName: "",
+    name: "",
+    createdAt: serverTimestamp(),
   });
+};
+
+// Kullanıcı adını güncelle
+export const updateUserName = async (userId, name) => {
+  const userRef = doc(db, "users", userId);
+  await updateDoc(userRef, {
+    name: name,
+  });
+};
+
+// Kullanıcı displayName'i güncelle
+export const updateUserDisplayName = async (userId, displayName) => {
+  const userRef = doc(db, "users", userId);
+  await updateDoc(userRef, {
+    displayName: displayName,
+  });
+};
+
+// Kullanıcının tüm verilerini sil (plants alt koleksiyonu dahil)
+export const deleteUserData = async (userId) => {
+  try {
+    // Önce kullanıcının plants alt koleksiyonunu sil
+    const plantsCol = collection(db, "users", userId, "plants");
+    const plantsSnapshot = await getDocs(plantsCol);
+    
+    const deletePromises = plantsSnapshot.docs.map((plantDoc) => 
+      deleteDoc(doc(db, "users", userId, "plants", plantDoc.id))
+    );
+    await Promise.all(deletePromises);
+    
+    // Sonra kullanıcı dokümanını sil
+    const userRef = doc(db, "users", userId);
+    await deleteDoc(userRef);
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Kullanıcı verileri silinirken hata:", error);
+    throw error;
+  }
 };
 
 export async function addPlant(userId, plantData) {
@@ -294,8 +334,10 @@ export async function fetchUserProfileWithFavorite(userId) {
     });
 
     return {
+      name: userData.name || "",
       displayName: userData.displayName || "",
       email: userData.email || "",
+      createdAt: userData.createdAt || null,
       wateringStreak: userData.wateringStreak ?? 0,
       favoritePlant,
       plantCount,

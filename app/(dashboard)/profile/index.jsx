@@ -19,6 +19,32 @@ import {
 import { AuthContext } from "../../../src/context/AuthContext";
 import ProfileSkeleton from "../../../components/skeletons/ProfileSkeleton";
 
+// Kayıt tarihini formatla
+const formatJoinDate = (createdAt) => {
+  if (!createdAt) return "Üye";
+  
+  const months = [
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+  ];
+  
+  let date;
+  if (createdAt.toDate) {
+    // Firestore Timestamp
+    date = createdAt.toDate();
+  } else if (createdAt.seconds) {
+    // Firestore Timestamp object
+    date = new Date(createdAt.seconds * 1000);
+  } else {
+    date = new Date(createdAt);
+  }
+  
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  
+  return `${month} ${year}'den beri üye`;
+};
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useContext(AuthContext);
@@ -26,7 +52,9 @@ export default function ProfileScreen() {
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   const [profile, setProfile] = useState({
+    name: "",
     displayName: "",
+    createdAt: null,
     wateringStreak: 0,
     plantCount: null,
     favoritePlant: null,
@@ -122,12 +150,12 @@ export default function ProfileScreen() {
         <View style={styles.profileCardRow}>
           {/* Sol Kolon - Kullanıcı Bilgileri */}
           <View style={styles.profileLeftColumn}>
-            <ThemedTitle style={styles.fullName}>Ahmet Yılmaz</ThemedTitle>
+            <ThemedTitle style={styles.fullName}>{profile.name || "Kullanıcı"}</ThemedTitle>
             <ThemedText style={styles.nickname}>
               @{profile.displayName || "kullanici"}
             </ThemedText>
             <ThemedText style={styles.joinDate}>
-              <Ionicons name="calendar-outline" size={14} color={theme.text} /> Kasım 2024'den beri üye
+              <Ionicons name="calendar-outline" size={14} color={theme.text} /> {formatJoinDate(profile.createdAt)}
             </ThemedText>
             
             {/* Badges */}

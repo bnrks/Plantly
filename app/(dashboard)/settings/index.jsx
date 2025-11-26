@@ -12,6 +12,7 @@ import ScreenContainer from "../../../components/ScreenContainer";
 import BackButton from "../../../components/BackButton";
 import Header from "../../../components/Header";
 import { AuthContext } from "../../../src/context/AuthContext";
+import { deleteUserAccount } from "../../../src/services/authService";
 import CustomAlert from "../../../components/CustomAlert";
 import { useCustomAlert } from "../../../src/hooks/ui/useCustomAlert";
 
@@ -58,14 +59,19 @@ export default function Settings() {
       "Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz silinecektir.",
       async () => {
         try {
-          // TODO: Hesap silme işlemi burada yapılacak
+          hideAlert();
+          await deleteUserAccount(user.uid);
           showSuccess("Başarılı", "Hesabınız silindi", () => {
             hideAlert();
             router.replace("/login");
           });
         } catch (error) {
           console.error("Hesap silinirken hata:", error);
-          showError("Hata", "Hesap silinirken bir hata oluştu");
+          if (error.code === "auth/requires-recent-login") {
+            showError("Hata", "Güvenlik nedeniyle yeniden giriş yapmanız gerekiyor. Lütfen çıkış yapıp tekrar girin.");
+          } else {
+            showError("Hata", "Hesap silinirken bir hata oluştu");
+          }
         }
       },
       () => hideAlert()

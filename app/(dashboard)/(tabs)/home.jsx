@@ -19,7 +19,7 @@ import HomeSkeleton from "../../../components/skeletons/HomeSkeleton";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { AuthContext } from "../../../src/context/AuthContext";
-import { fetchPlantsForWatering, updatePlantWatering, fetchEducationModules } from "../../../src/services/firestoreService";
+import { fetchPlantsForWatering, updatePlantWatering, fetchEducationModules, fetchUserProfileWithFavorite } from "../../../src/services/firestoreService";
 import { registerForPush } from "../../../src/notifications/registerForPush";
 import HomePlantCard from "../../../components/HomePlantCard";
 import HomeEducationCard from "../../../components/HomeEducationCard";
@@ -53,7 +53,7 @@ const Home = () => {
   const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
-  const username = user?.displayName || "Kullanici";
+  const [username, setUsername] = useState("");
   const userid = user?.uid || "";
   const registeredRef = useRef(false);
   const [modules, setModules] = useState([]);
@@ -64,6 +64,28 @@ const Home = () => {
       registerForPush(user.uid).catch(console.warn);
     }
   }, [user?.uid]);
+
+  // Kullanıcı adını Firebase'den çek
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (userid) {
+        try {
+          const userProfile = await fetchUserProfileWithFavorite(userid);
+          if (userProfile?.name) {
+            setUsername(userProfile.name);
+          } else if (userProfile?.displayName) {
+            setUsername(userProfile.displayName);
+          } else {
+            setUsername("Kullanıcı");
+          }
+        } catch (error) {
+          console.error("Kullanıcı adı çekilirken hata:", error);
+          setUsername(user?.displayName || "Kullanıcı");
+        }
+      }
+    };
+    fetchUserName();
+  }, [userid]);
 
   useEffect(() => {
     if (!user) {

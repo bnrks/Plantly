@@ -226,3 +226,143 @@ exports.runNotifyNow = onRequest(
     }
   }
 );
+
+// Custom bildirim gönderme (Web panelden kullanılacak)
+// POST body: { title: string, body: string, userIds?: string[] }
+// userIds verilmezse TÜM kullanıcılara gönderir
+exports.sendCustomNotification = onRequest(
+  { region: "europe-west1", cors: true },
+  async (req, res) => {
+    // Sadece POST kabul et
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed. Use POST." });
+      return;
+    }
+
+    try {
+      const { title, body, userIds } = req.body;
+
+      // Validasyon
+      if (!title || !body) {
+        res.status(400).json({ error: "title ve body zorunludur." });
+        return;
+      }
+
+      const db = getFirestore();
+      let usersSnap;
+
+      // Belirli kullanıcılar mı yoksa hepsi mi?
+      if (userIds && Array.isArray(userIds) && userIds.length > 0) {
+        // Belirli kullanıcıları çek
+        const userRefs = userIds.map((uid) => db.collection("users").doc(uid));
+        const userDocs = await Promise.all(userRefs.map((ref) => ref.get()));
+        usersSnap = userDocs.filter((doc) => doc.exists);
+      } else {
+        // Tüm kullanıcıları çek
+        usersSnap = (await db.collection("users").get()).docs;
+      }
+
+      console.log("[customNotify] userCount:", usersSnap.length);
+
+      // Token'ları topla
+      const messages = [];
+      const tokenOwners = [];
+
+      for (const userDoc of usersSnap) {
+        const userData = userDoc.data() || {};
+        
+        // Token'ları oku (dizi + tekil alan)
+        let rawTokens = Array.isArray(userData.expoPushTokens) 
+          ? userData.expoPushTokens 
+          : [];
+        if (!rawTokens.length && typeof userData.expoPushToken === "string") {
+          rawTokens = [userData.expoPushToken];
+        }
+        
+        // Kabul edilen formatlar
+        const tokens = rawTokens
+          .map((t) => (typeof t === "string" ? t.trim() : ""))
+          .filter((t) => TOK_RE.test(t));
+
+        if (tokens.length === 0) continue;
+
+        const data = {
+          kind: "CUSTOM_NOTIFICATION",
+          userId: userDoc.id,
+          sentAt: new Date().toISOString(),
+        };
+
+        for (const to of tokens) {
+          messages.push({ to, sound: "default", title, body, data });
+          tokenOwners.push({ to, userRef: userDoc.ref });
+        }
+      }
+
+      console.log("[customNotify] toSend:", messages.length);
+
+      if (messages.length === 0) {
+        res.json({ 
+          success: true, 
+          message: "Gönderilecek token bulunamadı.",
+          sent: 0 
+        });
+        return;
+      }
+
+      // Expo push gönderimi
+      const tickets = [];
+      const chunks = expo.chunkPushNotifications(messages);
+      for (const chunk of chunks) {
+        try {
+          const tk = await expo.sendPushNotificationsAsync(chunk);
+          console.log("[customNotify] tickets:", tk);
+          tickets.push(...tk);
+        } catch (e) {
+          console.error("[customNotify] send error:", e);
+        }
+      }
+
+      // Geçersiz token temizliği (opsiyonel, arka planda)
+      const receiptIds = tickets.filter((t) => t.id).map((t) => t.id);
+      if (receiptIds.length > 0) {
+        // Async olarak receipts kontrol et (response bekletmeden)
+        setImmediate(async () => {
+          try {
+            const receiptIdChunks = expo.chunkPushNotificationReceiptIds(receiptIds);
+            for (const chunk of receiptIdChunks) {
+              const receipts = await expo.getPushNotificationReceiptsAsync(chunk);
+              for (const [id, r] of Object.entries(receipts)) {
+                if (r.status === "ok") continue;
+                console.warn("[customNotify][receipt] error:", id, r);
+                if (r.details?.error === "DeviceNotRegistered") {
+                  const idx = tickets.findIndex((t) => t.id === id);
+                  const failedToken = tokenOwners[idx]?.to;
+                  const failedUserRef = tokenOwners[idx]?.userRef;
+                  if (failedToken && failedUserRef) {
+                    console.log("[customNotify][token] remove:", failedToken);
+                    await failedUserRef.update({
+                      expoPushTokens: FieldValue.arrayRemove(failedToken),
+                    });
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error("[customNotify][receipt] fetch error:", e);
+          }
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `${tickets.length} bildirim gönderildi.`,
+        sent: tickets.length,
+        userCount: usersSnap.length,
+      });
+
+    } catch (e) {
+      console.error("[customNotify] error:", e);
+      res.status(500).json({ error: e?.message || "internal error" });
+    }
+  }
+);

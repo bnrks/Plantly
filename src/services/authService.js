@@ -7,17 +7,17 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail,
+  deleteUser,
 } from "firebase/auth";
-import { createUserDocument } from "./firestoreService";
+import { createUserDocument, deleteUserData } from "./firestoreService";
 
-export const signup = async (email, password, username) => {
+export const signup = async (email, password) => {
   const userCredential = await createUserWithEmailAndPassword(
     auth,
     email,
     password
   );
   const user = userCredential.user;
-  await updateProfile(user, { displayName: username });
   await createUserDocument(user);
   return userCredential;
 };
@@ -37,3 +37,22 @@ export async function resetPassword(email) {
   }
 }
 export const observeAuth = (callback) => onAuthStateChanged(auth, callback);
+
+// Kullanıcı hesabını tamamen sil (Firestore verileri + Auth)
+export const deleteUserAccount = async (userId) => {
+  try {
+    // Önce Firestore'daki kullanıcı verilerini sil
+    await deleteUserData(userId);
+    
+    // Sonra Firebase Auth'dan kullanıcıyı sil
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      await deleteUser(currentUser);
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Hesap silme hatası:", error);
+    throw error;
+  }
+};
