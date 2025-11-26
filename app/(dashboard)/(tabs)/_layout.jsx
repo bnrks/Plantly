@@ -39,12 +39,6 @@ export default function DashboardTabs() {
         action: () => router.push("/(dashboard)/education"),
       },
       {
-        key: "settings",
-        label: "Ayarlar",
-        icon: "settings-outline",
-        action: () => router.push("/(dashboard)/(tabs)/settings"),
-      },
-      {
         key: "profile",
         label: "Profil",
         icon: "person-outline",
@@ -102,12 +96,6 @@ export default function DashboardTabs() {
         <Tabs.Screen name="menu" options={{ href: null }} />
         <Tabs.Screen name="addPlant" />
         <Tabs.Screen name="chat" />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            href: null,
-          }}
-        />
       </Tabs>
 
       <Modal

@@ -2,6 +2,7 @@ import { StyleSheet, View, Image, TouchableOpacity } from "react-native";
 import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
@@ -19,6 +20,7 @@ import { AuthContext } from "../../../src/context/AuthContext";
 import ProfileSkeleton from "../../../components/skeletons/ProfileSkeleton";
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
@@ -96,8 +98,20 @@ export default function ProfileScreen() {
 
   return (
     <ScreenContainer scrollable topSpacing={24} bottomSpacing={80}>
-      <BackButton style={styles.backButton} />
-      <Header style={styles.headerImage} />
+      {/* Header Row: BackButton, Header ve Settings aynı hizada */}
+      <View style={styles.headerRow}>
+        <BackButton style={styles.backButton} />
+        <View style={styles.headerWrapper}>
+          <Header />
+        </View>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => router.push("/(dashboard)/settings")}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="settings-outline" size={24} color={theme.text} />
+        </TouchableOpacity>
+      </View>
 
       <ThemedCard
         style={[
@@ -105,50 +119,60 @@ export default function ProfileScreen() {
           { backgroundColor: theme.secondBg },
         ]}
       >
-        <View style={styles.avatarWrapper}>
-          <Image
-            source={
-              profile.userPictureUrl
-                ? { uri: profile.userPictureUrl }
-                : require("../../../assets/plantly-logo.png")
-            }
-            style={styles.avatar}
-            resizeMode="cover"
-          />
-          <TouchableOpacity
-            style={styles.editAvatar}
-            onPress={handleChangePhoto}
-            disabled={uploading}
-            activeOpacity={0.85}
-          >
-            <Ionicons
-              name={uploading ? "time-outline" : "create-outline"}
-              size={18}
-              color={theme.background}
-            />
-          </TouchableOpacity>
-        </View>
-        <ThemedTitle style={styles.userName}>
-          {profile.displayName || "Kullanici"}
-        </ThemedTitle>
+        <View style={styles.profileCardRow}>
+          {/* Sol Kolon - Kullanıcı Bilgileri */}
+          <View style={styles.profileLeftColumn}>
+            <ThemedTitle style={styles.fullName}>Ahmet Yılmaz</ThemedTitle>
+            <ThemedText style={styles.nickname}>
+              @{profile.displayName || "kullanici"}
+            </ThemedText>
+            <ThemedText style={styles.joinDate}>
+              <Ionicons name="calendar-outline" size={14} color={theme.text} /> Kasım 2024'den beri üye
+            </ThemedText>
+            
+            {/* Badges */}
+            <View style={styles.badgesContainer}>
+              <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
+                <Ionicons name="leaf" size={14} color={theme.thirdBg} />
+                <ThemedText style={styles.badgeText}>Bitki Sever</ThemedText>
+              </View>
+              <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
+                <Ionicons name="water" size={14} color="#2196F3" />
+                <ThemedText style={styles.badgeText}>Sulama Ustası</ThemedText>
+              </View>
+              <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
+                <Ionicons name="star" size={14} color="#FFC107" />
+                <ThemedText style={styles.badgeText}>Pro</ThemedText>
+              </View>
+            </View>
+          </View>
 
-        <View style={styles.metaRow}>
-          <MetaItem
-            icon="flame-outline"
-            label="Sulama serisi"
-            value={`${profile.wateringStreak} gun`}
-            color={theme.thirdBg}
-          />
-          <MetaItem
-            icon="leaf-outline"
-            label="Bitki sayisi"
-            value={
-              typeof profile.plantCount === "number"
-                ? `${profile.plantCount}`
-                : "-"
-            }
-            color={theme.thirdBg}
-          />
+          {/* Sağ Kolon - Profil Resmi */}
+          <View style={styles.profileRightColumn}>
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={
+                  profile.userPictureUrl
+                    ? { uri: profile.userPictureUrl }
+                    : require("../../../assets/plantly-logo.png")
+                }
+                style={styles.avatar}
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                style={styles.editAvatar}
+                onPress={handleChangePhoto}
+                disabled={uploading}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name={uploading ? "time-outline" : "create-outline"}
+                  size={18}
+                  color={theme.background}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </ThemedCard>
 
@@ -159,23 +183,43 @@ export default function ProfileScreen() {
         ]}
       >
         <ThemedTitle style={styles.sectionTitle}>Profil Ozeti</ThemedTitle>
-        <View style={styles.summaryRow}>
-          <SummaryItem
-            icon="reader-outline"
-            label="Tamamlanan Egitim"
-            value={
-              typeof profile.completedModules === "number"
-                ? `${profile.completedModules} modul`
-                : "-"
-            }
-            color={theme.thirdBg}
-          />
-          <SummaryItem
-            icon="water-outline"
-            label="Sulama serisi"
-            value={`${profile.wateringStreak} gun`}
-            color={theme.thirdBg}
-          />
+        <View style={styles.summaryGrid}>
+          <View style={styles.summaryRow}>
+            <SummaryItem
+              icon="reader-outline"
+              label="Tamamlanan Egitim"
+              value={
+                typeof profile.completedModules === "number"
+                  ? `${profile.completedModules} modul`
+                  : "-"
+              }
+              color={theme.thirdBg}
+            />
+            <SummaryItem
+              icon="water-outline"
+              label="Sulama serisi"
+              value={`${profile.wateringStreak} gun`}
+              color={theme.thirdBg}
+            />
+          </View>
+          <View style={styles.summaryRow}>
+            <SummaryItem
+              icon="trophy-outline"
+              label="Sulama Puani"
+              value="850 puan"
+              color="#FFC107"
+            />
+            <SummaryItem
+              icon="leaf-outline"
+              label="Toplam Bitki"
+              value={
+                typeof profile.plantCount === "number"
+                  ? `${profile.plantCount} bitki`
+                  : "-"
+              }
+              color={theme.thirdBg}
+            />
+          </View>
         </View>
       </ThemedCard>
 
@@ -213,7 +257,63 @@ export default function ProfileScreen() {
           </ThemedText>
         )}
       </ThemedCard>
+
+      {/* Başarımlar */}
+      <ThemedCard
+        style={[
+          styles.sectionCard,
+          { backgroundColor: theme.secondBg },
+        ]}
+      >
+        <ThemedTitle style={styles.sectionTitle}>Başarımlar</ThemedTitle>
+        
+        <AchievementItem
+          icon="water"
+          iconColor="#2196F3"
+          bgColor="#E3F2FD"
+          title="Sulama Ustası"
+          description="7 gün üst üste bitki sula"
+        />
+        
+        <AchievementItem
+          icon="leaf"
+          iconColor="#4CAF50"
+          bgColor="#E8F5E9"
+          title="Bitki Sever"
+          description="İlk bitkini ekle"
+        />
+        
+        <AchievementItem
+          icon="flower"
+          iconColor="#E91E63"
+          bgColor="#FCE4EC"
+          title="Yeşil Parmak"
+          description="5 bitki ekle"
+        />
+        
+        <AchievementItem
+          icon="school"
+          iconColor="#FF9800"
+          bgColor="#FFF3E0"
+          title="Uzman"
+          description="3 eğitim modülünü tamamla"
+        />
+      </ThemedCard>
     </ScreenContainer>
+  );
+}
+
+function AchievementItem({ icon, iconColor, bgColor, title, description }) {
+  return (
+    <View style={styles.achievementItem}>
+      <View style={[styles.achievementImageWrapper, { backgroundColor: bgColor }]}>
+        <Ionicons name={icon} size={28} color={iconColor} />
+      </View>
+      <View style={styles.achievementTextContainer}>
+        <ThemedTitle style={styles.achievementTitle}>{title}</ThemedTitle>
+        <ThemedText style={styles.achievementDescription}>{description}</ThemedText>
+      </View>
+    </View>
   );
 }
 
@@ -240,29 +340,85 @@ function SummaryItem({ icon, label, value, color }) {
       >
         <Ionicons name={icon} size={20} color="#ffffff" />
       </View>
-      <ThemedText style={styles.summaryLabel}>{label}</ThemedText>
-      <ThemedTitle style={styles.summaryValue}>{value}</ThemedTitle>
+      <View style={styles.summaryTextContainer}>
+        <ThemedText style={styles.summaryLabel}>{label}</ThemedText>
+        <ThemedTitle style={styles.summaryValue}>{value}</ThemedTitle>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   backButton: {
     position: "absolute",
-    top: 0,
     left: 0,
-    zIndex: 10,
+    zIndex: 1,
   },
-  headerImage: {
-    marginTop: 16,
-    marginBottom: 12,
+  headerWrapper: {
+    flex: 1,
+    alignItems: "center",
+  },
+  settingsButton: {
+    position: "absolute",
+    right: 0,
+    zIndex: 1,
+    padding: 8,
   },
   profileCard: {
-    alignItems: "center",
-    paddingVertical: 28,
-    paddingHorizontal: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
     borderRadius: 24,
     marginTop: 8,
+  },
+  profileCardRow: {
+    flexDirection: "row",
+    width: "100%",
+  },
+  profileLeftColumn: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  profileRightColumn: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 16,
+  },
+  fullName: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  nickname: {
+    fontSize: 14,
+    opacity: 0.7,
+    marginBottom: 4,
+  },
+  joinDate: {
+    fontSize: 12,
+    opacity: 0.6,
+    marginBottom: 12,
+  },
+  badgesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    gap: 4,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: "500",
   },
   avatarWrapper: {
     width: 82,
@@ -333,6 +489,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 16,
   },
+  summaryGrid: {
+    gap: 14,
+  },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -343,21 +502,32 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     backgroundColor: "rgba(83,115,84,0.08)",
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
   summaryIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: 12,
+  },
+  summaryTextContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   summaryLabel: {
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: "600",
     marginBottom: 4,
+    textAlign: "center",
   },
   summaryValue: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
   },
   favoriteCard: {
     flexDirection: "row",
@@ -384,5 +554,38 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+  },
+  achievementItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+    gap: 14,
+  },
+  achievementImageWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  achievementImage: {
+    width: 40,
+    height: 40,
+    resizeMode: "contain",
+  },
+  achievementTextContainer: {
+    flex: 1,
+  },
+  achievementTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  achievementDescription: {
+    fontSize: 13,
+    opacity: 0.7,
   },
 });

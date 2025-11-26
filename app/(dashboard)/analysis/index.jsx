@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { View, Image, Alert, ScrollView } from "react-native";
+import { View, Image, Alert, ScrollView, StyleSheet } from "react-native";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
@@ -16,6 +16,9 @@ import {
   useImageCache,
 } from "../../../src/hooks";
 import { styles } from "../../../css/analysisStyles";
+
+// Analyzer icon
+const analyzerIcon = require("../../../assets/analyzer_icon.png");
 
 export default function Analysis() {
   const router = useRouter();
@@ -63,6 +66,15 @@ export default function Analysis() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Yapay Zeka Hastalık Analizi Başlık Butonu */}
+        <View style={[localStyles.analysisBanner, { backgroundColor: theme.thirdBg }]}>
+          <Image source={analyzerIcon} style={localStyles.analyzerIcon} />
+          <View style={localStyles.bannerTextContainer}>
+            <ThemedTitle style={localStyles.bannerTitle}>Yapay Zeka</ThemedTitle>
+            <ThemedTitle style={localStyles.bannerSubtitle}>Hastalık Analizi</ThemedTitle>
+          </View>
+        </View>
+
         {step === "instruction" && (
           <View style={styles.block}>
             {/* Büyük Asistant resmi */}
@@ -202,3 +214,34 @@ export default function Analysis() {
     </ThemedView>
   );
 }
+
+const localStyles = StyleSheet.create({
+  analysisBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    gap: 12,
+  },
+  analyzerIcon: {
+    width: 48,
+    height: 48,
+    resizeMode: "contain",
+  },
+  bannerTextContainer: {
+    flex: 1,
+  },
+  bannerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#ffffff",
+    marginBottom: 0,
+  },
+  bannerSubtitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+});
