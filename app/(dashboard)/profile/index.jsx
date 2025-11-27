@@ -3,6 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
@@ -20,32 +21,32 @@ import { AuthContext } from "../../../src/context/AuthContext";
 import ProfileSkeleton from "../../../components/skeletons/ProfileSkeleton";
 
 // Kayıt tarihini formatla
-const formatJoinDate = (createdAt) => {
-  if (!createdAt) return "Üye";
+const formatJoinDate = (createdAt, t) => {
+  if (!createdAt) return t('profile.member');
   
-  const months = [
-    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+  const monthKeys = [
+    'months.january', 'months.february', 'months.march', 'months.april',
+    'months.may', 'months.june', 'months.july', 'months.august',
+    'months.september', 'months.october', 'months.november', 'months.december'
   ];
   
   let date;
   if (createdAt.toDate) {
-    // Firestore Timestamp
     date = createdAt.toDate();
   } else if (createdAt.seconds) {
-    // Firestore Timestamp object
     date = new Date(createdAt.seconds * 1000);
   } else {
     date = new Date(createdAt);
   }
   
-  const month = months[date.getMonth()];
+  const month = t(monthKeys[date.getMonth()]);
   const year = date.getFullYear();
   
-  return `${month} ${year}'den beri üye`;
+  return t('profile.memberSinceFormat', { month, year });
 };
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
@@ -150,27 +151,27 @@ export default function ProfileScreen() {
         <View style={styles.profileCardRow}>
           {/* Sol Kolon - Kullanıcı Bilgileri */}
           <View style={styles.profileLeftColumn}>
-            <ThemedTitle style={styles.fullName}>{profile.name || "Kullanıcı"}</ThemedTitle>
+            <ThemedTitle style={styles.fullName}>{profile.name || t('profile.user')}</ThemedTitle>
             <ThemedText style={styles.nickname}>
-              @{profile.displayName || "kullanici"}
+              @{profile.displayName || t('profile.userLower')}
             </ThemedText>
             <ThemedText style={styles.joinDate}>
-              <Ionicons name="calendar-outline" size={14} color={theme.text} /> {formatJoinDate(profile.createdAt)}
+              <Ionicons name="calendar-outline" size={14} color={theme.text} /> {formatJoinDate(profile.createdAt, t)}
             </ThemedText>
             
             {/* Badges */}
             <View style={styles.badgesContainer}>
               <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
                 <Ionicons name="leaf" size={14} color={theme.thirdBg} />
-                <ThemedText style={styles.badgeText}>Bitki Sever</ThemedText>
+                <ThemedText style={styles.badgeText}>{t('profile.badges.plantLover')}</ThemedText>
               </View>
               <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
                 <Ionicons name="water" size={14} color="#2196F3" />
-                <ThemedText style={styles.badgeText}>Sulama Ustası</ThemedText>
+                <ThemedText style={styles.badgeText}>{t('profile.badges.wateringMaster')}</ThemedText>
               </View>
               <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
                 <Ionicons name="star" size={14} color="#FFC107" />
-                <ThemedText style={styles.badgeText}>Pro</ThemedText>
+                <ThemedText style={styles.badgeText}>{t('profile.badges.pro')}</ThemedText>
               </View>
             </View>
           </View>
@@ -210,39 +211,39 @@ export default function ProfileScreen() {
           { backgroundColor: theme.secondBg },
         ]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Profil Ozeti</ThemedTitle>
+        <ThemedTitle style={styles.sectionTitle}>{t('profile.summary.title')}</ThemedTitle>
         <View style={styles.summaryGrid}>
           <View style={styles.summaryRow}>
             <SummaryItem
               icon="reader-outline"
-              label="Tamamlanan Egitim"
+              label={t('profile.summary.completedEducation')}
               value={
                 typeof profile.completedModules === "number"
-                  ? `${profile.completedModules} modul`
+                  ? t('profile.summary.modules', { count: profile.completedModules })
                   : "-"
               }
               color={theme.thirdBg}
             />
             <SummaryItem
               icon="water-outline"
-              label="Sulama serisi"
-              value={`${profile.wateringStreak} gun`}
+              label={t('profile.summary.wateringStreak')}
+              value={t('profile.summary.days', { count: profile.wateringStreak })}
               color={theme.thirdBg}
             />
           </View>
           <View style={styles.summaryRow}>
             <SummaryItem
               icon="trophy-outline"
-              label="Sulama Puani"
-              value="850 puan"
+              label={t('profile.summary.wateringScore')}
+              value={t('profile.summary.points', { count: 850 })}
               color="#FFC107"
             />
             <SummaryItem
               icon="leaf-outline"
-              label="Toplam Bitki"
+              label={t('profile.summary.totalPlants')}
               value={
                 typeof profile.plantCount === "number"
-                  ? `${profile.plantCount} bitki`
+                  ? t('profile.summary.plantsCount', { count: profile.plantCount })
                   : "-"
               }
               color={theme.thirdBg}
@@ -257,7 +258,7 @@ export default function ProfileScreen() {
           { backgroundColor: theme.secondBg },
         ]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Favori Bitki</ThemedTitle>
+        <ThemedTitle style={styles.sectionTitle}>{t('profile.favoritePlant')}</ThemedTitle>
         {favorite ? (
           <View style={styles.favoriteCard}>
             <View style={[styles.favoriteIcon, { backgroundColor: theme.fourthBg }]}>
@@ -272,16 +273,16 @@ export default function ProfileScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <ThemedTitle style={styles.favoriteTitle}>
-                {favorite.name || "Favori bitki"}
+                {favorite.name || t('profile.favoritePlant')}
               </ThemedTitle>
               <ThemedText style={[styles.favoriteSubtitle, { color: theme.text }]}>
-                {favorite.description || "En cok ilgilendigigin bitki"}
+                {favorite.description || t('profile.favoriteDescription')}
               </ThemedText>
             </View>
           </View>
         ) : (
           <ThemedText style={[styles.favoriteSubtitle, { color: theme.text }]}>
-            Henuz favori bitkin yok.
+            {t('profile.noFavorite')}
           </ThemedText>
         )}
       </ThemedCard>
@@ -293,38 +294,38 @@ export default function ProfileScreen() {
           { backgroundColor: theme.secondBg },
         ]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Başarımlar</ThemedTitle>
+        <ThemedTitle style={styles.sectionTitle}>{t('profile.achievements')}</ThemedTitle>
         
         <AchievementItem
           icon="water"
           iconColor="#2196F3"
           bgColor="#E3F2FD"
-          title="Sulama Ustası"
-          description="7 gün üst üste bitki sula"
+          title={t('profile.achievementsList.wateringMaster.title')}
+          description={t('profile.achievementsList.wateringMaster.description')}
         />
         
         <AchievementItem
           icon="leaf"
           iconColor="#4CAF50"
           bgColor="#E8F5E9"
-          title="Bitki Sever"
-          description="İlk bitkini ekle"
+          title={t('profile.achievementsList.plantLover.title')}
+          description={t('profile.achievementsList.plantLover.description')}
         />
         
         <AchievementItem
           icon="flower"
           iconColor="#E91E63"
           bgColor="#FCE4EC"
-          title="Yeşil Parmak"
-          description="5 bitki ekle"
+          title={t('profile.achievementsList.greenThumb.title')}
+          description={t('profile.achievementsList.greenThumb.description')}
         />
         
         <AchievementItem
           icon="school"
           iconColor="#FF9800"
           bgColor="#FFF3E0"
-          title="Uzman"
-          description="3 eğitim modülünü tamamla"
+          title={t('profile.achievementsList.expert.title')}
+          description={t('profile.achievementsList.expert.description')}
         />
       </ThemedCard>
     </ScreenContainer>

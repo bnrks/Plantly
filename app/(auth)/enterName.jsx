@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { StyleSheet, Image, View } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { updateUserName } from "../../src/services/firestoreService";
 import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
@@ -20,26 +21,27 @@ export default function EnterName() {
   const [loading, setLoading] = useState(false);
   const { alertConfig, showSuccess, showError, showWarning, hideAlert } =
     useCustomAlert();
+  const { t } = useTranslation();
 
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   const handleSaveName = async () => {
     if (!name.trim()) {
-      showWarning("Uyarı", "Lütfen adınızı girin.");
+      showWarning(t('common.warning'), t('auth.enterName'));
       return;
     }
 
     try {
       setLoading(true);
       await updateUserName(userId, name.trim());
-      showSuccess("Başarılı", "Hoş geldiniz! Kayıt işleminiz tamamlandı.", () => {
+      showSuccess(t('common.success'), t('auth.registrationComplete'), () => {
         hideAlert();
         router.replace("/(dashboard)/(tabs)/home");
       });
     } catch (e) {
-      console.error("İsim kaydetme hatası:", e);
-      showError("Hata", "İsim kaydedilirken bir hata oluştu.");
+      console.error("Name save error:", e);
+      showError(t('common.error'), t('auth.nameSaveError'));
     } finally {
       setLoading(false);
     }
@@ -63,14 +65,14 @@ export default function EnterName() {
             style={styles.logo}
           />
           <ThemedCard style={styles.card}>
-            <ThemedText style={styles.title}>Bir Adım Kaldı!</ThemedText>
+            <ThemedText style={styles.title}>{t('auth.oneStepLeft')}</ThemedText>
             <ThemedText style={styles.subtitle}>
-              Size nasıl hitap edelim?
+              {t('auth.howToCallYou')}
             </ThemedText>
 
             <ThemedTextInput
               style={styles.input}
-              placeholder="Adınız"
+              placeholder={t('auth.name')}
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -78,7 +80,7 @@ export default function EnterName() {
             />
 
             <ThemedButton
-              title={loading ? "Kaydediliyor..." : "Tamamla"}
+              title={loading ? t('common.loading') : t('auth.complete')}
               onPress={handleSaveName}
               style={styles.button}
               disabled={loading}

@@ -6,6 +6,9 @@ const ThemedText = ({ style, children, ...props }) => {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
 
+  // Ensure children is never undefined/null to prevent render errors
+  const safeChildren = children ?? "";
+
   return (
     <Text
       style={[
@@ -18,7 +21,7 @@ const ThemedText = ({ style, children, ...props }) => {
       ]}
       {...props}
     >
-      {children}
+      {safeChildren}
     </Text>
   );
 };

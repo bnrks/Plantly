@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Colors } from "../../../constants/Colors";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
@@ -26,6 +27,7 @@ import Header from "../../../components/Header";
 // Yapay Zeka butonu için ikon
 const analyzerIcon = require("../../../assets/analyzer_icon.png");
 export default function PlantDetails() {
+  const { t } = useTranslation();
   const { user } = useContext(AuthContext);
   const router = useRouter();
   const { theme: selectedTheme } = useContext(ThemeContext);
@@ -62,37 +64,37 @@ export default function PlantDetails() {
   }
   const confirmDelete = () => {
     Alert.alert(
-      "Silme Onayı",
-      "Bu bitki kaydını silmek istediğinize emin misiniz?",
+      t('plants.deleteConfirmTitle'),
+      t('plants.deleteConfirmMessage'),
       [
-        { text: "İptal", style: "cancel" },
-        { text: "Sil", style: "destructive", onPress: handleDelete },
+        { text: t('common.cancel'), style: "cancel" },
+        { text: t('common.delete'), style: "destructive", onPress: handleDelete },
       ]
     );
   };
   function diseaseToStatus(disease) {
     switch (disease) {
       case "late_blight":
-        return "Hasta";
+        return t('plants.sick');
       case "bacterial_spot":
-        return "Hasta";
+        return t('plants.sick');
       case "early_blight":
-        return "Hasta";
+        return t('plants.sick');
       default:
-        return "Sağlıklı";
+        return t('plants.healthy');
     }
   }
 
   function diseaseToDescription(disease) {
     switch (disease) {
       case "late_blight":
-        return "Geç yanıklık hastalığına sahip.";
+        return t('plants.lateBlight');
       case "bacterial_spot":
-        return "Bakteriyel leke hastalığına sahip.";
+        return t('plants.bacterialSpot');
       case "early_blight":
-        return "Erken yanıklık hastalığına sahip.";
+        return t('plants.earlyBlight');
       default:
-        return "Herhangi bir hastalık belirtisi yok.";
+        return t('plants.noSickDescription');
     }
   }
   // TODO: Backend ile entegre edilecek => örnek veri
@@ -103,8 +105,8 @@ export default function PlantDetails() {
     image: { uri: plant.imageUrl },
     status: diseaseToStatus(plant.disease),
     statusDescription: diseaseToDescription(plant.disease),
-    suggestions: plant.suggestions || ["Bakım önerisi yok"],
-    notes: plant.notes || ["Not yok."],
+    suggestions: plant.suggestions || [t('plants.noCareRecommendations')],
+    notes: plant.notes || [t('plants.noNotes')],
     waterLevel: plant.waterLevel || 60,
     lightLevel: plant.lightLevel || 40,
     measureLevel: plant.measureLevel || 30,
@@ -171,8 +173,8 @@ export default function PlantDetails() {
         >
           <Image source={analyzerIcon} style={styles.analyzerIconImage} />
           <View style={styles.analysisTextContainer}>
-            <ThemedText style={styles.analysisButtonText}>Yapay Zeka Hastalık</ThemedText>
-            <ThemedText style={styles.analysisButtonText}>Analizi</ThemedText>
+            <ThemedText style={styles.analysisButtonText}>{t('plants.aiAnalysisTitle')}</ThemedText>
+            <ThemedText style={styles.analysisButtonText}>{t('plants.aiAnalysisSubtitle')}</ThemedText>
           </View>
         </TouchableOpacity>
         <TouchableOpacity
@@ -191,7 +193,7 @@ export default function PlantDetails() {
           }}
         >
           <Ionicons name="pencil" size={18} color={theme.text} />
-          <ThemedText style={styles.editButtonText} numberOfLines={1}>Düzenle</ThemedText>
+          <ThemedText style={styles.editButtonText} numberOfLines={1}>{t('plants.edit')}</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.deleteButton, { backgroundColor: "#FFEBEE" }]}
@@ -205,7 +207,7 @@ export default function PlantDetails() {
       <ThemedCard
         style={[styles.careCard, { backgroundColor: theme.secondBg }]}
       >
-        <ThemedTitle style={styles.sectionHeader}>Bakım Önerileri</ThemedTitle>
+        <ThemedTitle style={styles.sectionHeader}>{t('plants.careRecommendations')}</ThemedTitle>
         {plantexample.suggestions.map((suggestion, idx) => (
           <View key={idx} style={styles.suggestionRow}>
             <MaterialCommunityIcons
@@ -225,11 +227,11 @@ export default function PlantDetails() {
       </ThemedCard>
 
       {/* Notlar */}
-      {plantexample.notes && plantexample.notes.length > 0 && plantexample.notes[0] !== "Not yok." && (
+      {plantexample.notes && plantexample.notes.length > 0 && plantexample.notes[0] !== t('plants.noNotes') && (
         <ThemedCard
           style={[styles.careCard, { backgroundColor: theme.secondBg }]}
         >
-          <ThemedTitle style={styles.sectionHeader}>Notlar</ThemedTitle>
+          <ThemedTitle style={styles.sectionHeader}>{t('plants.notes')}</ThemedTitle>
           {plantexample.notes.map((note, idx) => (
             <ThemedText key={idx} style={styles.noteText}>
               • {note}

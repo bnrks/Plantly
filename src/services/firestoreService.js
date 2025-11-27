@@ -277,7 +277,7 @@ export async function fetchEducationModules(setModules, setLoading) {
       return {
         id: docSnap.id,
         moduleName: data.module_name ?? "",
-        content: data.content ?? "",
+        content: data.content ?? null, // TipTap JSON veya null
         bannerLink: data.banner_link ?? "",
       };
     });
@@ -295,6 +295,39 @@ export async function fetchEducationModules(setModules, setLoading) {
     throw error;
   } finally {
     setLoading?.(false);
+  }
+}
+
+/**
+ * Firestore'dan tek bir egitim modulunu ID'ye gore ceker.
+ * @param {string} moduleId - Modul document ID
+ * @returns {Promise<Object|null>} Modul verisi veya null
+ */
+export async function fetchEducationModuleById(moduleId) {
+  if (!moduleId) {
+    console.warn("Modul ID belirtilmedi.");
+    return null;
+  }
+
+  try {
+    const docRef = doc(db, "modules", moduleId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      console.warn(`Modul bulunamadi: ${moduleId}`);
+      return null;
+    }
+
+    const data = docSnap.data() || {};
+    return {
+      id: docSnap.id,
+      moduleName: data.module_name ?? "",
+      content: data.content ?? null, // TipTap JSON
+      bannerLink: data.banner_link ?? "",
+    };
+  } catch (error) {
+    console.error("Modul cekilirken hata olustu:", error);
+    throw error;
   }
 }
 

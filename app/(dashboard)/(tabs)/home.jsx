@@ -9,6 +9,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { getAuth } from "firebase/auth";
+import { useTranslation } from "react-i18next";
 
 import ThemedCard from "../../../components/ThemedCard";
 import ThemedTitle from "../../../components/ThemedTitle";
@@ -24,7 +25,30 @@ import { registerForPush } from "../../../src/notifications/registerForPush";
 import HomePlantCard from "../../../components/HomePlantCard";
 import HomeEducationCard from "../../../components/HomeEducationCard";
 
+/**
+ * TipTap JSON content'inden plain text özet çıkarır
+ */
+function extractTextFromContent(content, maxLength = 80) {
+  if (!content) return "";
+  if (typeof content === "string") {
+    return content.length > maxLength ? content.substring(0, maxLength) + "..." : content;
+  }
+  if (content.type === "doc" && Array.isArray(content.content)) {
+    const texts = [];
+    const extractText = (node) => {
+      if (!node) return;
+      if (node.type === "text" && node.text) texts.push(node.text);
+      if (Array.isArray(node.content)) node.content.forEach(extractText);
+    };
+    content.content.forEach(extractText);
+    const fullText = texts.join(" ").trim();
+    return fullText.length > maxLength ? fullText.substring(0, maxLength) + "..." : fullText;
+  }
+  return "";
+}
+
 const Home = () => {
+  const { t } = useTranslation();
   const [plantss, setPlantss] = useState([]);
   const [loading, setLoading] = useState(true);
   const [initialFetched, setInitialFetched] = useState(false);
@@ -126,15 +150,15 @@ const Home = () => {
         const normalized =
           data && data.length > 0
             ? data.map((m) => ({
-                id: m.id,
-                title: m.moduleName || "Egitim",
-                description: m.content || "",
+                id: m.id || String(Math.random()),
+                title: String(m.moduleName || "Eğitim"),
+                description: extractTextFromContent(m.content, 80),
                 banner: m.bannerLink || null,
               }))
             : fallbackModules.map((m) => ({
                 id: m.id,
-                title: m.moduleName,
-                description: m.content,
+                title: String(m.moduleName || ""),
+                description: extractTextFromContent(m.content, 80),
                 banner: m.bannerLink,
               }));
         setModules(normalized);
@@ -142,8 +166,8 @@ const Home = () => {
         console.error("Egitimler yuklenirken hata:", error);
         const normalizedFallback = fallbackModules.map((m) => ({
           id: m.id,
-          title: m.moduleName,
-          description: m.content,
+          title: String(m.moduleName || ""),
+          description: extractTextFromContent(m.content, 80),
           banner: m.bannerLink,
         }));
         setModules(normalizedFallback);
@@ -181,11 +205,11 @@ const Home = () => {
           <View style={styles.summaryRow}>
             <View style={{ width: "80%" }}>
               <ThemedTitle style={styles.summaryTitle}>
-                Merhaba, {username}
+                {t('home.greeting', { name: username })}
               </ThemedTitle>
-              <ThemedText>{notificationCount} tane bildirimin var.</ThemedText>
+              <ThemedText>{t('home.notificationCount', { count: notificationCount })}</ThemedText>
             </View>
-            <TouchableOpacity onPress={() => alert("Bildirimler")}>
+            <TouchableOpacity onPress={() => alert(t('home.notifications'))}>
               <View style={styles.notificationIcon}>
                 <Ionicons
                   name="notifications-outline"
@@ -203,9 +227,9 @@ const Home = () => {
         </ThemedCard>
 
         <ThemedCard style={styles.listCard}>
-          <ThemedTitle style={styles.sectionTitle}>Bitkilerim</ThemedTitle>
+          <ThemedTitle style={styles.sectionTitle}>{t('home.myPlants')}</ThemedTitle>
           <ThemedText style={styles.sectionDescription}>
-            Suladigin bitkileri isaretlemeyi unutma!
+            {t('home.wateringReminder')}
           </ThemedText>
           <FlatList
             data={plantss}
@@ -219,7 +243,7 @@ const Home = () => {
                 name={item.name}
                 description={item.description}
                 imageUrl={item.imageUrl}
-                wateringLabel={item.lastWatered ? "Bugun" : "-"}
+                wateringLabel={item.lastWatered ? t('home.today') : "-"}
                 themeName={selectedTheme}
                 onPress={() =>
                   router.push({
@@ -235,11 +259,11 @@ const Home = () => {
 
         <ThemedCard style={styles.discoveryCard}>
           <View style={styles.discoveryHeader}>
-            <ThemedTitle style={{ fontSize: 20 }}>Egitimlere Goz At</ThemedTitle>
+            <ThemedTitle style={{ fontSize: 20 }}>{t('home.browseEducation')}</ThemedTitle>
             <TouchableOpacity
               onPress={() => router.push("/(dashboard)/education")}
             >
-              <ThemedText style={styles.linkText}>Tumunu Gor</ThemedText>
+              <ThemedText style={styles.linkText}>{t('home.seeAll')}</ThemedText>
             </TouchableOpacity>
           </View>
 

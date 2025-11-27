@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { StyleSheet, Image } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { updateUserDisplayName } from "../../src/services/firestoreService";
 import { getAuth, updateProfile } from "firebase/auth";
 import ThemedText from "../../components/ThemedText";
@@ -21,18 +22,19 @@ export default function EnterUsername() {
   const [loading, setLoading] = useState(false);
   const { alertConfig, showSuccess, showError, showWarning, hideAlert } =
     useCustomAlert();
+  const { t } = useTranslation();
 
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   const handleSaveUsername = async () => {
     if (!username.trim()) {
-      showWarning("Uyarı", "Lütfen kullanıcı adınızı girin.");
+      showWarning(t('common.warning'), t('auth.enterUsername'));
       return;
     }
 
     if (username.trim().length < 3) {
-      showWarning("Uyarı", "Kullanıcı adı en az 3 karakter olmalıdır.");
+      showWarning(t('common.warning'), t('auth.usernameMinLength'));
       return;
     }
 
@@ -49,7 +51,7 @@ export default function EnterUsername() {
       // Firestore'da displayName güncelle
       await updateUserDisplayName(userId, username.trim());
       
-      showSuccess("Harika!", "Şimdi adınızı girelim.", () => {
+      showSuccess(t('common.success'), t('auth.nowEnterName'), () => {
         hideAlert();
         router.replace({
           pathname: "/enterName",
@@ -57,8 +59,8 @@ export default function EnterUsername() {
         });
       });
     } catch (e) {
-      console.error("Kullanıcı adı kaydetme hatası:", e);
-      showError("Hata", "Kullanıcı adı kaydedilirken bir hata oluştu.");
+      console.error("Username save error:", e);
+      showError(t('common.error'), t('auth.usernameSaveError'));
     } finally {
       setLoading(false);
     }
@@ -82,14 +84,14 @@ export default function EnterUsername() {
             style={styles.logo}
           />
           <ThemedCard style={styles.card}>
-            <ThemedText style={styles.title}>Hoş Geldiniz! 🌱</ThemedText>
+            <ThemedText style={styles.title}>{t('auth.welcome')} 🌱</ThemedText>
             <ThemedText style={styles.subtitle}>
-              Kullanıcı adınızı belirleyin
+              {t('auth.setUsername')}
             </ThemedText>
 
             <ThemedTextInput
               style={styles.input}
-              placeholder="Kullanıcı Adı"
+              placeholder={t('auth.username')}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -97,7 +99,7 @@ export default function EnterUsername() {
             />
 
             <ThemedButton
-              title={loading ? "Kaydediliyor..." : "Devam Et"}
+              title={loading ? t('common.loading') : t('auth.continue')}
               onPress={handleSaveUsername}
               style={styles.button}
               disabled={loading}

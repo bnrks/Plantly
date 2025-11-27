@@ -8,6 +8,7 @@ import {
   Platform,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { signin } from "../../src/services/authService";
 import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
@@ -17,6 +18,7 @@ import { ThemeContext } from "../../src/context/ThemeContext";
 import ThemedTextInput from "../../components/ThemedTextInput";
 import { LinearGradient } from "expo-linear-gradient";
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,7 +73,7 @@ export default function LoginScreen() {
                 })
               }
             >
-              Giriş Yap
+              {t('auth.login')}
             </ThemedText>
 
             {/* E-posta girişi */}
@@ -82,7 +84,7 @@ export default function LoginScreen() {
                 borderRadius: 5,
                 height: 50,
               }}
-              placeholder="E-posta"
+              placeholder={t('auth.email')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -97,7 +99,7 @@ export default function LoginScreen() {
                 borderRadius: 5,
                 height: 50,
               }}
-              placeholder="Şifre"
+              placeholder={t('auth.password')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -105,7 +107,7 @@ export default function LoginScreen() {
 
             {/* Giriş butonu */}
             <ThemedButton
-              title="Giriş"
+              title={t('auth.loginButton')}
               style={{
                 height: 50,
                 borderRadius: 5,
@@ -121,12 +123,12 @@ export default function LoginScreen() {
 
             <TouchableOpacity style={styles.button}>
               <Link href={"/register"} style={styles.buttonText}>
-                Hesabın Yok Mu? Kayıt Ol
+                {t('auth.dontHaveAccount')}
               </Link>
             </TouchableOpacity>
             <TouchableOpacity style={{ ...styles.button, marginTop: 20 }}>
               <Link href={"/resetPassword"} style={styles.buttonText}>
-                Şifremi Unuttum
+                {t('auth.forgotPassword')}
               </Link>
             </TouchableOpacity>
           </ThemedCard>

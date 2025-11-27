@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { StyleSheet, Image } from "react-native";
 import { useRouter, Link } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { signup } from "../../src/services/authService";
 import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
@@ -13,6 +14,7 @@ import { KeyboardAvoidingView, ScrollView, Platform } from "react-native";
 import CustomAlert from "../../components/CustomAlert";
 import { useCustomAlert } from "../../src/hooks/ui/useCustomAlert";
 export default function Register() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,21 +27,21 @@ export default function Register() {
 
   const handleRegister = async () => {
     if (!email.trim()) {
-      showWarning("Hata", "Lütfen e-posta adresinizi girin!");
+      showWarning(t('common.error'), t('auth.enterEmail'));
       return;
     }
     if (password.length < 6) {
-      showWarning("Hata", "Şifre en az 6 karakter olmalıdır!");
+      showWarning(t('common.error'), t('auth.passwordMinLength'));
       return;
     }
     if (password !== confirmPassword) {
-      showWarning("Hata", "Şifreler eşleşmiyor!");
+      showWarning(t('common.error'), t('auth.passwordsNotMatch'));
       return;
     }
     try {
       const userCredential = await signup(email.trim(), password);
       const userId = userCredential.user.uid;
-      showSuccess("Başarılı", "Kayıt işlemi başarılı! Şimdi kullanıcı adınızı girelim.", () => {
+      showSuccess(t('common.success'), t('auth.registrationSuccess'), () => {
         hideAlert();
         router.replace({
           pathname: "/enterUsername",
@@ -47,7 +49,7 @@ export default function Register() {
         });
       });
     } catch (e) {
-      showError("Hata", e.message);
+      showError(t('common.error'), e.message);
     }
   };
 
@@ -81,12 +83,12 @@ export default function Register() {
                 })
               }
             >
-              Kayıt Ol
+              {t('auth.register')}
             </ThemedText>
 
             <ThemedTextInput
               style={styles.input}
-              placeholder="E-posta"
+              placeholder={t('auth.email')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -94,21 +96,21 @@ export default function Register() {
             />
             <ThemedTextInput
               style={styles.input}
-              placeholder="Şifre"
+              placeholder={t('auth.password')}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
             />
             <ThemedTextInput
               style={styles.input}
-              placeholder="Şifre Tekrar"
+              placeholder={t('auth.confirmPassword')}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
             />
 
             <ThemedButton
-              title="Kayıt Ol"
+              title={t('auth.registerButton')}
               style={{
                 height: 50,
                 borderRadius: 5,
@@ -123,7 +125,7 @@ export default function Register() {
             />
 
             <Link href="/login" style={[styles.link, styles.buttonText]}>
-              <ThemedText>Hesabın var mı? Giriş yap</ThemedText>
+              <ThemedText>{t('auth.alreadyHaveAccount')}</ThemedText>
             </Link>
           </ThemedCard>
         </LinearGradient>

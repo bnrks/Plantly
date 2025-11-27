@@ -1,6 +1,7 @@
 // app/(dashboard)/(tabs)/_layout.jsx
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Colors } from "../../../constants/Colors";
 import { useContext, useMemo, useState } from "react";
 import { ThemeContext } from "../../../src/context/ThemeContext";
@@ -29,47 +30,48 @@ export default function DashboardTabs() {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const menuItems = useMemo(
     () => [
       {
         key: "education",
-        label: "Egitimler",
+        label: t('menu.education'),
         icon: "school-outline",
         action: () => router.push("/(dashboard)/education"),
       },
       {
         key: "profile",
-        label: "Profil",
+        label: t('menu.profile'),
         icon: "person-outline",
         action: () => router.push("/(dashboard)/profile"),
       },
       {
         key: "notifications",
-        label: "Bildirimler",
+        label: t('menu.notifications'),
         icon: "notifications-outline",
         action: () => {},
       },
       {
         key: "care",
-        label: "Bakim",
+        label: t('menu.care'),
         icon: "leaf-outline",
         action: () => {},
       },
       {
         key: "assistant",
-        label: "Asistan",
+        label: t('menu.assistant'),
         icon: "color-wand-outline",
         action: () => {},
       },
       {
         key: "about",
-        label: "Hakkinda",
+        label: t('menu.about'),
         icon: "information-circle-outline",
         action: () => {},
       },
     ],
-    [router]
+    [router, t]
   );
 
   const closeMenu = () => setMenuVisible(false);

@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import ThemedView from "../../../components/ThemedView";
@@ -48,6 +49,7 @@ export default function ChatScreen() {
   const [wsError, setWsError] = useState(null);
   const [showConnectionError, setShowConnectionError] = useState(false);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   // Debug için state değişikliklerini takip et
   useEffect(() => {
@@ -203,8 +205,8 @@ export default function ChatScreen() {
   // Yeni sohbet başlatma fonksiyonu
   const startNewChat = () => {
     showConfirm(
-      "Yeni Sohbet",
-      "Yeni bir sohbet başlatmak istediğinize emin misiniz? Mevcut konuşma geçmişi kaybolacak.",
+      t('chat.newChat'),
+      t('chat.newChatConfirm'),
       async () => {
         try {
           await startNewChatFromHook();
@@ -224,11 +226,11 @@ export default function ChatScreen() {
 
           // CustomAlert ile de göster
           showConfirm(
-            "Sohbet Hatası",
-            "Yeni sohbet başlatırken bir hata oluştu. Lütfen tekrar deneyin.",
+            t('chat.chatError'),
+            t('chat.newChatError'),
             () => hideAlert(),
             () => hideAlert(),
-            "Tamam",
+            t('common.done'),
             null
           );
         }
@@ -265,8 +267,8 @@ export default function ChatScreen() {
 
       // CustomAlert ile de göster
       showConfirm(
-        "Bağlantı Hatası",
-        "Yeniden bağlantı sırasında bir hata oluştu. Lütfen tekrar deneyin.",
+        t('chat.connectionError'),
+        t('chat.newChatError'),
         () => {
           hideAlert();
           // Tekrar denemek isterse
@@ -275,8 +277,8 @@ export default function ChatScreen() {
         () => {
           hideAlert();
         },
-        "Tekrar Dene",
-        "İptal"
+        t('chat.reconnect'),
+        t('common.cancel')
       );
     }
   };
@@ -303,7 +305,7 @@ export default function ChatScreen() {
           <View style={[styles.messageBubble, styles.notesBubble]}>
             <View style={styles.notesHeader}>
               <Ionicons name="bulb" size={18} color="#FF9800" />
-              <ThemedText style={styles.notesTitle}>Bakım Önerileri</ThemedText>
+              <ThemedText style={styles.notesTitle}>{t('plants.careRecommendations')}</ThemedText>
             </View>
             {Array.isArray(item.content) &&
               item.content.map((note, index) => (
@@ -318,7 +320,7 @@ export default function ChatScreen() {
               >
                 <Ionicons name="bookmark" size={16} color="#fff" />
                 <ThemedText style={styles.saveNotesButtonText}>
-                  Önerileri Kaydet
+                  {t('chat.saveNotes')}
                 </ThemedText>
               </TouchableOpacity>
             )}
@@ -382,7 +384,7 @@ export default function ChatScreen() {
               <View style={styles.suggestionsHeader}>
                 <Ionicons name="bulb" size={16} color="#FF9800" />
                 <ThemedText style={styles.suggestionsTitle}>
-                  Bakım Önerileri
+                  {t('plants.careRecommendations')}
                 </ThemedText>
               </View>
               {item.suggestions.map((suggestion, index) => (
@@ -544,7 +546,7 @@ export default function ChatScreen() {
                       messages.length === 0 && { opacity: 0.5 },
                     ]}
                   >
-                    Yeni Sohbet
+                    {t('chat.newChat')}
                   </ThemedText>
                 </TouchableOpacity>
 
@@ -564,7 +566,7 @@ export default function ChatScreen() {
                     color={theme.text}
                   />
                   <ThemedText style={styles.halfButtonText}>
-                    {isLoadingHistory ? "Yükleniyor..." : "Geçmiş Sohbetler"}
+                    {isLoadingHistory ? t('common.loading') : t('chat.chatHistory')}
                   </ThemedText>
                 </TouchableOpacity>
               </View>
@@ -638,22 +640,20 @@ export default function ChatScreen() {
                           <Ionicons name="leaf" size={24} color="#4CAF50" />
                         </View>
                         <ThemedTitle style={styles.title}>
-                          🌱 Plantly AI Asistan
+                          🌱 {t('chat.title')}
                         </ThemedTitle>
                         <ThemedText style={styles.subtitle}>
-                          Bitkilerinizin uzmanı yanınızda! Hastalık teşhisi,
-                          bakım önerileri ve daha fazlası için fotoğraf çekin
-                          veya soru sorun.
+                          {t('chat.subtitle')}
                         </ThemedText>
                         <Image
                           source={require("../../../assets/plantly-asistant.png")}
                           style={styles.welcomeAvatar}
                         />
                         <ThemedText style={styles.welcomeText}>
-                          Merhaba! Ben Plantly asistanınızım. 🌱
+                          {t('chat.welcomeMessage')}
                         </ThemedText>
                         <ThemedText style={styles.welcomeSubtext}>
-                          Bitkileriniz hakkında sorularınızı sorabilirsiniz.
+                          {t('chat.welcomeSubtext')}
                         </ThemedText>
                       </View>
                     }
@@ -725,7 +725,7 @@ export default function ChatScreen() {
 
                       <TextInput
                         style={[styles.textInput, { color: theme.fourthBg }]}
-                        placeholder="Mesajınızı yazın..."
+                        placeholder={t('chat.placeholder')}
                         placeholderTextColor={theme.fourthBg + "80"}
                         value={inputText}
                         onChangeText={setInputText}
@@ -767,10 +767,10 @@ export default function ChatScreen() {
                 style={styles.waitingAvatar}
               />
               <ThemedText style={styles.waitingText}>
-                Asistan bağlantısı kuruluyor...
+                {t('chat.connecting')}
               </ThemedText>
               <ThemedText style={styles.waitingSubtext}>
-                Lütfen bekleyin, size yardım etmek için hazırlanıyorum.
+                {t('chat.waitingSubtext')}
               </ThemedText>
             </View>
           )}
@@ -786,7 +786,7 @@ export default function ChatScreen() {
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <ThemedTitle style={styles.modalTitle}>
-                  Geçmiş Sohbetler
+                  {t('chat.chatHistory')}
                 </ThemedTitle>
                 <TouchableOpacity
                   style={styles.closeButton}
@@ -805,10 +805,10 @@ export default function ChatScreen() {
                     color={theme.text + "50"}
                   />
                   <ThemedText style={styles.emptyText}>
-                    Henüz geçmiş sohbet bulunmuyor
+                    {t('chat.noHistory')}
                   </ThemedText>
                   <ThemedText style={styles.emptySubtext}>
-                    İlk sohbetinizi başlatın!
+                    {t('chat.startFirstChat')}
                   </ThemedText>
                 </View>
               ) : (
@@ -941,7 +941,7 @@ export default function ChatScreen() {
                         },
                       ]}
                     >
-                      Bitki Seçin
+                      {t('chat.selectPlant')}
                     </ThemedTitle>
                   </View>
                   <TouchableOpacity
@@ -980,7 +980,7 @@ export default function ChatScreen() {
                       color={theme.thirdBg || "#34d399"}
                     />
                     <ThemedText style={{ marginTop: 15, fontSize: 16 }}>
-                      Bitkiler yükleniyor...
+                      {t('common.loading')}
                     </ThemedText>
                   </View>
                 ) : userPlants.length === 0 ? (
@@ -1015,7 +1015,7 @@ export default function ChatScreen() {
                         { fontSize: 18, fontWeight: "600" },
                       ]}
                     >
-                      Henüz bitki eklenmemiş
+                      {t('chat.noPlants')}
                     </ThemedText>
                     <ThemedText
                       style={[
@@ -1023,7 +1023,7 @@ export default function ChatScreen() {
                         { fontSize: 15, marginTop: 8 },
                       ]}
                     >
-                      Önce "Bitki Ekle" sayfasından bir bitki ekleyin
+                      {t('chat.addPlantFirst')}
                     </ThemedText>
                   </View>
                 ) : (
@@ -1037,7 +1037,7 @@ export default function ChatScreen() {
                         opacity: 0.8,
                       }}
                     >
-                      🌱 Bitkileriniz ({userPlants.length})
+                      🌱 {t('chat.yourPlants')} ({userPlants.length})
                     </ThemedText>
                     <FlatList
                       data={userPlants}

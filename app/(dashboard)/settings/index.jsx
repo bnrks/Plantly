@@ -1,7 +1,8 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { StyleSheet, View, Switch, TouchableOpacity, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import ThemedTitle from "../../../components/ThemedTitle";
@@ -15,9 +16,11 @@ import { AuthContext } from "../../../src/context/AuthContext";
 import { deleteUserAccount } from "../../../src/services/authService";
 import CustomAlert from "../../../components/CustomAlert";
 import { useCustomAlert } from "../../../src/hooks/ui/useCustomAlert";
+import { SUPPORTED_LANGUAGES, setStoredLanguage, getCurrentLanguage } from "../../../src/locales";
 
 export default function Settings() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { theme: currentTheme, toggleTheme } = useContext(ThemeContext);
   const theme = Colors[currentTheme] ?? Colors.light;
   const { user, logout } = useContext(AuthContext);
@@ -29,11 +32,13 @@ export default function Settings() {
   const [diseaseNotif, setDiseaseNotif] = useState(true);
 
   // Dil seçeneği state
-  const [selectedLanguage, setSelectedLanguage] = useState("tr");
-  const languages = [
-    { code: "tr", name: "Türkçe", flag: "🇹🇷" },
-    { code: "en", name: "English", flag: "🇬🇧" },
-  ];
+  const [selectedLanguage, setSelectedLanguage] = useState(getCurrentLanguage() || "tr");
+
+  // Dil değiştirme fonksiyonu
+  const handleLanguageChange = async (langCode) => {
+    setSelectedLanguage(langCode);
+    await setStoredLanguage(langCode);
+  };
 
   // User yoksa erken return
   if (!user) {
@@ -43,34 +48,34 @@ export default function Settings() {
   const handleLogout = async () => {
     try {
       await logout();
-      showSuccess("Başarılı", "Çıkış yapıldı", () => {
+      showSuccess(t("common.success"), t("settings.logoutSuccess"), () => {
         hideAlert();
         router.replace("/login");
       });
     } catch (error) {
       console.error("Çıkış yapılırken hata:", error);
-      showError("Hata", "Çıkış yapılırken bir hata oluştu");
+      showError(t("common.error"), t("settings.logoutError"));
     }
   };
 
   const handleDeleteAccount = () => {
     showConfirm(
-      "Hesabı Sil",
-      "Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm verileriniz silinecektir.",
+      t("settings.deleteAccount"),
+      t("settings.deleteAccountConfirm"),
       async () => {
         try {
           hideAlert();
           await deleteUserAccount(user.uid);
-          showSuccess("Başarılı", "Hesabınız silindi", () => {
+          showSuccess(t("common.success"), t("settings.deleteAccountSuccess"), () => {
             hideAlert();
             router.replace("/login");
           });
         } catch (error) {
           console.error("Hesap silinirken hata:", error);
           if (error.code === "auth/requires-recent-login") {
-            showError("Hata", "Güvenlik nedeniyle yeniden giriş yapmanız gerekiyor. Lütfen çıkış yapıp tekrar girin.");
+            showError(t("common.error"), t("settings.reloginRequired"));
           } else {
-            showError("Hata", "Hesap silinirken bir hata oluştu");
+            showError(t("common.error"), t("settings.deleteAccountError"));
           }
         }
       },
@@ -91,13 +96,13 @@ export default function Settings() {
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >
-        <ThemedTitle style={styles.title}>Ayarlar</ThemedTitle>
+        <ThemedTitle style={styles.title}>{t("settings.title")}</ThemedTitle>
 
         {/* Tema Değiştirme */}
         <View style={[styles.section, { backgroundColor: theme.fourthBg }]}>
           <View style={styles.sectionLeft}>
             <Ionicons name="moon-outline" size={22} color={theme.text} style={styles.sectionIcon} />
-            <ThemedText style={styles.sectionText}>Koyu Mod</ThemedText>
+            <ThemedText style={styles.sectionText}>{t("settings.darkMode")}</ThemedText>
           </View>
           <Switch
             trackColor={{ false: "#767577", true: "#81b0ff" }}
@@ -113,12 +118,12 @@ export default function Settings() {
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Bildirim Ayarları</ThemedTitle>
+        <ThemedTitle style={styles.sectionTitle}>{t("settings.notifications")}</ThemedTitle>
 
         <View style={[styles.section, { backgroundColor: theme.fourthBg }]}>
           <View style={styles.sectionLeft}>
             <Ionicons name="water-outline" size={22} color={theme.text} style={styles.sectionIcon} />
-            <ThemedText style={styles.sectionText}>Sulama Hatırlatıcıları</ThemedText>
+            <ThemedText style={styles.sectionText}>{t("settings.wateringReminders")}</ThemedText>
           </View>
           <Switch
             trackColor={{ false: "#767577", true: "#81b0ff" }}
@@ -132,7 +137,7 @@ export default function Settings() {
         <View style={[styles.section, { backgroundColor: theme.fourthBg }]}>
           <View style={styles.sectionLeft}>
             <Ionicons name="calendar-outline" size={22} color={theme.text} style={styles.sectionIcon} />
-            <ThemedText style={styles.sectionText}>Rutin Bakım Bildirimleri</ThemedText>
+            <ThemedText style={styles.sectionText}>{t("settings.routineCare")}</ThemedText>
           </View>
           <Switch
             trackColor={{ false: "#767577", true: "#81b0ff" }}
@@ -146,7 +151,7 @@ export default function Settings() {
         <View style={[styles.section, { backgroundColor: theme.fourthBg, marginBottom: 0 }]}>
           <View style={styles.sectionLeft}>
             <Ionicons name="warning-outline" size={22} color={theme.text} style={styles.sectionIcon} />
-            <ThemedText style={styles.sectionText}>Hastalık Uyarıları</ThemedText>
+            <ThemedText style={styles.sectionText}>{t("settings.diseaseAlerts")}</ThemedText>
           </View>
           <Switch
             trackColor={{ false: "#767577", true: "#81b0ff" }}
@@ -162,14 +167,14 @@ export default function Settings() {
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Kullanıcı Bilgileri</ThemedTitle>
+        <ThemedTitle style={styles.sectionTitle}>{t("settings.userInfo")}</ThemedTitle>
 
         <View style={[styles.infoSection, { backgroundColor: theme.fourthBg }]}>
           <View style={styles.infoRow}>
             <Ionicons name="mail-outline" size={22} color={theme.text} style={styles.sectionIcon} />
             <View style={styles.infoContent}>
-              <ThemedText style={styles.infoLabel}>E-posta</ThemedText>
-              <ThemedText style={styles.infoValue}>{user.email || "Belirtilmemiş"}</ThemedText>
+              <ThemedText style={styles.infoLabel}>{t("settings.email")}</ThemedText>
+              <ThemedText style={styles.infoValue}>{user.email || t("settings.notSpecified")}</ThemedText>
             </View>
           </View>
         </View>
@@ -178,8 +183,8 @@ export default function Settings() {
           <View style={styles.infoRow}>
             <Ionicons name="person-outline" size={22} color={theme.text} style={styles.sectionIcon} />
             <View style={styles.infoContent}>
-              <ThemedText style={styles.infoLabel}>Kullanıcı Adı</ThemedText>
-              <ThemedText style={styles.infoValue}>{user.displayName || user.email?.split("@")[0] || "Belirtilmemiş"}</ThemedText>
+              <ThemedText style={styles.infoLabel}>{t("settings.username")}</ThemedText>
+              <ThemedText style={styles.infoValue}>{user.displayName || user.email?.split("@")[0] || t("settings.notSpecified")}</ThemedText>
             </View>
           </View>
         </View>
@@ -189,10 +194,10 @@ export default function Settings() {
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Dil Seçeneği</ThemedTitle>
+        <ThemedTitle style={styles.sectionTitle}>{t("settings.language")}</ThemedTitle>
 
         <View style={styles.languageContainer}>
-          {languages.map((lang) => (
+          {SUPPORTED_LANGUAGES.map((lang) => (
             <TouchableOpacity
               key={lang.code}
               style={[
@@ -202,7 +207,7 @@ export default function Settings() {
                   borderColor: selectedLanguage === lang.code ? "#2E7D32" : "#999",
                 },
               ]}
-              onPress={() => setSelectedLanguage(lang.code)}
+              onPress={() => handleLanguageChange(lang.code)}
             >
               <ThemedText style={styles.flagEmoji}>{lang.flag}</ThemedText>
               {selectedLanguage === lang.code && (
@@ -217,14 +222,14 @@ export default function Settings() {
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >
-        <ThemedTitle style={styles.sectionTitle}>Hesap İşlemleri</ThemedTitle>
+        <ThemedTitle style={styles.sectionTitle}>{t("settings.accountActions")}</ThemedTitle>
 
         <TouchableOpacity
           style={[styles.logoutButton, { backgroundColor: theme.primary }]}
           onPress={handleLogout}
         >
           <Ionicons name="log-out-outline" size={22} color="#000" />
-          <ThemedText style={styles.logoutButtonText}>Çıkış Yap</ThemedText>
+          <ThemedText style={styles.logoutButtonText}>{t("settings.logout")}</ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -233,7 +238,7 @@ export default function Settings() {
         >
           <Ionicons name="trash-outline" size={22} color={theme.danger} />
           <ThemedText style={[styles.deleteButtonText, { color: theme.danger }]}>
-            Hesabı Sil
+            {t("settings.deleteAccount")}
           </ThemedText>
         </TouchableOpacity>
       </ThemedCard>

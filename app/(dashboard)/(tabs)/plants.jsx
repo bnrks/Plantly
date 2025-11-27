@@ -2,6 +2,7 @@ import { StyleSheet, FlatList, View } from "react-native";
 import { useState, useEffect, useContext } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 
 import { fetchPlants } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
@@ -17,6 +18,7 @@ import ScreenContainer from "../../../components/ScreenContainer";
 import PlantsSkeleton from "../../../components/skeletons/PlantsSkeleton";
 
 const Plants = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { refresh } = useLocalSearchParams();
   const { user } = useContext(AuthContext);
@@ -60,7 +62,7 @@ const Plants = () => {
       <Header />
 
       <ThemedCard style={[styles.card, { backgroundColor: theme.secondBg }]}>
-        <ThemedTitle style={styles.cardTitle}>Bitkilerim</ThemedTitle>
+        <ThemedTitle style={styles.cardTitle}>{t('plants.title')}</ThemedTitle>
 
         <FlatList
           data={plantss}
@@ -87,7 +89,7 @@ const Plants = () => {
           )}
           ListEmptyComponent={
             <ThemedTitle style={{ textAlign: "center", marginTop: 20 }}>
-              Hic bitkin yok
+              {t('plants.noPlants')}
             </ThemedTitle>
           }
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
@@ -95,7 +97,7 @@ const Plants = () => {
       </ThemedCard>
 
       <ThemedButton
-        title="Yeni Bitki Ekle"
+        title={t('plants.addNew')}
         onPress={() => router.push("../addPlant")}
         style={[
           styles.addButton,

@@ -9,6 +9,9 @@ import { Colors } from "../constants/Colors";
 import { AuthProvider } from "../src/context/AuthContext";
 import { AlertSystemProvider } from "../src/context/AlertSystemProvider";
 
+// i18n başlatma
+import "../src/locales";
+
 class SimpleErrorBoundary extends React.Component {
   constructor(props) {
     super(props);

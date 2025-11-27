@@ -18,13 +18,17 @@ const HomeEducationCard = ({
       ? { uri: banner }
       : banner || require("../assets/header.png");
 
+  // Ensure text values are always strings
+  const safeTitle = typeof title === 'string' ? title : '';
+  const safeDescription = typeof description === 'string' ? description : '';
+
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={onPress}>
       <Image source={imageSource} style={styles.image} />
       <View style={[styles.info, { backgroundColor: theme.secondBg }]}>
-        <ThemedTitle style={styles.title}>{title}</ThemedTitle>
+        <ThemedTitle style={styles.title}>{safeTitle}</ThemedTitle>
         <ThemedText style={[styles.desc, { color: theme.text }]} numberOfLines={2}>
-          {description}
+          {safeDescription}
         </ThemedText>
       </View>
     </TouchableOpacity>

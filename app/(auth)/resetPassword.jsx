@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Link, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
 import ThemedCard from "../../components/ThemedCard";
@@ -11,6 +12,7 @@ import ThemedTextInput from "../../components/ThemedTextInput";
 import { LinearGradient } from "expo-linear-gradient";
 import { resetPassword } from "../../src/services/authService";
 const ResetPassword = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
@@ -69,7 +71,7 @@ const ResetPassword = () => {
             })
           }
         >
-          Şifremi Sıfırla
+          {t('auth.resetPassword')}
         </ThemedText>
 
         {/* E-posta girişi */}
@@ -80,7 +82,7 @@ const ResetPassword = () => {
             borderRadius: 5,
             height: 50,
           }}
-          placeholder="E-posta"
+          placeholder={t('auth.email')}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -89,7 +91,7 @@ const ResetPassword = () => {
         />
 
         <ThemedButton
-          title={resetSuccess ? "Gönderildi" : "Şifre Sıfırlama Linki Gönder"}
+          title={resetSuccess ? t('common.done') : t('auth.resetPasswordButton')}
           style={{
             height: 50,
             borderRadius: 5,
@@ -108,12 +110,12 @@ const ResetPassword = () => {
 
         <TouchableOpacity style={styles.button}>
           <Link href={"/register"} style={styles.buttonText}>
-            Hesabın Yok Mu? Kayıt Ol
+            {t('auth.dontHaveAccount')}
           </Link>
         </TouchableOpacity>
         <TouchableOpacity style={{ ...styles.button, marginTop: 20 }}>
           <Link href={"/login"} style={styles.buttonText}>
-            Giriş Yap
+            {t('auth.login')}
           </Link>
         </TouchableOpacity>
       </ThemedCard>

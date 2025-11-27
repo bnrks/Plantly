@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { View, Image, Alert, ScrollView, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
@@ -21,6 +22,7 @@ import { styles } from "../../../css/analysisStyles";
 const analyzerIcon = require("../../../assets/analyzer_icon.png");
 
 export default function Analysis() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { theme: selectedTheme } = useContext(ThemeContext);
@@ -70,8 +72,8 @@ export default function Analysis() {
         <View style={[localStyles.analysisBanner, { backgroundColor: theme.thirdBg }]}>
           <Image source={analyzerIcon} style={localStyles.analyzerIcon} />
           <View style={localStyles.bannerTextContainer}>
-            <ThemedTitle style={localStyles.bannerTitle}>Yapay Zeka</ThemedTitle>
-            <ThemedTitle style={localStyles.bannerSubtitle}>Hastalık Analizi</ThemedTitle>
+            <ThemedTitle style={localStyles.bannerTitle}>{t('analysis.aiTitle')}</ThemedTitle>
+            <ThemedTitle style={localStyles.bannerSubtitle}>{t('analysis.aiSubtitle')}</ThemedTitle>
           </View>
         </View>
 
@@ -84,19 +86,16 @@ export default function Analysis() {
 
             <ThemedCard style={styles.infoCard}>
               <ThemedTitle style={styles.title}>
-                Planty ile Yaprak Analizi
+                {t('analysis.leafAnalysis')}
               </ThemedTitle>
               <ThemedText style={styles.subtitle}>
-                Yapay zeka asistanımız Planty ile bitkinizin sağlığını kontrol
-                edin!
+                {t('analysis.leafAnalysisDescription')}
               </ThemedText>
 
               <View style={styles.divider} />
 
               <ThemedText style={styles.text}>
-                Bitkinizdeki olası hastalıkları tespit etmek için net bir yaprak
-                görüntüsü çekin. Analiz sonucu bitkinin durumu ve bakım
-                önerileri hakkında detaylı bilgi alacaksınız.
+                {t('analysis.analysisInstructions')}
               </ThemedText>
 
               <View style={styles.tipsContainer}>
@@ -107,7 +106,7 @@ export default function Analysis() {
                     color={theme.accent}
                   />
                   <ThemedText style={styles.tipText}>
-                    Yaprağı tam çerçeveye alın
+                    {t('analysis.tip1')}
                   </ThemedText>
                 </View>
                 <View style={styles.tipRow}>
@@ -117,7 +116,7 @@ export default function Analysis() {
                     color={theme.accent}
                   />
                   <ThemedText style={styles.tipText}>
-                    İyi aydınlatılmış ortamda çekim yapın
+                    {t('analysis.tip2')}
                   </ThemedText>
                 </View>
                 <View style={styles.tipRow}>
@@ -127,14 +126,14 @@ export default function Analysis() {
                     color={theme.accent}
                   />
                   <ThemedText style={styles.tipText}>
-                    Arka planın sade olmasına özen gösterin
+                    {t('analysis.tip3')}
                   </ThemedText>
                 </View>
               </View>
 
               <View style={styles.buttonContainer}>
                 <ThemedButton
-                  title="Fotoğraf Çek"
+                  title={t('analysis.takePhoto')}
                   onPress={handlePhotoTaken}
                   style={styles.button}
                   icon={
@@ -147,7 +146,7 @@ export default function Analysis() {
                   }
                 />
                 <ThemedButton
-                  title="Galeriden Seç"
+                  title={t('analysis.selectFromGallery')}
                   onPress={handleGalleryPick}
                   style={styles.button}
                   icon={
@@ -168,16 +167,15 @@ export default function Analysis() {
           <View style={styles.block}>
             <ThemedCard style={styles.previewCard}>
               <ThemedTitle style={styles.previewTitle}>
-                Fotoğrafı Onaylayın
+                {t('analysis.confirmPhoto')}
               </ThemedTitle>
               <Image source={{ uri: photoUri }} style={styles.preview} />
               <ThemedText style={styles.previewText}>
-                Bu görüntü analiz için uygun mu? Eğer yaprak net görünmüyorsa,
-                yeniden çekim yapabilirsiniz.
+                {t('analysis.confirmPhotoDescription')}
               </ThemedText>
               <View style={styles.actionRow}>
                 <ThemedButton
-                  title={isProcessing ? "İşleniyor..." : "Onayla ve Analiz Et"}
+                  title={isProcessing ? t('analysis.analyzing') : t('analysis.confirmAndAnalyze')}
                   onPress={sendToAnalysis}
                   disabled={isProcessing}
                   icon={
@@ -190,7 +188,7 @@ export default function Analysis() {
                   }
                 />
                 <ThemedButton
-                  title="Tekrar Çek"
+                  title={t('analysis.retake')}
                   onPress={() => {
                     clearPhoto();
                     goToInstruction();

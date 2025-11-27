@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
 import { ThemeContext } from "../../../src/context/ThemeContext";
@@ -19,6 +20,49 @@ import EducationListSkeleton from "../../../components/skeletons/EducationListSk
 import { fetchEducationModules } from "../../../src/services/firestoreService";
 
 const { width } = Dimensions.get("window");
+
+/**
+ * TipTap JSON content'inden plain text özet çıkarır
+ * @param {Object|string} content - TipTap JSON veya string
+ * @param {number} maxLength - Maksimum karakter sayısı
+ * @returns {string} Plain text özet
+ */
+function extractTextFromContent(content, maxLength = 100) {
+  if (!content) return "";
+  
+  // String ise direkt döndür
+  if (typeof content === "string") {
+    return content.length > maxLength 
+      ? content.substring(0, maxLength) + "..." 
+      : content;
+  }
+
+  // TipTap JSON ise text'leri topla
+  if (content.type === "doc" && Array.isArray(content.content)) {
+    const texts = [];
+    
+    const extractText = (node) => {
+      if (!node) return;
+      
+      if (node.type === "text" && node.text) {
+        texts.push(node.text);
+      }
+      
+      if (Array.isArray(node.content)) {
+        node.content.forEach(extractText);
+      }
+    };
+    
+    content.content.forEach(extractText);
+    const fullText = texts.join(" ").trim();
+    
+    return fullText.length > maxLength 
+      ? fullText.substring(0, maxLength) + "..." 
+      : fullText;
+  }
+  
+  return "";
+}
 
 const MODULES = [
   {
@@ -61,6 +105,7 @@ const MODULES = [
 ];
 
 export default function EducationScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
@@ -84,8 +129,8 @@ export default function EducationScreen() {
 
         const normalized = source.map((item, idx) => ({
           id: item.id || item.moduleName || `module-${idx}`,
-          title: item.moduleName || item.title || "Egitim Modulu",
-          description: item.content || item.description || "",
+          title: item.moduleName || item.title || "Eğitim Modülü",
+          description: extractTextFromContent(item.content, 120) || item.description || "",
           duration: item.duration || "",
           image:
             item.bannerLink && item.bannerLink.length > 0
@@ -136,9 +181,9 @@ export default function EducationScreen() {
           >
             <Ionicons name="school-outline" size={22} color={accentColor} />
           </View>
-          <ThemedTitle style={styles.heroTitle}>Egitim Kutuphanesi</ThemedTitle>
+          <ThemedTitle style={styles.heroTitle}>{t('education.title')}</ThemedTitle>
           <ThemedText style={[styles.heroSubtitle, { color: theme.text }]}>
-            Her seviyeden bitki sever icin hazirlanan modulleri kesfet, bilgin tazelensin.
+            {t('education.subtitle')}
           </ThemedText>
         </View>
 

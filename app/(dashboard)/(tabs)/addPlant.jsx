@@ -10,6 +10,7 @@ import {
   FlatList,
   Pressable,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import ThemedView from "../../../components/ThemedView";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
@@ -39,6 +40,7 @@ export default function AddPlantScreen({}) {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   // User yoksa erken return
   if (!user) {
@@ -104,7 +106,7 @@ export default function AddPlantScreen({}) {
     const validation = validateForm(photoUri, species, notes);
 
     if (!validation.isValid) {
-      showWarning("Eksik Bilgi", validation.message);
+      showWarning(t('plants.missingInfo'), validation.message);
       return;
     }
 
@@ -132,7 +134,7 @@ export default function AddPlantScreen({}) {
       safe={true}
     >
       <Header />
-      <ThemedTitle style={styles.header}>Yeni Bitki Ekle</ThemedTitle>
+      <ThemedTitle style={styles.header}>{t('plants.addPlant')}</ThemedTitle>
       <ThemedCard
         style={{
           maxHeight: "70%",
@@ -165,7 +167,7 @@ export default function AddPlantScreen({}) {
                 >
                   <Ionicons name="camera" size={24} color="#fff" />
                   <ThemedText style={styles.changePhotoText}>
-                    Değiştir
+                    {t('plants.change')}
                   </ThemedText>
                 </View>
                 <TouchableOpacity
@@ -190,9 +192,9 @@ export default function AddPlantScreen({}) {
                   size={32}
                   color={theme.thirdBg}
                 />
-                <ThemedText style={styles.photoText}>Fotoğraf Ekle</ThemedText>
+                <ThemedText style={styles.photoText}>{t('plants.addPhoto')}</ThemedText>
                 <ThemedText style={styles.photoSubtext}>
-                  Dokunarak fotoğraf seç
+                  {t('plants.tapToSelectPhoto')}
                 </ThemedText>
               </View>
             </TouchableOpacity>
@@ -218,7 +220,7 @@ export default function AddPlantScreen({}) {
                     pickImage();
                   }}
                 >
-                  <Text style={styles.modalText}>Galeriden Seç</Text>
+                  <Text style={styles.modalText}>{t('plants.selectFromGallery')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.modalButton}
@@ -227,7 +229,7 @@ export default function AddPlantScreen({}) {
                     takePhoto();
                   }}
                 >
-                  <Text style={styles.modalText}>Kamera</Text>
+                  <Text style={styles.modalText}>{t('plants.camera')}</Text>
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
@@ -242,11 +244,11 @@ export default function AddPlantScreen({}) {
                 color={theme.thirdBg}
                 style={{ marginRight: 13, paddingRight: 2 }}
               />
-              Bitki Adı
+              {t('plants.plantName')}
             </ThemedText>
             <TextInput
               style={styles.input}
-              placeholder="Bitkinin adını girin..."
+              placeholder={t('plants.plantNamePlaceholder')}
               placeholderTextColor="#999"
               value={name}
               onChangeText={setName}
@@ -262,13 +264,13 @@ export default function AddPlantScreen({}) {
                 color={theme.thirdBg}
                 style={{ marginRight: 13 }}
               />
-              Bitki Türü
+              {t('plants.species')}
             </ThemedText>
             <View style={styles.speciesContainer}>
               <TextInput
                 ref={speciesInputRef}
                 style={styles.input}
-                placeholder="Türünü seçin veya yazın..."
+                placeholder={t('plants.speciesPlaceholder')}
                 placeholderTextColor="#999"
                 value={species}
                 onChangeText={handleSpeciesChange}
@@ -340,11 +342,11 @@ export default function AddPlantScreen({}) {
                 color={theme.thirdBg}
                 style={{ marginRight: 13 }}
               />
-              Açıklama
+              {t('plants.description')}
             </ThemedText>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Bitkiniz hakkında kısa açıklama..."
+              placeholder={t('plants.descriptionPlaceholder')}
               placeholderTextColor="#999"
               value={description}
               onChangeText={setDescription}
@@ -361,19 +363,19 @@ export default function AddPlantScreen({}) {
                 color={theme.thirdBg}
                 style={{ marginRight: 13 }}
               />
-              Sulama Aralığı
+              {t('plants.wateringInterval')}
             </ThemedText>
             <View style={styles.wateringInputContainer}>
               <TextInput
                 style={[styles.input, styles.wateringInput]}
-                placeholder="Kaç gün"
+                placeholder={t('plants.howManyDays')}
                 placeholderTextColor="#999"
                 value={wateringInterval}
                 onChangeText={setWateringInterval}
                 keyboardType="numeric"
                 maxLength={3}
               />
-              <ThemedText style={styles.wateringUnit}>gün</ThemedText>
+              <ThemedText style={styles.wateringUnit}>{t('plants.days')}</ThemedText>
             </View>
           </View>
 
@@ -386,12 +388,12 @@ export default function AddPlantScreen({}) {
                 color={theme.thirdBg}
                 style={{ marginRight: 13 }}
               />
-              Notlar
+              {t('plants.notes')}
             </ThemedText>
             <View style={styles.noteInputRow}>
               <TextInput
                 style={[styles.input, { flex: 1 }]}
-                placeholder="Yeni not ekle..."
+                placeholder={t('plants.addNote')}
                 placeholderTextColor="#999"
                 value={noteText}
                 onChangeText={setNoteText}
@@ -433,7 +435,7 @@ export default function AddPlantScreen({}) {
       {/* Kaydet Butonu */}
       <View style={{ paddingHorizontal: 20, paddingBottom: 24, paddingTop: 8 }}>
         <ThemedButton
-          title={isSaving ? "Kaydediliyor…" : "Kaydet"}
+          title={isSaving ? t('common.loading') : t('common.save')}
           onPress={onSave}
           style={[
             styles.saveButton,

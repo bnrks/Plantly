@@ -11,6 +11,7 @@ import {
   Platform,
   Animated,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,6 +35,7 @@ export default function EditPlant() {
   const { user } = useContext(AuthContext);
   const { theme: selTheme } = useContext(ThemeContext);
   const colors = selTheme === "dark" ? Colors.dark : Colors.light;
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
@@ -66,7 +68,7 @@ export default function EditPlant() {
       setPhotoUri(data.imageUrl || null);
       setNotes(data.notes || []);
     } catch {
-      Alert.alert("Hata", "Bitki bilgileri yüklenirken hata oluştu.");
+      Alert.alert(t('common.error'), t('plants.loadError'));
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export default function EditPlant() {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("İzin Gerekli", "Galerinize erişim izni vermelisiniz.");
+      Alert.alert(t('plants.permissionRequired'), t('plants.galleryPermission'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -99,7 +101,7 @@ export default function EditPlant() {
   const handleSave = async () => {
     if (saving) return;
     if (!name.trim() || !species.trim()) {
-      Alert.alert("Eksik Bilgi", "İsim ve tür boş bırakılamaz.");
+      Alert.alert(t('plants.missingInfo'), t('plants.nameAndSpeciesRequired'));
       return;
     }
     setSaving(true);
@@ -111,13 +113,13 @@ export default function EditPlant() {
         imageUrl: photoUri,
         notes,
       });
-      Alert.alert("Başarılı", "Bitki güncellendi.");
+      Alert.alert(t('common.success'), t('plants.plantUpdated'));
       router.replace({
         pathname: "/(dashboard)/(tabs)/plants",
         params: { refresh: "true" },
       });
     } catch {
-      Alert.alert("Hata", "Güncelleme sırasında bir sorun oluştu.");
+      Alert.alert(t('common.error'), t('plants.updateError'));
       setSaving(false);
     }
   };
@@ -144,7 +146,7 @@ export default function EditPlant() {
               },
             ]}
           >
-            <ThemedTitle style={styles.title}>Bitkini Güncelle</ThemedTitle>
+            <ThemedTitle style={styles.title}>{t('plants.updatePlant')}</ThemedTitle>
             <ScrollView
               contentContainerStyle={{ paddingBottom: 10 }}
               showsVerticalScrollIndicator={false}
@@ -178,20 +180,20 @@ export default function EditPlant() {
                 >
                   <Ionicons name="camera" size={20} color="#fff" />
                   <ThemedText style={styles.imageText}>
-                    Fotoğraf Değiştir
+                    {t('plants.changePhoto')}
                   </ThemedText>
                 </View>
               </TouchableOpacity>
 
               <View style={styles.formSection}>
                 <ThemedTitle style={styles.sectionTitle}>
-                  Temel Bilgiler
+                  {t('plants.basicInfo')}
                 </ThemedTitle>
 
                 <View style={styles.fieldContainer}>
                   <View style={styles.labelContainer}>
                     <Ionicons name="leaf" size={20} color={colors.accent} />
-                    <ThemedText style={styles.label}>Bitki Adı</ThemedText>
+                    <ThemedText style={styles.label}>{t('plants.plantName')}</ThemedText>
                   </View>
                   <TextInput
                     style={[
@@ -200,7 +202,7 @@ export default function EditPlant() {
                     ]}
                     value={name}
                     onChangeText={setName}
-                    placeholder="Örn: Orkide"
+                    placeholder={t('plants.plantNameExample')}
                     placeholderTextColor={colors.placeholder}
                   />
                 </View>
@@ -208,7 +210,7 @@ export default function EditPlant() {
                 <View style={styles.fieldContainer}>
                   <View style={styles.labelContainer}>
                     <Ionicons name="flask" size={20} color={colors.accent} />
-                    <ThemedText style={styles.label}>Bitki Türü</ThemedText>
+                    <ThemedText style={styles.label}>{t('plants.plantType')}</ThemedText>
                   </View>
                   <TextInput
                     style={[
@@ -217,7 +219,7 @@ export default function EditPlant() {
                     ]}
                     value={species}
                     onChangeText={setSpecies}
-                    placeholder="Örn: Phalaenopsis"
+                    placeholder={t('plants.speciesExample')}
                     placeholderTextColor={colors.placeholder}
                   />
                 </View>
@@ -225,7 +227,7 @@ export default function EditPlant() {
                 <View style={styles.fieldContainer}>
                   <View style={styles.labelContainer}>
                     <Ionicons name="create" size={20} color={colors.accent} />
-                    <ThemedText style={styles.label}>Açıklama</ThemedText>
+                    <ThemedText style={styles.label}>{t('plants.description')}</ThemedText>
                   </View>
                   <TextInput
                     style={[
@@ -236,7 +238,7 @@ export default function EditPlant() {
                     value={description}
                     onChangeText={setDescription}
                     multiline
-                    placeholder="Biraz açıklama ekleyin..."
+                    placeholder={t('plants.addDescription')}
                     placeholderTextColor={colors.placeholder}
                   />
                 </View>
@@ -244,10 +246,10 @@ export default function EditPlant() {
 
               <View style={styles.formSection}>
                 <ThemedTitle style={styles.sectionTitle}>
-                  Bakım Notları
+                  {t('plants.careNotes')}
                 </ThemedTitle>
                 <ThemedText style={styles.sectionDescription}>
-                  Bitkiniz için özel bakım notları ekleyebilirsiniz.
+                  {t('plants.careNotesDescription')}
                 </ThemedText>
 
                 <View style={styles.fieldContainer}>
@@ -263,7 +265,7 @@ export default function EditPlant() {
                       ]}
                       value={noteText}
                       onChangeText={setNoteText}
-                      placeholder="Bakım notu ekleyin..."
+                      placeholder={t('plants.addCareNote')}
                       placeholderTextColor={colors.placeholder}
                       returnKeyType="done"
                       onSubmitEditing={handleAddNote}
@@ -310,7 +312,7 @@ export default function EditPlant() {
                       ))
                     ) : (
                       <ThemedText style={styles.emptyNotes}>
-                        Henüz not eklenmedi.
+                        {t('plants.noNotesYet')}
                       </ThemedText>
                     )}
                   </View>
@@ -320,7 +322,7 @@ export default function EditPlant() {
           </Animated.View>
         </View>
         <ThemedButton
-          title={saving ? "Kaydediliyor..." : "Değişiklikleri Kaydet"}
+          title={saving ? t('common.loading') : t('plants.saveChanges')}
           onPress={handleSave}
           disabled={saving}
           style={styles.saveBtn}
@@ -335,7 +337,7 @@ export default function EditPlant() {
         />
 
         <ThemedButton
-          title="Vazgeç"
+          title={t('plants.cancel')}
           onPress={() => router.back()}
           style={styles.cancelBtn}
           textStyle={{ color: colors.text }}

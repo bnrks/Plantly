@@ -1,27 +1,18 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { StyleSheet, View, Image } from "react-native";
+import { StyleSheet, View, Image, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ThemedTitle from "../../../components/ThemedTitle";
 import ThemedText from "../../../components/ThemedText";
 import BackButton from "../../../components/BackButton";
-import Header from "../../../components/Header";
 import ScreenContainer from "../../../components/ScreenContainer";
+import TipTapRenderer from "../../../components/TipTapRenderer";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
 import EducationModuleSkeleton from "../../../components/skeletons/EducationModuleSkeleton";
-import { fetchEducationModules } from "../../../src/services/firestoreService";
-
-const fallbackDescriptions = {
-  starter: "Bitki bakiminin temel adimlarini ogrenmek icin hazirlanan ozet.",
-  watering: "Sulama sikligi, su kalitesi ve toprak nemini izleme ipuclari.",
-  light: "Bitkiler icin dogru konumlandirma ve yapay isik kullanimi.",
-  diagnosis: "Yaprak, govde ve kok belirtilerinden yola cikarak erken teshis.",
-  seasonal: "Mevsim gecislerinde yapilacak bakim, budama ve ortam ayarlari.",
-};
+import { fetchEducationModuleById } from "../../../src/services/firestoreService";
 
 export default function EducationModuleScreen() {
-  const router = useRouter();
   const params = useLocalSearchParams();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
@@ -38,36 +29,27 @@ export default function EducationModuleScreen() {
   useEffect(() => {
     const loadModule = async () => {
       try {
-        const modules = await fetchEducationModules();
-        const current =
-          modules?.find((m) => m.id === moduleId) ||
-          modules?.find((m) => m.moduleName === moduleId);
+        const data = await fetchEducationModuleById(moduleId);
 
-        if (current) {
+        if (data) {
           setModuleData({
-            title: current.moduleName || "Egitim Modulu",
-            description:
-              current.content ||
-              fallbackDescriptions[moduleId] ||
-              "Bu modul icin ayrintilar yakinda eklenecek.",
-            banner: current.bannerLink ? { uri: current.bannerLink } : null,
+            id: data.id,
+            title: data.moduleName || "Eğitim Modülü",
+            content: data.content,
+            banner: data.bannerLink ? { uri: data.bannerLink } : null,
           });
         } else {
           setModuleData({
-            title: "Egitim materyalleri yakinda",
-            description:
-              fallbackDescriptions[moduleId] ||
-              "Bu modul icin ayrintilar yakinda eklenecek. Simdilik ozet bilgileri inceleyebilirsin.",
+            title: "Modül bulunamadı",
+            content: null,
             banner: null,
           });
         }
       } catch (error) {
-        console.warn("Modul verisi cekilirken hata:", error);
+        console.warn("Modül verisi çekilirken hata:", error);
         setModuleData({
-          title: "Egitim materyalleri yakinda",
-          description:
-            fallbackDescriptions[moduleId] ||
-            "Modul icerigini hazirliyoruz. Su an icin ozet bilgileri inceleyebilirsin.",
+          title: "Bir hata oluştu",
+          content: null,
           banner: null,
         });
       } finally {
@@ -86,116 +68,162 @@ export default function EducationModuleScreen() {
     return null;
   }
 
+  const hasContent =
+    moduleData.content &&
+    (typeof moduleData.content === "string" ||
+      (moduleData.content.type === "doc" &&
+        Array.isArray(moduleData.content.content) &&
+        moduleData.content.content.length > 0));
+
   return (
-    <ScreenContainer>
-      <View style={styles.topBar}>
+    <ScreenContainer style={styles.screen}>
+      {/* Header Bar */}
+      <View style={styles.headerBar}>
         <BackButton />
       </View>
-      {moduleData.banner ? (
-        <Image source={moduleData.banner} style={styles.bannerImage} />
-      ) : (
-        <Header style={styles.headerImage} />
-      )}
 
+      {/* Main Card */}
       <View
         style={[
-          styles.hero,
+          styles.mainCard,
           {
             backgroundColor: theme.secondBg,
             borderColor:
               selectedTheme === "dark"
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.06)",
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(0,0,0,0.05)",
           },
         ]}
       >
-        <Ionicons
-          name="book-outline"
-          size={44}
-          color={accent}
-          style={{ marginBottom: 12 }}
-        />
-        <ThemedTitle style={styles.heroTitle}>
-          {moduleData.title || "Egitim materyalleri yakinda"}
-        </ThemedTitle>
-        <ThemedText
-          style={[styles.heroSubtitle, { color: theme.text }]}
-          numberOfLines={0}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          {moduleData.description}
-        </ThemedText>
-      </View>
+          {/* Banner */}
+          {moduleData.banner && (
+            <Image source={moduleData.banner} style={styles.bannerImage} />
+          )}
 
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: theme.secondBg,
-            borderColor:
-              selectedTheme === "dark"
-                ? "rgba(255,255,255,0.12)"
-                : "rgba(0,0,0,0.08)",
-          },
-        ]}
-      >
-        <ThemedText
-          style={[styles.cardText, { color: theme.text }]}
-          numberOfLines={0}
-        >
-          {moduleData.description}
-        </ThemedText>
+          {/* Title Section */}
+          <View style={styles.titleSection}>
+            <View
+              style={[
+                styles.iconBadge,
+                {
+                  backgroundColor:
+                    selectedTheme === "dark"
+                      ? "rgba(255,255,255,0.1)"
+                      : "rgba(83,115,84,0.12)",
+                },
+              ]}
+            >
+              <Ionicons name="book" size={24} color={accent} />
+            </View>
+            <ThemedTitle style={styles.title}>{moduleData.title}</ThemedTitle>
+            <View
+              style={[styles.divider, { backgroundColor: accent + "30" }]}
+            />
+          </View>
+
+          {/* Content */}
+          {hasContent ? (
+            <View style={styles.contentSection}>
+              <TipTapRenderer content={moduleData.content} />
+            </View>
+          ) : (
+            <View style={styles.emptySection}>
+              <Ionicons
+                name="document-text-outline"
+                size={56}
+                color={theme.text + "30"}
+              />
+              <ThemedText style={styles.emptyText}>
+                Bu modül için içerik henüz eklenmemiş.
+              </ThemedText>
+            </View>
+          )}
+        </ScrollView>
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  topBar: {
+  screen: {
+    paddingHorizontal: 0,
+  },
+  headerBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
-    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
-  headerImage: {
-    marginTop: 0,
+  mainCard: {
+    flex: 1,
+    marginHorizontal: 12,
     marginBottom: 16,
+    borderRadius: 28,
+    borderWidth: 1,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 32,
   },
   bannerImage: {
     width: "100%",
-    height: 140,
-    borderRadius: 16,
-    marginBottom: 16,
+    height: 200,
     resizeMode: "cover",
   },
-  hero: {
-    borderRadius: 24,
-    padding: 20,
-    alignItems: "flex-start",
-    marginBottom: 20,
-    borderWidth: 1,
+  titleSection: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 8,
+    alignItems: "center",
   },
-  heroTitle: {
-    fontSize: 20,
-    marginBottom: 8,
-    textAlign: "left",
+  iconBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
   },
-  heroSubtitle: {
-    textAlign: "justify",
-    lineHeight: 20,
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 32,
+    paddingHorizontal: 8,
   },
-  card: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 18,
+  divider: {
+    width: 60,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 16,
   },
-  cardTitle: {
-    fontSize: 18,
-    marginBottom: 10,
+  contentSection: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
   },
-  cardText: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "justify",
+  emptySection: {
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 48,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 15,
+    textAlign: "center",
+    opacity: 0.5,
+    marginTop: 16,
   },
 });
