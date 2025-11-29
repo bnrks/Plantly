@@ -292,8 +292,8 @@ const Index = () => {
               <ThemedButton
                 title="Giriş Yap"
                 onPress={() => router.push("/login")}
-                style={[styles.button, { backgroundColor: theme.fourthBg }]}
-                textStyle={{ color: theme.thirdBg }}
+                style={[styles.button, { backgroundColor: Colors.primary }]}
+                textStyle={{ color: "#FFFFFF" }}
               />
             </Animated.View>
 

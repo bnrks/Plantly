@@ -161,15 +161,15 @@ export default function ProfileScreen() {
             
             {/* Badges */}
             <View style={styles.badgesContainer}>
-              <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
-                <Ionicons name="leaf" size={14} color={theme.thirdBg} />
+              <View style={[styles.badge, { backgroundColor: theme.thirdBg }]}>
+                <Ionicons name="leaf" size={14} color={Colors.primary} />
                 <ThemedText style={styles.badgeText}>{t('profile.badges.plantLover')}</ThemedText>
               </View>
-              <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
+              <View style={[styles.badge, { backgroundColor: theme.thirdBg }]}>
                 <Ionicons name="water" size={14} color="#2196F3" />
                 <ThemedText style={styles.badgeText}>{t('profile.badges.wateringMaster')}</ThemedText>
               </View>
-              <View style={[styles.badge, { backgroundColor: theme.fourthBg }]}>
+              <View style={[styles.badge, { backgroundColor: theme.thirdBg }]}>
                 <Ionicons name="star" size={14} color="#FFC107" />
                 <ThemedText style={styles.badgeText}>{t('profile.badges.pro')}</ThemedText>
               </View>
@@ -222,13 +222,13 @@ export default function ProfileScreen() {
                   ? t('profile.summary.modules', { count: profile.completedModules })
                   : "-"
               }
-              color={theme.thirdBg}
+              color={Colors.primary}
             />
             <SummaryItem
               icon="water-outline"
               label={t('profile.summary.wateringStreak')}
               value={t('profile.summary.days', { count: profile.wateringStreak })}
-              color={theme.thirdBg}
+              color={Colors.primary}
             />
           </View>
           <View style={styles.summaryRow}>
@@ -246,7 +246,7 @@ export default function ProfileScreen() {
                   ? t('profile.summary.plantsCount', { count: profile.plantCount })
                   : "-"
               }
-              color={theme.thirdBg}
+              color={Colors.primary}
             />
           </View>
         </View>
@@ -261,14 +261,14 @@ export default function ProfileScreen() {
         <ThemedTitle style={styles.sectionTitle}>{t('profile.favoritePlant')}</ThemedTitle>
         {favorite ? (
           <View style={styles.favoriteCard}>
-            <View style={[styles.favoriteIcon, { backgroundColor: theme.fourthBg }]}>
+            <View style={[styles.favoriteIcon, { backgroundColor: theme.thirdBg }]}>
               {favorite.imageUrl ? (
                 <Image
                   source={{ uri: favorite.imageUrl }}
                   style={styles.favoriteImage}
                 />
               ) : (
-                <Ionicons name="leaf" size={28} color={theme.thirdBg} />
+                <Ionicons name="leaf" size={28} color={Colors.primary} />
               )}
             </View>
             <View style={{ flex: 1 }}>
@@ -306,7 +306,7 @@ export default function ProfileScreen() {
         
         <AchievementItem
           icon="leaf"
-          iconColor="#4CAF50"
+          iconColor={Colors.primary}
           bgColor="#E8F5E9"
           title={t('profile.achievementsList.plantLover.title')}
           description={t('profile.achievementsList.plantLover.description')}
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#537354",
+    backgroundColor: Colors.primary,
     borderWidth: 2,
     borderColor: "#fff",
   },

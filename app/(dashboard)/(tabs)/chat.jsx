@@ -364,7 +364,7 @@ export default function ChatScreen() {
           {item.type === "analysis" && item.disease && (
             <View style={styles.diagnosisContainer}>
               <View style={styles.diagnosisHeader}>
-                <Ionicons name="medical" size={16} color="#4CAF50" />
+                <Ionicons name="medical" size={16} color={Colors.primary} />
                 <ThemedText style={styles.diagnosisTitle}>
                   Teşhis Sonucu
                 </ThemedText>
@@ -399,7 +399,7 @@ export default function ChatScreen() {
           {item.diagnosis && !item.type && (
             <View style={styles.diagnosisContainer}>
               <View style={styles.diagnosisHeader}>
-                <Ionicons name="medical" size={16} color="#4CAF50" />
+                <Ionicons name="medical" size={16} color={Colors.primary} />
                 <ThemedText style={styles.diagnosisTitle}>
                   Teşhis Sonucu
                 </ThemedText>
@@ -527,7 +527,7 @@ export default function ChatScreen() {
                 <TouchableOpacity
                   style={[
                     styles.halfButton,
-                    { backgroundColor: theme.fourthBg },
+                    { backgroundColor: Colors.primary },
                     messages.length === 0 && styles.disabledButton,
                   ]}
                   onPress={startNewChat}
@@ -537,7 +537,7 @@ export default function ChatScreen() {
                     name="add-circle-outline"
                     size={20}
                     color={
-                      messages.length === 0 ? theme.text + "50" : theme.text
+                      messages.length === 0 ? theme.text + "50" : "#FFFFFF"
                     }
                   />
                   <ThemedText
@@ -555,7 +555,7 @@ export default function ChatScreen() {
                   style={[
                     styles.halfButton,
                     styles.historyButton,
-                    { backgroundColor: theme.fourthBg },
+                    { backgroundColor: Colors.primary },
                   ]}
                   onPress={loadChatHistory}
                   disabled={isLoadingHistory}
@@ -637,7 +637,7 @@ export default function ChatScreen() {
                     ListEmptyComponent={
                       <View style={styles.emptyChat}>
                         <View style={styles.headerIcon}>
-                          <Ionicons name="leaf" size={24} color="#4CAF50" />
+                          <Ionicons name="leaf" size={24} color={Colors.primary} />
                         </View>
                         <ThemedTitle style={styles.title}>
                           🌱 {t('chat.title')}
@@ -708,7 +708,7 @@ export default function ChatScreen() {
                         <Ionicons
                           name="image"
                           size={24}
-                          color={theme.fourthBg}
+                          color={Colors.primary}
                         />
                       </TouchableOpacity>
 
@@ -719,14 +719,14 @@ export default function ChatScreen() {
                         <Ionicons
                           name="camera"
                           size={24}
-                          color={theme.fourthBg}
+                          color={Colors.primary}
                         />
                       </TouchableOpacity>
 
                       <TextInput
-                        style={[styles.textInput, { color: theme.fourthBg }]}
+                        style={[styles.textInput, { color: Colors.primary }]}
                         placeholder={t('chat.placeholder')}
-                        placeholderTextColor={theme.fourthBg + "80"}
+                        placeholderTextColor={Colors.primary + "80"}
                         value={inputText}
                         onChangeText={setInputText}
                         multiline
@@ -736,7 +736,7 @@ export default function ChatScreen() {
                       <TouchableOpacity
                         style={[
                           styles.sendButton,
-                          { backgroundColor: theme.fourthBg },
+                          { backgroundColor: Colors.primary },
                         ]}
                         onPress={
                           selectedImage
@@ -820,7 +820,7 @@ export default function ChatScreen() {
                     <TouchableOpacity
                       style={[
                         styles.historyItem,
-                        { backgroundColor: theme.fourthBg },
+                        { backgroundColor: theme.thirdBg },
                       ]}
                       onPress={() => {
                         loadPreviousChat(item.id);
@@ -899,7 +899,7 @@ export default function ChatScreen() {
                     borderRadius: 25,
                     maxHeight: 500,
                     overflow: "hidden",
-                    backgroundColor: theme.fourthBg,
+                    backgroundColor: theme.thirdBg,
                     shadowColor: "#000",
                     shadowOffset: { width: 0, height: 10 },
                     shadowOpacity: 0.3,
@@ -1067,7 +1067,7 @@ export default function ChatScreen() {
                           <View
                             style={{
                               flex: 1,
-                              backgroundColor: theme.fourthBg,
+                              backgroundColor: theme.thirdBg,
                               flexDirection: "row",
                               alignItems: "center",
                               paddingRight: 12,

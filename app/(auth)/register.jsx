@@ -114,7 +114,7 @@ export default function Register() {
               style={{
                 height: 50,
                 borderRadius: 5,
-                backgroundColor: theme.fourthBg,
+                backgroundColor: Colors.primary,
                 justifyContent: "center",
                 alignItems: "center",
                 marginBottom: 20,

@@ -61,9 +61,9 @@ export const PlantErrorFallback = ({ error, onRetry, onReset }) => {
     <ThemedView style={styles.container}>
       <ThemedCard style={styles.card}>
         <View
-          style={[styles.iconContainer, { backgroundColor: "#4CAF50" + "20" }]}
+          style={[styles.iconContainer, { backgroundColor: Colors.primary + "20" }]}
         >
-          <Ionicons name="leaf" size={40} color="#4CAF50" />
+          <Ionicons name="leaf" size={40} color={Colors.primary} />
         </View>
 
         <ThemedText style={styles.title}>Bitki Verileri Hatası</ThemedText>
@@ -76,7 +76,7 @@ export const PlantErrorFallback = ({ error, onRetry, onReset }) => {
           <ThemedButton
             title="Tekrar Dene"
             onPress={onRetry}
-            style={[styles.button, { backgroundColor: "#4CAF50" }]}
+            style={[styles.button, { backgroundColor: Colors.primary }]}
             icon={<Ionicons name="refresh" size={18} color="#FFF" />}
           />
           <ThemedButton

@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import wsService from "../../services/wsService";
+import { Colors } from "../../../constants/Colors";
 
 export const useWebSocketConnection = () => {
   const [connectionStatus, setConnectionStatus] = useState("disconnected");
@@ -68,7 +69,7 @@ export const useWebSocketConnection = () => {
       case "connecting":
         return "#FFA500"; // Orange
       case "connected":
-        return "#4CAF50"; // Green
+        return Colors.primary; // Green
       case "error":
         return "#F44336"; // Red
       default:

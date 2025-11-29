@@ -6,10 +6,11 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  View,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { signin } from "../../src/services/authService";
+import { signin, signInWithGoogle } from "../../src/services/authService";
 import ThemedText from "../../components/ThemedText";
 import ThemedButton from "../../components/ThemedButton";
 import ThemedCard from "../../components/ThemedCard";
@@ -17,20 +18,75 @@ import { Colors } from "../../constants/Colors";
 import { ThemeContext } from "../../src/context/ThemeContext";
 import ThemedTextInput from "../../components/ThemedTextInput";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
+
+  const getErrorMessage = (errorCode) => {
+    switch (errorCode) {
+      case "auth/invalid-email":
+        return t("auth.invalidEmail");
+      case "auth/user-not-found":
+        return t("auth.userNotFound");
+      case "auth/wrong-password":
+        return t("auth.wrongPassword");
+      case "auth/invalid-credential":
+        return t("auth.invalidCredential");
+      case "auth/too-many-requests":
+        return t("auth.tooManyRequests");
+      case "auth/user-disabled":
+        return t("auth.userDisabled");
+      default:
+        return t("auth.loginError");
+    }
+  };
+
   const handleLogin = async () => {
+    setError("");
+    
+    if (!email.trim()) {
+      setError(t("auth.enterEmail"));
+      return;
+    }
+    if (!password) {
+      setError(t("auth.enterPassword"));
+      return;
+    }
+
     try {
+      setIsLoading(true);
       await signin(email.trim(), password);
       console.log("Giriş başarılı");
       router.replace("/home");
-    } catch (error) {}
-    console.log("Giriş yapılıyor:", email, password);
+    } catch (error) {
+      console.log("Login error:", error.code);
+      setError(getErrorMessage(error.code));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+      await signInWithGoogle();
+      console.log("Google ile giriş başarılı");
+      router.replace("/home");
+    } catch (error) {
+      if (error.code !== "auth/cancelled") {
+        console.error("Google sign-in error:", error);
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
@@ -86,7 +142,10 @@ export default function LoginScreen() {
               }}
               placeholder={t('auth.email')}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (error) setError("");
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -95,31 +154,61 @@ export default function LoginScreen() {
             <ThemedTextInput
               style={{
                 width: "90%",
-                marginBottom: 20,
+                marginBottom: error ? 10 : 20,
                 borderRadius: 5,
                 height: 50,
               }}
               placeholder={t('auth.password')}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (error) setError("");
+              }}
               secureTextEntry
             />
 
+            {/* Error message */}
+            {error ? (
+              <ThemedText style={styles.errorText}>{error}</ThemedText>
+            ) : null}
+
             {/* Giriş butonu */}
             <ThemedButton
-              title={t('auth.loginButton')}
+              title={isLoading ? t('auth.signingIn') : t('auth.loginButton')}
               style={{
                 height: 50,
                 borderRadius: 5,
-                backgroundColor: theme.fourthBg,
+                backgroundColor: Colors.primary,
                 justifyContent: "center",
                 alignItems: "center",
                 marginBottom: 20,
+                opacity: isLoading ? 0.7 : 1,
               }}
               onPress={handleLogin}
               textStyle={styles.buttonText}
               stayPressed={true}
+              disabled={isLoading}
             />
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={[styles.divider, { backgroundColor: theme.tertiaryText }]} />
+              <ThemedText style={styles.dividerText}>{t('auth.or')}</ThemedText>
+              <View style={[styles.divider, { backgroundColor: theme.tertiaryText }]} />
+            </View>
+
+            {/* Google Sign-In Button */}
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleSignIn}
+              disabled={isGoogleLoading}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={require("../../assets/google-icon.png")}
+                style={styles.googleIcon}
+              />
+            </TouchableOpacity>
 
             <TouchableOpacity style={styles.button}>
               <Link href={"/register"} style={styles.buttonText}>
@@ -153,5 +242,42 @@ const styles = StyleSheet.create({
   logo: {
     width: 400,
     height: 400,
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "90%",
+    marginBottom: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 15,
+    fontSize: 14,
+    color: "#888",
+  },
+  googleButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "#dadce0",
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  googleIcon: {
+    width: 28,
+    height: 28,
+  },
+  errorText: {
+    color: "#dc3545",
+    fontSize: 14,
+    marginBottom: 15,
+    textAlign: "center",
+    width: "90%",
   },
 });

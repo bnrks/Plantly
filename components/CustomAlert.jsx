@@ -30,7 +30,7 @@ export default function CustomAlert({
   const getIconAndColor = () => {
     switch (type) {
       case "success":
-        return { icon: "checkmark-circle", color: "#4CAF50" };
+        return { icon: "checkmark-circle", color: Colors.success };
       case "error":
         return { icon: "close-circle", color: theme.danger };
       case "warning":

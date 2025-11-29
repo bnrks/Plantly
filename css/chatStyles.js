@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+import { Colors } from "../constants/Colors";
 
 export const chatStyles = StyleSheet.create({
   container: {
@@ -160,7 +161,7 @@ export const chatStyles = StyleSheet.create({
     marginBottom: 6,
   },
   saveNotesButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: Colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -268,12 +269,12 @@ export const chatStyles = StyleSheet.create({
     marginBottom: 8,
   },
   diagnosisContainer: {
-    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    backgroundColor: Colors.primary + "1A",
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
     borderLeftWidth: 3,
-    borderLeftColor: "#4CAF50",
+    borderLeftColor: Colors.primary,
   },
   diagnosisHeader: {
     flexDirection: "row",
@@ -284,7 +285,7 @@ export const chatStyles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 6,
     fontSize: 14,
-    color: "#4CAF50",
+    color: Colors.primary,
   },
   diagnosisText: {
     fontSize: 13,
@@ -500,9 +501,9 @@ export const chatStyles = StyleSheet.create({
   },
   // Notes Bubble Styles
   notesBubble: {
-    backgroundColor: "#E8F5E8",
+    backgroundColor: Colors.primary + "15",
     borderLeftWidth: 4,
-    borderLeftColor: "#4CAF50",
+    borderLeftColor: Colors.primary,
     padding: 12,
     marginTop: 8,
   },
@@ -521,12 +522,12 @@ export const chatStyles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 4,
-    color: "#2E7D32",
+    color: Colors.primary,
   },
   saveNotesButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#4CAF50",
+    backgroundColor: Colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

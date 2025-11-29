@@ -8,7 +8,7 @@ const ThemedTextInput = ({ style, ...props }) => {
       style={[
         {
           backgroundColor: theme.thirdBg,
-          color: theme.text,
+          color: theme.title,
           padding: 10,
           fontFamily: "CommeRegular",
         },

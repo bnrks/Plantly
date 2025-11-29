@@ -175,7 +175,7 @@ export default function EditPlant() {
                 <View
                   style={[
                     styles.imageOverlay,
-                    { backgroundColor: colors.accent },
+                    { backgroundColor: Colors.primary },
                   ]}
                 >
                   <Ionicons name="camera" size={20} color="#fff" />
@@ -192,7 +192,7 @@ export default function EditPlant() {
 
                 <View style={styles.fieldContainer}>
                   <View style={styles.labelContainer}>
-                    <Ionicons name="leaf" size={20} color={colors.accent} />
+                    <Ionicons name="leaf" size={20} color={Colors.primary} />
                     <ThemedText style={styles.label}>{t('plants.plantName')}</ThemedText>
                   </View>
                   <TextInput
@@ -209,7 +209,7 @@ export default function EditPlant() {
 
                 <View style={styles.fieldContainer}>
                   <View style={styles.labelContainer}>
-                    <Ionicons name="flask" size={20} color={colors.accent} />
+                    <Ionicons name="flask" size={20} color={Colors.primary} />
                     <ThemedText style={styles.label}>{t('plants.plantType')}</ThemedText>
                   </View>
                   <TextInput
@@ -226,7 +226,7 @@ export default function EditPlant() {
 
                 <View style={styles.fieldContainer}>
                   <View style={styles.labelContainer}>
-                    <Ionicons name="create" size={20} color={colors.accent} />
+                    <Ionicons name="create" size={20} color={Colors.primary} />
                     <ThemedText style={styles.label}>{t('plants.description')}</ThemedText>
                   </View>
                   <TextInput
@@ -274,7 +274,7 @@ export default function EditPlant() {
                       onPress={handleAddNote}
                       style={[
                         styles.addNoteButton,
-                        { backgroundColor: colors.accent },
+                        { backgroundColor: Colors.primary },
                       ]}
                     >
                       <Ionicons name="add" size={24} color="#fff" />
@@ -295,7 +295,7 @@ export default function EditPlant() {
                             <Ionicons
                               name="water"
                               size={18}
-                              color={colors.accent}
+                              color={Colors.primary}
                             />
                             <ThemedText style={styles.noteText}>
                               {note}

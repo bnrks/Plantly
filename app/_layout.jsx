@@ -88,7 +88,7 @@ function RootInner() {
           barStyle="dark-content"
           backgroundColor="#FFFFFF"
         />
-        <ActivityIndicator size="small" color="#537354" />
+        <ActivityIndicator size="small" color={Colors.primary} />
       </SafeAreaView>
     );
   }

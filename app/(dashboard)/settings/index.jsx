@@ -3,6 +3,7 @@ import { StyleSheet, View, Switch, TouchableOpacity, TextInput } from "react-nat
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import Constants from "expo-constants";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import ThemedTitle from "../../../components/ThemedTitle";
@@ -99,13 +100,13 @@ export default function Settings() {
         <ThemedTitle style={styles.title}>{t("settings.title")}</ThemedTitle>
 
         {/* Tema Değiştirme */}
-        <View style={[styles.section, { backgroundColor: theme.fourthBg }]}>
+        <View style={[styles.section, { backgroundColor: theme.thirdBg }]}>
           <View style={styles.sectionLeft}>
-            <Ionicons name="moon-outline" size={22} color={theme.text} style={styles.sectionIcon} />
+            <Ionicons name="moon-outline" size={22} color={currentTheme === "dark" ? theme.text : theme.title} style={styles.sectionIcon} />
             <ThemedText style={styles.sectionText}>{t("settings.darkMode")}</ThemedText>
           </View>
           <Switch
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            trackColor={{ false: "#767577", true: Colors.primary }}
             thumbColor={currentTheme === "dark" ? "#f5dd4b" : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
             onValueChange={toggleTheme}
@@ -120,42 +121,42 @@ export default function Settings() {
       >
         <ThemedTitle style={styles.sectionTitle}>{t("settings.notifications")}</ThemedTitle>
 
-        <View style={[styles.section, { backgroundColor: theme.fourthBg }]}>
+        <View style={[styles.section, { backgroundColor: theme.thirdBg }]}>
           <View style={styles.sectionLeft}>
-            <Ionicons name="water-outline" size={22} color={theme.text} style={styles.sectionIcon} />
+            <Ionicons name="water-outline" size={22} color={currentTheme === "dark" ? theme.text : theme.title} style={styles.sectionIcon} />
             <ThemedText style={styles.sectionText}>{t("settings.wateringReminders")}</ThemedText>
           </View>
           <Switch
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor={wateringNotif ? "#4CAF50" : "#f4f3f4"}
+            trackColor={{ false: "#767577", true: Colors.primary }}
+            thumbColor={wateringNotif ? Colors.success : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
             onValueChange={setWateringNotif}
             value={wateringNotif}
           />
         </View>
 
-        <View style={[styles.section, { backgroundColor: theme.fourthBg }]}>
+        <View style={[styles.section, { backgroundColor: theme.thirdBg }]}>
           <View style={styles.sectionLeft}>
-            <Ionicons name="calendar-outline" size={22} color={theme.text} style={styles.sectionIcon} />
+            <Ionicons name="calendar-outline" size={22} color={currentTheme === "dark" ? theme.text : theme.title} style={styles.sectionIcon} />
             <ThemedText style={styles.sectionText}>{t("settings.routineCare")}</ThemedText>
           </View>
           <Switch
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor={careNotif ? "#4CAF50" : "#f4f3f4"}
+            trackColor={{ false: "#767577", true: Colors.primary }}
+            thumbColor={careNotif ? Colors.success : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
             onValueChange={setCareNotif}
             value={careNotif}
           />
         </View>
 
-        <View style={[styles.section, { backgroundColor: theme.fourthBg, marginBottom: 0 }]}>
+        <View style={[styles.section, { backgroundColor: theme.thirdBg, marginBottom: 0 }]}>
           <View style={styles.sectionLeft}>
-            <Ionicons name="warning-outline" size={22} color={theme.text} style={styles.sectionIcon} />
+            <Ionicons name="warning-outline" size={22} color={currentTheme === "dark" ? theme.text : theme.title} style={styles.sectionIcon} />
             <ThemedText style={styles.sectionText}>{t("settings.diseaseAlerts")}</ThemedText>
           </View>
           <Switch
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor={diseaseNotif ? "#4CAF50" : "#f4f3f4"}
+            trackColor={{ false: "#767577", true: Colors.primary }}
+            thumbColor={diseaseNotif ? Colors.success : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
             onValueChange={setDiseaseNotif}
             value={diseaseNotif}
@@ -169,7 +170,7 @@ export default function Settings() {
       >
         <ThemedTitle style={styles.sectionTitle}>{t("settings.userInfo")}</ThemedTitle>
 
-        <View style={[styles.infoSection, { backgroundColor: theme.fourthBg }]}>
+        <View style={[styles.infoSection, { backgroundColor: theme.thirdBg }]}>
           <View style={styles.infoRow}>
             <Ionicons name="mail-outline" size={22} color={theme.text} style={styles.sectionIcon} />
             <View style={styles.infoContent}>
@@ -179,7 +180,7 @@ export default function Settings() {
           </View>
         </View>
 
-        <View style={[styles.infoSection, { backgroundColor: theme.fourthBg, marginBottom: 0 }]}>
+        <View style={[styles.infoSection, { backgroundColor: theme.thirdBg, marginBottom: 0 }]}>
           <View style={styles.infoRow}>
             <Ionicons name="person-outline" size={22} color={theme.text} style={styles.sectionIcon} />
             <View style={styles.infoContent}>
@@ -203,8 +204,8 @@ export default function Settings() {
               style={[
                 styles.languageOption,
                 { 
-                  backgroundColor: selectedLanguage === lang.code ? "#2E7D32" : theme.fourthBg,
-                  borderColor: selectedLanguage === lang.code ? "#2E7D32" : "#999",
+                  backgroundColor: selectedLanguage === lang.code ? Colors.primary : theme.thirdBg,
+                  borderColor: selectedLanguage === lang.code ? Colors.primary : "#999",
                 },
               ]}
               onPress={() => handleLanguageChange(lang.code)}
@@ -242,6 +243,13 @@ export default function Settings() {
           </ThemedText>
         </TouchableOpacity>
       </ThemedCard>
+
+      {/* Versiyon Bilgisi */}
+      <View style={styles.versionContainer}>
+        <ThemedText style={[styles.versionText, { color: theme.secondaryText }]}>
+          Plantly v{Constants.expoConfig?.version || "1.0.0"}
+        </ThemedText>
+      </View>
 
       <CustomAlert
         visible={alertConfig.visible}
@@ -378,5 +386,13 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 17,
     fontWeight: "700",
+  },
+  versionContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  versionText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

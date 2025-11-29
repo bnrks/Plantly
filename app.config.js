@@ -31,7 +31,16 @@ export default {
     web: {
       favicon: "./assets/favicon.png",
     },
-    plugins: ["expo-router","react-native-edge-to-edge"],
+    plugins: [
+      "expo-router",
+      "react-native-edge-to-edge",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          iosUrlScheme: "com.googleusercontent.apps.250730263332-m1mrrploaji5kbrus69hbo295cb3ehnh"
+        }
+      ]
+    ],
     extra: {
       router: {},
       eas: {

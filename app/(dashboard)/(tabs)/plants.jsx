@@ -77,7 +77,7 @@ const Plants = () => {
               image={{ uri: item.imageUrl }}
               style={[
                 styles.plantCard,
-                { backgroundColor: theme.fourthBg },
+                { backgroundColor: theme.fifthBg },
               ]}
               onPress={() =>
                 router.push({
@@ -101,9 +101,9 @@ const Plants = () => {
         onPress={() => router.push("../addPlant")}
         style={[
           styles.addButton,
-          { backgroundColor: theme.thirdBg || "#537354" },
+          { backgroundColor: theme.thirdBg },
         ]}
-        textStyle={{ fontSize: 18 }}
+        textStyle={{ fontSize: 18, color: "#FFFFFF" }}
       />
     </ScreenContainer>
   );

@@ -214,10 +214,10 @@ const Home = () => {
                 <Ionicons
                   name="notifications-outline"
                   size={28}
-                  color={selectedTheme === "dark" ? theme.title : "#000000"}
+                  color={theme.title}
                 />
                 {notificationCount > 0 && (
-                  <View style={styles.badge}>
+                  <View style={[styles.badge, { backgroundColor: theme.warning }]}>
                     <Text style={styles.badgeText}>{notificationCount}</Text>
                   </View>
                 )}
@@ -228,7 +228,7 @@ const Home = () => {
 
         <ThemedCard style={styles.listCard}>
           <ThemedTitle style={styles.sectionTitle}>{t('home.myPlants')}</ThemedTitle>
-          <ThemedText style={styles.sectionDescription}>
+          <ThemedText style={[styles.sectionDescription, { color: theme.secondaryText }]}>
             {t('home.wateringReminder')}
           </ThemedText>
           <FlatList
@@ -263,7 +263,7 @@ const Home = () => {
             <TouchableOpacity
               onPress={() => router.push("/(dashboard)/education")}
             >
-              <ThemedText style={styles.linkText}>{t('home.seeAll')}</ThemedText>
+              <ThemedText style={[styles.linkText, { color: Colors.primary }]}>{t('home.seeAll')}</ThemedText>
             </TouchableOpacity>
           </View>
 
@@ -322,7 +322,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -4,
     right: -4,
-    backgroundColor: "red",
     borderRadius: 10,
     width: 18,
     height: 18,
@@ -345,7 +344,6 @@ const styles = StyleSheet.create({
   },
   sectionDescription: {
     fontSize: 15,
-    color: "#888",
     paddingHorizontal: 20,
     marginBottom: 10,
   },
@@ -373,7 +371,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   linkText: {
-    color: "#537354",
     fontWeight: "600",
   },
   trainingRow: {

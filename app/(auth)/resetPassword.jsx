@@ -97,7 +97,7 @@ const ResetPassword = () => {
             borderRadius: 5,
             backgroundColor: resetSuccess
               ? theme.disabledButton || "#ccc"
-              : theme.fourthBg,
+              : Colors.primary,
             justifyContent: "center",
             alignItems: "center",
             marginBottom: 20,

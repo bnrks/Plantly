@@ -4,7 +4,6 @@ import {
   Image,
   View,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -16,6 +15,7 @@ import ThemedButton from "../../../components/ThemedButton";
 import ThemedCard from "../../../components/ThemedCard";
 import ScreenContainer from "../../../components/ScreenContainer";
 import BackButton from "../../../components/BackButton";
+import CustomAlert from "../../../components/CustomAlert";
 import { useContext } from "react";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { fetchPlantById } from "../../../src/services/firestoreService";
@@ -35,6 +35,7 @@ export default function PlantDetails() {
   const { id } = useLocalSearchParams();
   const [plant, setPlant] = useState({});
   const [loading, setLoading] = useState(true);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
   // User yoksa erken return
   if (!user) {
@@ -51,6 +52,7 @@ export default function PlantDetails() {
     getPlant();
   }, []);
   function handleDelete() {
+    setShowDeleteAlert(false);
     deletePlant(userid, id)
       .then(() => {
         router.push({
@@ -63,14 +65,7 @@ export default function PlantDetails() {
       });
   }
   const confirmDelete = () => {
-    Alert.alert(
-      t('plants.deleteConfirmTitle'),
-      t('plants.deleteConfirmMessage'),
-      [
-        { text: t('common.cancel'), style: "cancel" },
-        { text: t('common.delete'), style: "destructive", onPress: handleDelete },
-      ]
-    );
+    setShowDeleteAlert(true);
   };
   function diseaseToStatus(disease) {
     switch (disease) {
@@ -148,8 +143,8 @@ export default function PlantDetails() {
               styles.statusText,
               {
                 color:
-                  plantexample.status === "Sağlıklı"
-                    ? "#4CAF50"
+                  plantexample.status === "Sağlıklı" || plantexample.status === "Healthy"
+                    ? theme.success
                     : theme.danger,
               },
             ]}
@@ -162,7 +157,7 @@ export default function PlantDetails() {
       {/* Butonlar */}
       <View style={styles.buttonRow}>
         <TouchableOpacity
-          style={[styles.analysisButton, { backgroundColor: theme.thirdBg }]}
+          style={[styles.analysisButton, { backgroundColor: Colors.primary }]}
           onPress={() =>
             router.push({
               pathname: "analysis",
@@ -181,8 +176,7 @@ export default function PlantDetails() {
           style={[
             styles.editButton,
             {
-              backgroundColor:
-                selectedTheme === "dark" ? theme.fifthBg : theme.fourthBg,
+              backgroundColor: theme.fifthBg,
             },
           ]}
           onPress={() => {
@@ -192,14 +186,14 @@ export default function PlantDetails() {
             });
           }}
         >
-          <Ionicons name="pencil" size={18} color={theme.text} />
+          <Ionicons name="pencil" size={18} color={theme.title} />
           <ThemedText style={styles.editButtonText} numberOfLines={1}>{t('plants.edit')}</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.deleteButton, { backgroundColor: "#FFEBEE" }]}
           onPress={confirmDelete}
         >
-          <Ionicons name="trash" size={20} color="#F44336" />
+          <Ionicons name="trash" size={20} color={theme.danger} />
         </TouchableOpacity>
       </View>
 
@@ -239,6 +233,19 @@ export default function PlantDetails() {
           ))}
         </ThemedCard>
       )}
+
+      {/* Delete Confirmation Alert */}
+      <CustomAlert
+        visible={showDeleteAlert}
+        type="warning"
+        title={t('plants.deleteConfirmTitle')}
+        message={t('plants.deleteConfirmMessage')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        showCancel={true}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteAlert(false)}
+      />
     </ScreenContainer>
   );
 }

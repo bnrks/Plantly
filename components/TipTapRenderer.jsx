@@ -284,7 +284,7 @@ function createStyles(theme, selectedTheme) {
       fontStyle: "italic",
     },
     link: {
-      color: theme.thirdBg || "#4CAF50",
+      color: theme.thirdBg || Colors.primary,
       textDecorationLine: "underline",
     },
     paragraph: {
@@ -354,7 +354,7 @@ function createStyles(theme, selectedTheme) {
     listBullet: {
       fontSize: 16,
       lineHeight: 26,
-      color: theme.thirdBg || "#4CAF50",
+      color: theme.thirdBg || Colors.primary,
       width: 24,
       fontWeight: "700",
     },
@@ -363,7 +363,7 @@ function createStyles(theme, selectedTheme) {
     },
     blockquote: {
       borderLeftWidth: 4,
-      borderLeftColor: theme.thirdBg || "#4CAF50",
+      borderLeftColor: theme.thirdBg || Colors.primary,
       paddingLeft: 16,
       paddingVertical: 8,
       marginVertical: 16,

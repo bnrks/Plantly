@@ -47,28 +47,10 @@ export default function DashboardTabs() {
         action: () => router.push("/(dashboard)/profile"),
       },
       {
-        key: "notifications",
-        label: t('menu.notifications'),
-        icon: "notifications-outline",
-        action: () => {},
-      },
-      {
-        key: "care",
-        label: t('menu.care'),
-        icon: "leaf-outline",
-        action: () => {},
-      },
-      {
-        key: "assistant",
-        label: t('menu.assistant'),
-        icon: "color-wand-outline",
-        action: () => {},
-      },
-      {
-        key: "about",
-        label: t('menu.about'),
-        icon: "information-circle-outline",
-        action: () => {},
+        key: "settings",
+        label: t('menu.settings'),
+        icon: "settings-outline",
+        action: () => router.push("/(dashboard)/settings"),
       },
     ],
     [router, t]
@@ -146,7 +128,7 @@ export default function DashboardTabs() {
                     activeOpacity={0.85}
                     style={[
                       styles.popoverItem,
-                      { backgroundColor: theme.fourthBg },
+                      { backgroundColor: selectedTheme === "dark" ? theme.fourthBg : theme.thirdBg },
                     ]}
                     onPress={() => {
                       closeMenu();
@@ -154,9 +136,9 @@ export default function DashboardTabs() {
                     }}
                   >
                     <View style={styles.popoverItemIconWrapper}>
-                      <Ionicons name={item.icon} size={22} color={theme.title} />
+                      <Ionicons name={item.icon} size={22} color={selectedTheme === "dark" ? theme.title : "#FFFFFF"} />
                     </View>
-                    <Text style={[styles.popoverItemText, { color: theme.title }]}>
+                    <Text style={[styles.popoverItemText, { color: selectedTheme === "dark" ? theme.title : "#FFFFFF" }]}>
                       {item.label}
                     </Text>
                   </TouchableOpacity>
