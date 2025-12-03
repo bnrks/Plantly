@@ -16,6 +16,10 @@ import {
   fetchUserProfileWithFavorite,
   fetchUserPlantCount,
   uploadProfilePicture,
+  fetchAchievements,
+  fetchUserAchievementProgress,
+  fetchUserBadges,
+  fetchBadges,
 } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
 import ProfileSkeleton from "../../../components/skeletons/ProfileSkeleton";
@@ -64,15 +68,25 @@ export default function ProfileScreen() {
   });
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  
+  // Achievement & Badge state'leri
+  const [userBadges, setUserBadges] = useState([]);
+  const [allBadges, setAllBadges] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+  const [achievementProgress, setAchievementProgress] = useState([]);
 
   useEffect(() => {
     const loadProfile = async () => {
       if (!user?.uid) return;
       setLoading(true);
       try {
-        const [profileData, plantCount] = await Promise.all([
+        const [profileData, plantCount, badgesData, allBadgesData, achievementsData, progressData] = await Promise.all([
           fetchUserProfileWithFavorite(user.uid),
           fetchUserPlantCount(user.uid),
+          fetchUserBadges(user.uid),
+          fetchBadges(),
+          fetchAchievements(),
+          fetchUserAchievementProgress(user.uid),
         ]);
 
         if (profileData) {
@@ -82,6 +96,11 @@ export default function ProfileScreen() {
             plantCount,
           }));
         }
+        
+        setUserBadges(badgesData || []);
+        setAllBadges(allBadgesData || []);
+        setAchievements(achievementsData || []);
+        setAchievementProgress(progressData || []);
       } catch (error) {
         console.error("Profil bilgisi cekilirken hata:", error);
       } finally {
@@ -124,6 +143,25 @@ export default function ProfileScreen() {
   }
 
   const favorite = profile.favoritePlant;
+  
+  // Badge için ikon ve renk belirleme
+  const getBadgeIconInfo = (badgeId) => {
+    const iconMap = {
+      watering_master: { icon: "water", color: "#2196F3" },
+      plant_lover: { icon: "leaf", color: Colors.primary },
+      green_thumb: { icon: "flower", color: "#E91E63" },
+      expert: { icon: "school", color: "#FF9800" },
+    };
+    return iconMap[badgeId] || { icon: "ribbon", color: Colors.primary };
+  };
+  
+  // Kullanıcının kazandığı badge ID'leri
+  const earnedBadgeIds = userBadges.map(ub => ub.badgeId);
+  
+  // Achievement progress'i ID'ye göre bul
+  const getProgressForAchievement = (achievementId) => {
+    return achievementProgress.find(p => p.achievementId === achievementId) || { current: 0, completed: false };
+  };
 
   return (
     <ScreenContainer scrollable topSpacing={24} bottomSpacing={80}>
@@ -159,20 +197,30 @@ export default function ProfileScreen() {
               <Ionicons name="calendar-outline" size={14} color={theme.text} /> {formatJoinDate(profile.createdAt, t)}
             </ThemedText>
             
-            {/* Badges */}
+            {/* Badges - Dinamik */}
             <View style={styles.badgesContainer}>
-              <View style={[styles.badge, { backgroundColor: theme.thirdBg }]}>
-                <Ionicons name="leaf" size={14} color={Colors.primary} />
-                <ThemedText style={styles.badgeText}>{t('profile.badges.plantLover')}</ThemedText>
-              </View>
-              <View style={[styles.badge, { backgroundColor: theme.thirdBg }]}>
-                <Ionicons name="water" size={14} color="#2196F3" />
-                <ThemedText style={styles.badgeText}>{t('profile.badges.wateringMaster')}</ThemedText>
-              </View>
-              <View style={[styles.badge, { backgroundColor: theme.thirdBg }]}>
-                <Ionicons name="star" size={14} color="#FFC107" />
-                <ThemedText style={styles.badgeText}>{t('profile.badges.pro')}</ThemedText>
-              </View>
+              {userBadges.length > 0 ? (
+                userBadges.slice(0, 3).map((userBadge) => {
+                  const badgeInfo = allBadges.find(b => b.id === userBadge.badgeId);
+                  const iconInfo = getBadgeIconInfo(userBadge.badgeId);
+                  return (
+                    <View 
+                      key={userBadge.badgeId} 
+                      style={[styles.badge, { backgroundColor: theme.thirdBg }]}
+                    >
+                      <Ionicons name={iconInfo.icon} size={14} color={iconInfo.color} />
+                      <ThemedText style={styles.badgeText}>
+                        {badgeInfo?.name || userBadge.badgeId}
+                      </ThemedText>
+                    </View>
+                  );
+                })
+              ) : (
+                <View style={[styles.badge, { backgroundColor: theme.thirdBg, opacity: 0.6 }]}>
+                  <Ionicons name="ribbon-outline" size={14} color={theme.text} />
+                  <ThemedText style={styles.badgeText}>{t('achievements.noBadges')}</ThemedText>
+                </View>
+              )}
             </View>
           </View>
 
@@ -296,51 +344,110 @@ export default function ProfileScreen() {
       >
         <ThemedTitle style={styles.sectionTitle}>{t('profile.achievements')}</ThemedTitle>
         
-        <AchievementItem
-          icon="water"
-          iconColor="#2196F3"
-          bgColor="#E3F2FD"
-          title={t('profile.achievementsList.wateringMaster.title')}
-          description={t('profile.achievementsList.wateringMaster.description')}
-        />
-        
-        <AchievementItem
-          icon="leaf"
-          iconColor={Colors.primary}
-          bgColor="#E8F5E9"
-          title={t('profile.achievementsList.plantLover.title')}
-          description={t('profile.achievementsList.plantLover.description')}
-        />
-        
-        <AchievementItem
-          icon="flower"
-          iconColor="#E91E63"
-          bgColor="#FCE4EC"
-          title={t('profile.achievementsList.greenThumb.title')}
-          description={t('profile.achievementsList.greenThumb.description')}
-        />
-        
-        <AchievementItem
-          icon="school"
-          iconColor="#FF9800"
-          bgColor="#FFF3E0"
-          title={t('profile.achievementsList.expert.title')}
-          description={t('profile.achievementsList.expert.description')}
-        />
+        {achievements.length > 0 ? (
+          achievements.map((achievement) => {
+            const progress = getProgressForAchievement(achievement.id);
+            const iconInfo = getBadgeIconInfo(achievement.badgeId);
+            const bgColorMap = {
+              watering_master: "#E3F2FD",
+              plant_lover: "#E8F5E9",
+              green_thumb: "#FCE4EC",
+              expert: "#FFF3E0",
+            };
+            
+            return (
+              <AchievementItem
+                key={achievement.id}
+                icon={iconInfo.icon}
+                iconColor={iconInfo.color}
+                bgColor={bgColorMap[achievement.badgeId] || "#F5F5F5"}
+                title={achievement.name}
+                description={achievement.description}
+                progress={progress.current || 0}
+                target={achievement.target || 0}
+                completed={progress.completed || false}
+              />
+            );
+          })
+        ) : (
+          <>
+            {/* Fallback - Firebase'den veri gelmezse varsayılan göster */}
+            <AchievementItem
+              icon="water"
+              iconColor="#2196F3"
+              bgColor="#E3F2FD"
+              title={t('profile.achievementsList.wateringMaster.title')}
+              description={t('profile.achievementsList.wateringMaster.description')}
+              progress={profile.wateringCount || 0}
+              target={10}
+              completed={false}
+            />
+            
+            <AchievementItem
+              icon="leaf"
+              iconColor={Colors.primary}
+              bgColor="#E8F5E9"
+              title={t('profile.achievementsList.plantLover.title')}
+              description={t('profile.achievementsList.plantLover.description')}
+              progress={profile.plantCount || 0}
+              target={1}
+              completed={profile.plantCount >= 1}
+            />
+            
+            <AchievementItem
+              icon="flower"
+              iconColor="#E91E63"
+              bgColor="#FCE4EC"
+              title={t('profile.achievementsList.greenThumb.title')}
+              description={t('profile.achievementsList.greenThumb.description')}
+              progress={profile.plantCount || 0}
+              target={5}
+              completed={profile.plantCount >= 5}
+            />
+            
+            <AchievementItem
+              icon="school"
+              iconColor="#FF9800"
+              bgColor="#FFF3E0"
+              title={t('profile.achievementsList.expert.title')}
+              description={t('profile.achievementsList.expert.description')}
+              progress={profile.completedModulesCount || 0}
+              target={3}
+              completed={false}
+            />
+          </>
+        )}
       </ThemedCard>
     </ScreenContainer>
   );
 }
 
-function AchievementItem({ icon, iconColor, bgColor, title, description }) {
+function AchievementItem({ icon, iconColor, bgColor, title, description, progress, target, completed }) {
+  const progressPercent = target > 0 ? Math.min((progress / target) * 100, 100) : 0;
+  
   return (
     <View style={styles.achievementItem}>
       <View style={[styles.achievementImageWrapper, { backgroundColor: bgColor }]}>
         <Ionicons name={icon} size={28} color={iconColor} />
+        {completed && (
+          <View style={styles.completedBadge}>
+            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+          </View>
+        )}
       </View>
       <View style={styles.achievementTextContainer}>
         <ThemedTitle style={styles.achievementTitle}>{title}</ThemedTitle>
         <ThemedText style={styles.achievementDescription}>{description}</ThemedText>
+        {target > 0 && (
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: completed ? '#4CAF50' : iconColor }]} />
+            </View>
+            <ThemedText style={styles.progressText}>
+              {progress} / {target}
+            </ThemedText>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -616,5 +723,36 @@ const styles = StyleSheet.create({
   achievementDescription: {
     fontSize: 13,
     opacity: 0.7,
+  },
+  completedBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+  },
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    gap: 8,
+  },
+  progressBar: {
+    flex: 1,
+    height: 6,
+    backgroundColor: "rgba(0,0,0,0.1)",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: "600",
+    opacity: 0.7,
+    minWidth: 45,
+    textAlign: "right",
   },
 });

@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   deleteDoc,
   increment,
+  runTransaction,
 } from "firebase/firestore";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 
@@ -429,5 +430,293 @@ export async function uploadProfilePicture(userId, fileUri) {
   } catch (error) {
     console.error("Profil resmi yuklenirken hata olustu:", error);
     throw error;
+  }
+}
+
+// ========== ACHIEVEMENT & BADGE SİSTEMİ ==========
+
+/**
+ * Tüm achievement tanımlarını Firestore'dan çeker
+ * @returns {Promise<Array>} Achievement listesi
+ */
+export async function fetchAchievements() {
+  try {
+    const achievementsCol = collection(db, "achievements");
+    const snapshot = await getDocs(achievementsCol);
+    
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Achievement'lar çekilirken hata:", error);
+    return [];
+  }
+}
+
+/**
+ * Tüm badge tanımlarını Firestore'dan çeker
+ * @returns {Promise<Array>} Badge listesi
+ */
+export async function fetchBadges() {
+  try {
+    const badgesCol = collection(db, "badges");
+    const snapshot = await getDocs(badgesCol);
+    
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Badge'ler çekilirken hata:", error);
+    return [];
+  }
+}
+
+/**
+ * Kullanıcının achievement progress'lerini çeker
+ * @param {string} userId
+ * @returns {Promise<Array>} Progress listesi
+ */
+export async function fetchUserAchievementProgress(userId) {
+  try {
+    if (!userId) return [];
+    
+    const progressCol = collection(db, "users", userId, "achievementProgress");
+    const snapshot = await getDocs(progressCol);
+    
+    return snapshot.docs.map((doc) => ({
+      achievementId: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Achievement progress çekilirken hata:", error);
+    return [];
+  }
+}
+
+/**
+ * Kullanıcının kazandığı badge'leri çeker
+ * @param {string} userId
+ * @returns {Promise<Array>} Kazanılan badge listesi
+ */
+export async function fetchUserBadges(userId) {
+  try {
+    if (!userId) return [];
+    
+    const badgesCol = collection(db, "users", userId, "badges");
+    const snapshot = await getDocs(badgesCol);
+    
+    return snapshot.docs.map((doc) => ({
+      badgeId: doc.id,
+      ...doc.data(),
+    }));
+  } catch (error) {
+    console.error("Kullanıcı badge'leri çekilirken hata:", error);
+    return [];
+  }
+}
+
+/**
+ * Achievement progress'i günceller
+ * @param {string} userId
+ * @param {string} achievementId
+ * @param {number} newCurrent - Yeni current değeri
+ */
+export async function updateAchievementProgress(userId, achievementId, newCurrent) {
+  try {
+    const progressRef = doc(db, "users", userId, "achievementProgress", achievementId);
+    
+    await setDoc(progressRef, {
+      current: newCurrent,
+      completed: false,
+      completedAt: null,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    
+    return true;
+  } catch (error) {
+    console.error("Achievement progress güncellenirken hata:", error);
+    throw error;
+  }
+}
+
+/**
+ * Kullanıcıya badge verir
+ * @param {string} userId
+ * @param {string} badgeId
+ * @param {string} achievementId - Hangi achievement'tan kazanıldı
+ */
+export async function awardBadge(userId, badgeId, achievementId) {
+  try {
+    const badgeRef = doc(db, "users", userId, "badges", badgeId);
+    
+    await setDoc(badgeRef, {
+      earnedAt: serverTimestamp(),
+      achievementId: achievementId,
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Badge verilirken hata:", error);
+    throw error;
+  }
+}
+
+/**
+ * Achievement kontrolü yapar ve tamamlandıysa badge verir
+ * Transaction kullanarak race condition önler
+ * @param {string} userId
+ * @param {string} achievementId
+ * @param {string} counterField - users/{userId} içindeki sayaç alanı (ör: wateringCount)
+ * @returns {Promise<{completed: boolean, badgeAwarded: boolean, badgeId: string|null}>}
+ */
+export async function checkAndAwardAchievement(userId, achievementId, counterField) {
+  try {
+    const result = await runTransaction(db, async (transaction) => {
+      // 1. Achievement tanımını çek
+      const achievementRef = doc(db, "achievements", achievementId);
+      const achievementDoc = await transaction.get(achievementRef);
+      
+      if (!achievementDoc.exists()) {
+        console.warn(`Achievement bulunamadı: ${achievementId}`);
+        return { completed: false, badgeAwarded: false, badgeId: null };
+      }
+      
+      const achievement = achievementDoc.data();
+      const { target, badgeId } = achievement;
+      
+      // 2. Kullanıcının sayacını çek
+      const userRef = doc(db, "users", userId);
+      const userDoc = await transaction.get(userRef);
+      
+      if (!userDoc.exists()) {
+        return { completed: false, badgeAwarded: false, badgeId: null };
+      }
+      
+      const userData = userDoc.data();
+      const currentCount = userData[counterField] || 0;
+      
+      // 3. Progress dokümanını çek
+      const progressRef = doc(db, "users", userId, "achievementProgress", achievementId);
+      const progressDoc = await transaction.get(progressRef);
+      
+      const progressData = progressDoc.exists() ? progressDoc.data() : { completed: false };
+      
+      // Zaten tamamlanmışsa tekrar badge verme
+      if (progressData.completed) {
+        return { completed: true, badgeAwarded: false, badgeId: null };
+      }
+      
+      // 4. Progress'i güncelle
+      transaction.set(progressRef, {
+        current: currentCount,
+        completed: currentCount >= target,
+        completedAt: currentCount >= target ? serverTimestamp() : null,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      
+      // 5. Hedef tamamlandıysa badge ver
+      if (currentCount >= target) {
+        const userBadgeRef = doc(db, "users", userId, "badges", badgeId);
+        transaction.set(userBadgeRef, {
+          earnedAt: serverTimestamp(),
+          achievementId: achievementId,
+        });
+        
+        return { completed: true, badgeAwarded: true, badgeId };
+      }
+      
+      return { completed: false, badgeAwarded: false, badgeId: null };
+    });
+    
+    return result;
+  } catch (error) {
+    console.error("Achievement kontrolü sırasında hata:", error);
+    return { completed: false, badgeAwarded: false, badgeId: null };
+  }
+}
+
+/**
+ * Kullanıcının belirli bir sayacını artırır
+ * @param {string} userId
+ * @param {string} counterField - Artırılacak alan adı (ör: wateringCount, plantCount)
+ * @param {number} incrementBy - Artırma miktarı (varsayılan: 1)
+ */
+export async function incrementUserCounter(userId, counterField, incrementBy = 1) {
+  try {
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      [counterField]: increment(incrementBy),
+      updatedAt: serverTimestamp(),
+    });
+    return true;
+  } catch (error) {
+    console.error(`${counterField} artırılırken hata:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Belirli bir actionType'a sahip tüm achievement'ları çeker
+ * @param {string} actionType - Aksiyon tipi (watering, plant_added, analysis, module_completed)
+ * @returns {Promise<Array>} Achievement listesi
+ */
+export async function fetchAchievementsByActionType(actionType) {
+  try {
+    const achievementsCol = collection(db, "achievements");
+    const snapshot = await getDocs(achievementsCol);
+    
+    // actionType'a göre filtrele
+    return snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .filter((achievement) => achievement.actionType === actionType);
+  } catch (error) {
+    console.error(`${actionType} achievement'ları çekilirken hata:`, error);
+    return [];
+  }
+}
+
+/**
+ * Belirli bir actionType için TÜM achievement'ları kontrol eder ve badge verir
+ * @param {string} userId
+ * @param {string} actionType - Aksiyon tipi (watering, plant_added, analysis, module_completed)
+ * @returns {Promise<{success: boolean, awardedBadges: Array}>}
+ */
+export async function checkAllAchievementsForAction(userId, actionType) {
+  try {
+    // 1. Bu actionType'a ait tüm achievement'ları çek
+    const achievements = await fetchAchievementsByActionType(actionType);
+    
+    if (achievements.length === 0) {
+      return { success: true, awardedBadges: [] };
+    }
+    
+    const awardedBadges = [];
+    
+    // 2. Her achievement için kontrol yap
+    for (const achievement of achievements) {
+      const result = await checkAndAwardAchievement(
+        userId,
+        achievement.id,
+        achievement.progressField
+      );
+      
+      if (result.badgeAwarded && result.badgeId) {
+        awardedBadges.push({
+          badgeId: result.badgeId,
+          achievementId: achievement.id,
+          achievementName: achievement.name,
+        });
+      }
+    }
+    
+    return { success: true, awardedBadges };
+  } catch (error) {
+    console.error(`${actionType} achievement kontrolü sırasında hata:`, error);
+    return { success: false, awardedBadges: [] };
   }
 }

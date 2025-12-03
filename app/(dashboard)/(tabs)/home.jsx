@@ -17,10 +17,12 @@ import ThemedText from "../../../components/ThemedText";
 import Header from "../../../components/Header";
 import ScreenContainer from "../../../components/ScreenContainer";
 import HomeSkeleton from "../../../components/skeletons/HomeSkeleton";
+import CustomAlert from "../../../components/CustomAlert";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { AuthContext } from "../../../src/context/AuthContext";
-import { fetchPlantsForWatering, updatePlantWatering, fetchEducationModules, fetchUserProfileWithFavorite } from "../../../src/services/firestoreService";
+import { fetchPlantsForWatering, fetchEducationModules, fetchUserProfileWithFavorite } from "../../../src/services/firestoreService";
+import { useAchievementTracker } from "../../../src/hooks/achievements";
 import { registerForPush } from "../../../src/notifications/registerForPush";
 import HomePlantCard from "../../../components/HomePlantCard";
 import HomeEducationCard from "../../../components/HomeEducationCard";
@@ -81,6 +83,9 @@ const Home = () => {
   const userid = user?.uid || "";
   const registeredRef = useRef(false);
   const [modules, setModules] = useState([]);
+  
+  // Achievement tracker hook
+  const { trackWatering, newBadge, clearNewBadge, isTracking } = useAchievementTracker(userid);
 
   useEffect(() => {
     if (user?.uid && !registeredRef.current) {
@@ -180,9 +185,15 @@ const Home = () => {
   if (!user) return null;
 
   const handleWaterPlant = async (plantId) => {
+    // Optimistic UI update - bitkiyi hemen listeden kaldır
     setPlantss((prev) => prev.filter((plant) => plant.id !== plantId));
     try {
-      await updatePlantWatering(userid, plantId);
+      // Achievement tracker ile sulama yap
+      const result = await trackWatering(plantId);
+      
+      if (result.badgeAwarded) {
+        console.log("🎉 Yeni badge kazanıldı:", result.badge?.name);
+      }
     } catch (e) {
       console.error("Sulama guncelleme hatasi:", e);
     }
@@ -200,6 +211,16 @@ const Home = () => {
         bottomSpacing={120}
       >
         <Header />
+
+        {/* Badge Kazanma Bildirimi */}
+        <CustomAlert
+          visible={!!newBadge}
+          type="success"
+          title={t('achievements.badgeEarned')}
+          message={t('achievements.congratulations', { badgeName: newBadge?.name || '' })}
+          onConfirm={clearNewBadge}
+          confirmText={t('common.great')}
+        />
 
         <ThemedCard style={styles.summaryCard}>
           <View style={styles.summaryRow}>
