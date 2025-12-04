@@ -56,26 +56,7 @@ const Home = () => {
   const [initialFetched, setInitialFetched] = useState(false);
   const router = useRouter();
   const notificationCount = plantss.length;
-  const fallbackModules = [
-    {
-      id: "starter",
-      moduleName: "Baslangic Rehberi",
-      content: "Temel bakim ipuclari.",
-      bannerLink: "../../../assets/onboarding-1.png",
-    },
-    {
-      id: "watering",
-      moduleName: "Sulama Akademisi",
-      content: "Sulama ve nem kontrolu.",
-      bannerLink: "../../../assets/onboarding-2.png",
-    },
-    {
-      id: "diagnosis",
-      moduleName: "Hastalik Dedektifi",
-      content: "Erken teshis ipuclari.",
-      bannerLink: "../../../assets/onboarding-4.png",
-    },
-  ];
+  
   const { user } = useContext(AuthContext);
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;

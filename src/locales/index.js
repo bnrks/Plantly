@@ -60,6 +60,10 @@ export const setStoredLanguage = async (lang) => {
 // Mevcut dili al
 export const getCurrentLanguage = () => i18n.language;
 
+// i18n hazır mı kontrolü
+let i18nReady = false;
+let i18nReadyPromise = null;
+
 // i18n başlat
 const initI18n = async () => {
   const savedLanguage = await getStoredLanguage();
@@ -80,9 +84,16 @@ const initI18n = async () => {
         useSuspense: false,
       },
     });
+  
+  i18nReady = true;
+  return true;
 };
 
-// Başlat
-initI18n();
+// Promise olarak export et (await edilebilir)
+i18nReadyPromise = initI18n();
+
+// i18n'in hazır olmasını bekle
+export const waitForI18n = () => i18nReadyPromise;
+export const isI18nReady = () => i18nReady;
 
 export default i18n;

@@ -1,5 +1,5 @@
 // app/_layout.jsx
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { StyleSheet, SafeAreaView, StatusBar, ActivityIndicator } from "react-native";
 import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
@@ -10,7 +10,7 @@ import { AuthProvider } from "../src/context/AuthContext";
 import { AlertSystemProvider } from "../src/context/AlertSystemProvider";
 
 // i18n başlatma
-import "../src/locales";
+import { waitForI18n } from "../src/locales";
 
 class SimpleErrorBoundary extends React.Component {
   constructor(props) {
@@ -43,14 +43,31 @@ Notifications.setNotificationHandler({
 });
 
 export default function RootLayout() {
+  const [i18nReady, setI18nReady] = useState(false);
+
   useEffect(() => {
     console.log("Global error handler initialized");
+
+    // i18n'in hazır olmasını bekle
+    waitForI18n().then(() => {
+      setI18nReady(true);
+    });
 
     const sub = Notifications.addNotificationResponseReceivedListener(() => {
       // Placeholder for navigation from notification payload
     });
     return () => sub.remove();
   }, []);
+
+  // i18n hazır değilse bekle
+  if (!i18nReady) {
+    return (
+      <SafeAreaView style={[styles.safeArea, styles.fontLoading]}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <ActivityIndicator size="small" color={Colors.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SimpleErrorBoundary>

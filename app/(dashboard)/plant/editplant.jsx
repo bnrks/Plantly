@@ -132,7 +132,7 @@ export default function EditPlant() {
     <ThemedView style={[styles.container, { backgroundColor: colors.mainBg }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Header style={{ marginTop: 40, marginBottom: -5 }} />
         <View style={styles.content}>

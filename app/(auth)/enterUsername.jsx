@@ -69,18 +69,26 @@ export default function EnterUsername() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
         <LinearGradient
-          colors={["#A8E6CF", "#DCEDC1", "#FFFFFF"]}
+          colors={
+            selectedTheme === "dark"
+              ? ["#2D3D34", "#243029", "#1A2420"]
+              : ["#A8E6CF", "#DCEDC1", "#FFFFFF"]
+          }
           start={{ x: 0, y: 0.001 }}
           end={{ x: 0, y: 1 }}
           style={styles.container}
         >
           <Image
-            source={require("../../assets/plantly-logo.png")}
+            source={require("../../assets/enter_username.png")}
             style={styles.logo}
           />
           <ThemedCard style={styles.card}>
@@ -131,9 +139,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 30,
+    width: 250,
+    height: 190,
+    marginBottom: -30,
     resizeMode: "contain",
   },
   card: {

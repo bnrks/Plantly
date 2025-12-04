@@ -218,7 +218,7 @@ const CustomTabBar = ({
                     menuVisible && styles.menuButtonActive,
                   ]}
                 >
-                  <Ionicons name="menu" size={24} color={theme.thirdBg} />
+                  <Ionicons name="menu" size={24} color={selectedTheme === "dark" ? theme.title : theme.thirdBg} />
                 </TouchableOpacity>
               </View>
             );

@@ -77,9 +77,31 @@ export default function LoginScreen() {
   const handleGoogleSignIn = async () => {
     try {
       setIsGoogleLoading(true);
-      await signInWithGoogle();
-      console.log("Google ile giriş başarılı");
-      router.replace("/home");
+      const result = await signInWithGoogle();
+      console.log("Google ile giriş başarılı", result);
+      
+      // Profil tamamlanmamışsa yönlendir
+      if (!result.profileComplete) {
+        const userId = result.userCredential.user.uid;
+        
+        if (result.missingFields.includes('displayName')) {
+          // Önce username sayfasına
+          router.replace({
+            pathname: "/enterUsername",
+            params: { userId: userId }
+          });
+        } else if (result.missingFields.includes('name')) {
+          // Sadece name eksikse name sayfasına
+          router.replace({
+            pathname: "/enterName",
+            params: { userId: userId }
+          });
+        } else {
+          router.replace("/home");
+        }
+      } else {
+        router.replace("/home");
+      }
     } catch (error) {
       if (error.code !== "auth/cancelled") {
         console.error("Google sign-in error:", error);
@@ -92,13 +114,21 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
         <LinearGradient
           style={styles.container}
-          colors={["#A8E6CF", "#DCEDC1", "#FFFFFF"]}
+          colors={
+            selectedTheme === "dark"
+              ? ["#2D3D34", "#243029", "#1A2420"]
+              : ["#A8E6CF", "#DCEDC1", "#FFFFFF"]
+          }
           start={{ x: 0, y: 0.001 }}
           end={{ x: 0, y: 1 }}
         >
@@ -109,7 +139,7 @@ export default function LoginScreen() {
 
           <ThemedCard
             style={{
-              height: "45%",
+              height: "47%",
               width: "100%",
               marginTop: 10,
               borderRadius: 20,
@@ -139,6 +169,7 @@ export default function LoginScreen() {
                 marginBottom: 20,
                 borderRadius: 5,
                 height: 50,
+                
               }}
               placeholder={t('auth.email')}
               value={email}
@@ -211,12 +242,12 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.button}>
-              <Link href={"/register"} style={styles.buttonText}>
+              <Link href={"/register"} style={[styles.linkText, { color: theme.title }]}>
                 {t('auth.dontHaveAccount')}
               </Link>
             </TouchableOpacity>
             <TouchableOpacity style={{ ...styles.button, marginTop: 20 }}>
-              <Link href={"/resetPassword"} style={styles.buttonText}>
+              <Link href={"/resetPassword"} style={[styles.linkText, { color: theme.title }]}>
                 {t('auth.forgotPassword')}
               </Link>
             </TouchableOpacity>
@@ -237,11 +268,11 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000",
+    
   },
   logo: {
-    width: 400,
-    height: 400,
+    width: 300,
+    height: 300,
   },
   dividerContainer: {
     flexDirection: "row",
@@ -279,5 +310,12 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: "center",
     width: "90%",
+  },
+  button: {
+    alignItems: "center",
+  },
+  linkText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

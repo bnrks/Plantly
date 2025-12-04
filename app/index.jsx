@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useRouter, Redirect } from "expo-router";
 import { AuthContext } from "../src/context/AuthContext";
+import { checkUserProfileComplete } from "../src/services/firestoreService";
 // Aşağıdaki satırı kaldırın veya yorum satırına alın
 // import { useContext } from "react"; <-- Bu satırı silin
 import { Ionicons } from "@expo/vector-icons";
@@ -21,35 +22,33 @@ import { ThemeContext } from "../src/context/ThemeContext";
 import ThemedText from "../components/ThemedText";
 import ThemedButton from "../components/ThemedButton";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
+
 const { width, height } = Dimensions.get("window");
 
-const slides = [
+const getSlides = (t) => [
   {
     id: "1",
-    title: "Plantly'ye Hoşgeldin!",
-    description:
-      "Plantly, bitki bakımı ve hastalık tespiti için yapay zeka destekli bir uygulamadır. Bitkilerinizi daha sağlıklı ve mutlu hale getirmek için buradayız!",
+    title: t('onboarding.slide1Title'),
+    description: t('onboarding.slide1Desc'),
     image: require("../assets/onboarding-2.png"),
   },
   {
     id: "2",
-    title: "Yapay zeka destekli hastalık tespiti",
-    description:
-      "Yapraklarının fotoğrafını çekerek bitkinizdeki olası hastalıkları tespit edin ve tedavi önerileri alın.",
+    title: t('onboarding.slide2Title'),
+    description: t('onboarding.slide2Desc'),
     image: require("../assets/onboarding-4.png"),
   },
   {
     id: "3",
-    title: "Kişisel bitki koleksiyonunuzu oluşturun",
-    description:
-      "Tüm bitkilerinizi Plantly'de kaydedin, bakım takvimlerini oluşturun ve sağlıklı bir bahçe oluşturun.",
+    title: t('onboarding.slide3Title'),
+    description: t('onboarding.slide3Desc'),
     image: require("../assets/onboarding-3.png"),
   },
   {
     id: "4",
-    title: "Plantly ile sağlıklı ve mutlu bitkiler!",
-    description:
-      "Plantly, bitkilerinizi daha sağlıklı ve mutlu hale getirmek için size rehberlik eder. Bitki bakımı artık çok daha kolay!",
+    title: t('onboarding.slide4Title'),
+    description: t('onboarding.slide4Desc'),
     image: require("../assets/onboarding-1.png"),
   },
 ];
@@ -61,6 +60,8 @@ const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [splashComplete, setSplashComplete] = useState(false); // Splash animasyonundan sonra kullanıcı kontrolü için ek state
+  const [profileCheckDone, setProfileCheckDone] = useState(false);
+  const [redirectPath, setRedirectPath] = useState(null);
   // Ref hooks
   const flatListRef = useRef(null);
   const splashOpacity = useRef(new Animated.Value(0)).current;
@@ -75,6 +76,10 @@ const Index = () => {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
   const router = useRouter();
+  const { t } = useTranslation();
+  
+  // Slides'ı çevirilerle oluştur
+  const slides = getSlides(t);
 
   // HOOK TANIMLAMALARI BİTTİ - Bundan sonra normal fonksiyonlar ve logic
 
@@ -121,6 +126,35 @@ const Index = () => {
       console.log("User is not logged in");
     }
   }, [user]);
+
+  // Kullanıcı profil kontrolü - eksik bilgi varsa yönlendir
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (user && splashComplete && !loading) {
+        try {
+          const profileStatus = await checkUserProfileComplete(user.uid);
+          
+          if (!profileStatus.isComplete) {
+            if (profileStatus.missingFields.includes('displayName')) {
+              setRedirectPath(`/enterUsername?userId=${user.uid}`);
+            } else if (profileStatus.missingFields.includes('name')) {
+              setRedirectPath(`/enterName?userId=${user.uid}`);
+            } else {
+              setRedirectPath('/home');
+            }
+          } else {
+            setRedirectPath('/home');
+          }
+        } catch (error) {
+          console.error('Profil kontrol hatası:', error);
+          setRedirectPath('/home');
+        }
+        setProfileCheckDone(true);
+      }
+    };
+    
+    checkProfile();
+  }, [user, splashComplete, loading]);
 
   // Buton animasyonları için effect
   useEffect(() => {
@@ -250,9 +284,19 @@ const Index = () => {
     );
   }
 
-  // Kullanıcı giriş yapmışsa yönlendir - splash animasyonu bittikten sonra kontrol et
-  if (splashComplete && !loading) {
-    if (user) return <Redirect href="/home" />;
+  // Kullanıcı giriş yapmışsa profil kontrolü yap ve yönlendir
+  if (splashComplete && !loading && user) {
+    if (profileCheckDone && redirectPath) {
+      return <Redirect href={redirectPath} />;
+    }
+    // Profil kontrolü devam ediyor
+    return (
+      <View
+        style={[styles.loadingContainer, { backgroundColor: theme.mainBg }]}
+      >
+        <ActivityIndicator size="large" color={theme.accent} />
+      </View>
+    );
   }
 
   // Normal onboarding akışını render et
@@ -290,7 +334,7 @@ const Index = () => {
               }}
             >
               <ThemedButton
-                title="Giriş Yap"
+                title={t('onboarding.login')}
                 onPress={() => router.push("/login")}
                 style={[styles.button, { backgroundColor: Colors.primary }]}
                 textStyle={{ color: "#FFFFFF" }}
@@ -306,7 +350,7 @@ const Index = () => {
               }}
             >
               <ThemedButton
-                title="Kayıt Ol"
+                title={t('onboarding.register')}
                 onPress={() => router.push("/register")}
                 style={[
                   styles.button,
@@ -324,7 +368,7 @@ const Index = () => {
               onPress={() => router.push("/login")}
               style={styles.skipButton}
             >
-              <ThemedText style={styles.skipText}>Atla</ThemedText>
+              <ThemedText style={styles.skipText}>{t('onboarding.skip')}</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -366,6 +410,7 @@ const styles = StyleSheet.create({
   textContainer: {
     alignItems: "center",
     marginTop: 20,
+    marginBottom: 80,
   },
   title: {
     fontSize: 28,

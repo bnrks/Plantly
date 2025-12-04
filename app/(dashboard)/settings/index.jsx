@@ -22,7 +22,7 @@ import { SUPPORTED_LANGUAGES, setStoredLanguage, getCurrentLanguage } from "../.
 export default function Settings() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const { theme: currentTheme, toggleTheme } = useContext(ThemeContext);
+  const { theme: currentTheme, themeMode, setThemeMode } = useContext(ThemeContext);
   const theme = Colors[currentTheme] ?? Colors.light;
   const { user, logout } = useContext(AuthContext);
   const { alertConfig, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
@@ -99,19 +99,97 @@ export default function Settings() {
       >
         <ThemedTitle style={styles.title}>{t("settings.title")}</ThemedTitle>
 
-        {/* Tema Değiştirme */}
-        <View style={[styles.section, { backgroundColor: theme.thirdBg }]}>
-          <View style={styles.sectionLeft}>
-            <Ionicons name="moon-outline" size={22} color={currentTheme === "dark" ? theme.text : theme.title} style={styles.sectionIcon} />
-            <ThemedText style={styles.sectionText}>{t("settings.darkMode")}</ThemedText>
-          </View>
-          <Switch
-            trackColor={{ false: "#767577", true: Colors.primary }}
-            thumbColor={currentTheme === "dark" ? "#f5dd4b" : "#f4f3f4"}
-            ios_backgroundColor="#3e3e3e"
-            onValueChange={toggleTheme}
-            value={currentTheme === "dark"}
-          />
+        {/* Tema Seçenekleri */}
+        <ThemedText style={[styles.sectionLabel, { color: theme.secondaryText }]}>
+          {t("settings.theme")}
+        </ThemedText>
+        <View style={styles.themeContainer}>
+          {/* Açık Tema */}
+          <TouchableOpacity
+            style={[
+              styles.themeOption,
+              { 
+                backgroundColor: themeMode === "light" ? Colors.primary : theme.thirdBg,
+                borderColor: themeMode === "light" ? Colors.primary : theme.border || "#999",
+              },
+            ]}
+            onPress={() => setThemeMode("light")}
+          >
+            <Ionicons 
+              name="sunny-outline" 
+              size={24} 
+              color={themeMode === "light" ? "#fff" : theme.text} 
+            />
+            <ThemedText 
+              style={[
+                styles.themeOptionText, 
+                { color: themeMode === "light" ? "#fff" : theme.text }
+              ]}
+            >
+              {t("settings.themeLight")}
+            </ThemedText>
+            {themeMode === "light" && (
+              <Ionicons name="checkmark-circle" size={18} color="#fff" style={styles.themeCheck} />
+            )}
+          </TouchableOpacity>
+
+          {/* Koyu Tema */}
+          <TouchableOpacity
+            style={[
+              styles.themeOption,
+              { 
+                backgroundColor: themeMode === "dark" ? Colors.primary : theme.thirdBg,
+                borderColor: themeMode === "dark" ? Colors.primary : theme.border || "#999",
+              },
+            ]}
+            onPress={() => setThemeMode("dark")}
+          >
+            <Ionicons 
+              name="moon-outline" 
+              size={24} 
+              color={themeMode === "dark" ? "#fff" : theme.text} 
+            />
+            <ThemedText 
+              style={[
+                styles.themeOptionText, 
+                { color: themeMode === "dark" ? "#fff" : theme.text }
+              ]}
+            >
+              {t("settings.themeDark")}
+            </ThemedText>
+            {themeMode === "dark" && (
+              <Ionicons name="checkmark-circle" size={18} color="#fff" style={styles.themeCheck} />
+            )}
+          </TouchableOpacity>
+
+          {/* Sistem Varsayılanı */}
+          <TouchableOpacity
+            style={[
+              styles.themeOption,
+              { 
+                backgroundColor: themeMode === "system" ? Colors.primary : theme.thirdBg,
+                borderColor: themeMode === "system" ? Colors.primary : theme.border || "#999",
+              },
+            ]}
+            onPress={() => setThemeMode("system")}
+          >
+            <Ionicons 
+              name="phone-portrait-outline" 
+              size={24} 
+              color={themeMode === "system" ? "#fff" : theme.text} 
+            />
+            <ThemedText 
+              style={[
+                styles.themeOptionText, 
+                { color: themeMode === "system" ? "#fff" : theme.text }
+              ]}
+            >
+              {t("settings.themeSystem")}
+            </ThemedText>
+            {themeMode === "system" && (
+              <Ionicons name="checkmark-circle" size={18} color="#fff" style={styles.themeCheck} />
+            )}
+          </TouchableOpacity>
         </View>
       </ThemedCard>
 
@@ -359,6 +437,34 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     marginRight: 8,
+  },
+  themeContainer: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  themeOption: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 2,
+    gap: 6,
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  themeCheck: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 12,
   },
   logoutButton: {
     flexDirection: "row",

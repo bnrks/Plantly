@@ -40,7 +40,11 @@ const ResetPassword = () => {
   return (
     <LinearGradient
       style={styles.container}
-      colors={["#A8E6CF", "#DCEDC1", "#FFFFFF"]}
+      colors={
+        selectedTheme === "dark"
+          ? ["#2D3D34", "#243029", "#1A2420"]
+          : ["#A8E6CF", "#DCEDC1", "#FFFFFF"]
+      }
       start={{ x: 0, y: 0.001 }}
       end={{ x: 0, y: 1 }}
     >
@@ -108,13 +112,13 @@ const ResetPassword = () => {
           disabled={isLoading || resetSuccess}
         />
 
-        <TouchableOpacity style={styles.button}>
-          <Link href={"/register"} style={styles.buttonText}>
+        <TouchableOpacity style={styles.linkButton}>
+          <Link href={"/register"} style={[styles.linkText, { color: theme.title }]}>
             {t('auth.dontHaveAccount')}
           </Link>
         </TouchableOpacity>
-        <TouchableOpacity style={{ ...styles.button, marginTop: 20 }}>
-          <Link href={"/login"} style={styles.buttonText}>
+        <TouchableOpacity style={[styles.linkButton, { marginTop: 20 }]}>
+          <Link href={"/login"} style={[styles.linkText, { color: theme.title }]}>
             {t('auth.login')}
           </Link>
         </TouchableOpacity>
@@ -135,7 +139,13 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#000000",
+  },
+  linkButton: {
+    alignItems: "center",
+  },
+  linkText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   logo: {
     width: 400,

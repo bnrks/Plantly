@@ -11,7 +11,7 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
 } from "firebase/auth";
-import { createUserDocument, deleteUserData } from "./firestoreService";
+import { createUserDocument, checkUserProfileComplete, deleteUserData } from "./firestoreService";
 
 // Lazy import for Google Sign-In (requires native module)
 let GoogleSignin = null;
@@ -56,10 +56,18 @@ export const signInWithGoogle = async () => {
     // Sign in to Firebase with credential
     const userCredential = await signInWithCredential(auth, googleCredential);
     
-    // Create user document in Firestore if it's a new user
-    await createUserDocument(userCredential.user);
+    // Create user document in Firestore if it's a new user (won't override existing)
+    const { isNewUser } = await createUserDocument(userCredential.user);
     
-    return userCredential;
+    // Check if profile is complete
+    const profileStatus = await checkUserProfileComplete(userCredential.user.uid);
+    
+    return {
+      userCredential,
+      isNewUser,
+      profileComplete: profileStatus.isComplete,
+      missingFields: profileStatus.missingFields
+    };
   } catch (error) {
     if (error.code === statusCodes?.SIGN_IN_CANCELLED) {
       console.log("Google Sign-In cancelled by user");

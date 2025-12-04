@@ -3,17 +3,25 @@ import { Pressable, Text, StyleSheet } from "react-native";
 import { Colors } from "../constants/Colors";
 import { useContext } from "react";
 import { ThemeContext } from "../src/context/ThemeContext";
+
 const ThemedButton = ({
   title,
   onPress,
   style,
   textStyle,
+  textColor,
   stayPressed = false,
   ...props
 }) => {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
   const [active, setActive] = useState(false);
+  
+  // Props olarak renk gelmezse tema bazlı varsayılan renk
+  // Dark modda açık, Light modda koyu
+  const isDark = selectedTheme === "dark";
+  const defaultTextColor = isDark ? "#F5F2ED" : "#1E3A29";
+  const buttonTextColor = textColor || defaultTextColor;
 
   const handlePress = (event) => {
     if (stayPressed) setActive(true);
@@ -34,7 +42,7 @@ const ThemedButton = ({
       <Text
         style={[
           styles.text,
-          { color: theme.background, fontFamily: "CommeRegular" },
+          { color: buttonTextColor, fontFamily: "CommeRegular" },
           textStyle,
         ]}
       >

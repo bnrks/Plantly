@@ -10,7 +10,7 @@ import { Colors } from "../../constants/Colors";
 import { ThemeContext } from "../../src/context/ThemeContext";
 import ThemedTextInput from "../../components/ThemedTextInput";
 import { LinearGradient } from "expo-linear-gradient";
-import { KeyboardAvoidingView, ScrollView, Platform } from "react-native";
+import { KeyboardAvoidingView, ScrollView, Platform,TouchableOpacity } from "react-native";
 import CustomAlert from "../../components/CustomAlert";
 import { useCustomAlert } from "../../src/hooks/ui/useCustomAlert";
 export default function Register() {
@@ -56,12 +56,20 @@ export default function Register() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
         <LinearGradient
-          colors={["#A8E6CF", "#DCEDC1", "#FFFFFF"]}
+          colors={
+            selectedTheme === "dark"
+              ? ["#2D3D34", "#243029", "#1A2420"]
+              : ["#A8E6CF", "#DCEDC1", "#FFFFFF"]
+          }
           start={{ x: 0, y: 0.001 }}
           end={{ x: 0, y: 1 }}
           style={styles.container}
@@ -124,9 +132,11 @@ export default function Register() {
               stayPressed={true}
             />
 
-            <Link href="/login" style={[styles.link, styles.buttonText]}>
-              <ThemedText>{t('auth.alreadyHaveAccount')}</ThemedText>
-            </Link>
+            <TouchableOpacity style={styles.linkButton}>
+              <Link href="/login" style={[styles.linkText, { color: theme.title }]}>
+                {t('auth.alreadyHaveAccount')}
+              </Link>
+            </TouchableOpacity>
           </ThemedCard>
         </LinearGradient>
 
@@ -193,6 +203,14 @@ const styles = StyleSheet.create({
   },
   link: {
     marginTop: 10,
+  },
+  linkButton: {
+    marginTop: 10,
+    alignItems: "center",
+  },
+  linkText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   logo: {
     width: 300,

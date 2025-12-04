@@ -109,15 +109,12 @@ export default function PlantDetails() {
   if (loading) {
     return <PlantDetailsSkeleton />;
   }
-  // Arkaplan rengi: dark modda thirdBg, light modda fourthBg
-  const backgroundColor = selectedTheme === "dark" ? theme.fifthBg : theme.fifthBg;
 
   return (
     <ScreenContainer
       scrollable
       contentContainerStyle={styles.scrollContent}
       bottomSpacing={40}
-      style={{ backgroundColor }}
     >
       {/* Header Row: BackButton ve Header aynı hizada */}
       <View style={styles.headerRow}>

@@ -16,8 +16,20 @@ import {
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 
 // Diğer Firebase işlevleri
-export const createUserDocument = async (user) => {
+// Kullanıcı dokümanı oluştur - sadece yeni kullanıcı için
+export const createUserDocument = async (user, forceCreate = false) => {
   const userRef = doc(db, "users", user.uid);
+  
+  // Mevcut kullanıcıyı kontrol et
+  const userSnap = await getDoc(userRef);
+  
+  if (userSnap.exists() && !forceCreate) {
+    // Kullanıcı zaten var, mevcut verileri koru
+    console.log("Kullanıcı zaten mevcut, veriler korunuyor");
+    return { isNewUser: false, userData: userSnap.data() };
+  }
+  
+  // Yeni kullanıcı oluştur
   await setDoc(userRef, {
     uid: user.uid,
     email: user.email,
@@ -25,6 +37,40 @@ export const createUserDocument = async (user) => {
     name: "",
     createdAt: serverTimestamp(),
   });
+  
+  return { isNewUser: true, userData: null };
+};
+
+// Kullanıcı profilinin tamamlanıp tamamlanmadığını kontrol et
+export const checkUserProfileComplete = async (userId) => {
+  try {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (!userSnap.exists()) {
+      return { exists: false, isComplete: false, missingFields: ['all'] };
+    }
+    
+    const userData = userSnap.data();
+    const missingFields = [];
+    
+    if (!userData.displayName || userData.displayName.trim() === '') {
+      missingFields.push('displayName');
+    }
+    if (!userData.name || userData.name.trim() === '') {
+      missingFields.push('name');
+    }
+    
+    return {
+      exists: true,
+      isComplete: missingFields.length === 0,
+      missingFields,
+      userData
+    };
+  } catch (error) {
+    console.error("Profil kontrol hatası:", error);
+    return { exists: false, isComplete: false, missingFields: ['all'] };
+  }
 };
 
 // Kullanıcı adını güncelle

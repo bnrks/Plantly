@@ -489,7 +489,7 @@ export default function ChatScreen() {
         <Header />
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           enabled
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
@@ -577,7 +577,7 @@ export default function ChatScreen() {
           {connectionStatus === "connected" ? (
             <KeyboardAvoidingView
               style={{ flex: 1 }}
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
               <ThemedView style={styles.chatContainer}>
                 {/* Chat Content */}

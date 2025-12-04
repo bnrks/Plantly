@@ -1,14 +1,16 @@
 // app/(auth)/_layout.jsx
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import * as Font from "expo-font";
 import { Slot } from "expo-router";
 import ErrorBoundary from "../../src/components/ErrorBoundary";
 import { AuthErrorFallback } from "../../src/components/ErrorFallbacks";
+import { ThemeContext } from "../../src/context/ThemeContext";
 
 export default function AuthLayout() {
   const [ready, setReady] = useState(false);
+  const { theme } = useContext(ThemeContext);
 
   React.useEffect(() => {
     async function prepare() {
@@ -41,7 +43,7 @@ export default function AuthLayout() {
         console.error("📍 Error Info:", errorInfo);
       }}
     >
-      <StatusBar style="auto" />
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <Slot />
     </ErrorBoundary>
   );

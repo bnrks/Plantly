@@ -186,14 +186,14 @@ export default function AddPlantScreen({}) {
               style={styles.photoAddButton}
               onPress={() => openImageOptions()}
             >
-              <View style={styles.photoContainer}>
+              <View style={[styles.photoContainer, { backgroundColor: selectedTheme === "dark" ? theme.thirdBg : "#F8FDF6", borderColor: selectedTheme === "dark" ? theme.text : "#A0C878" }]}>
                 <Ionicons
                   name="camera-outline"
                   size={32}
-                  color={theme.thirdBg}
+                  color={selectedTheme === "dark" ? theme.text : theme.thirdBg}
                 />
-                <ThemedText style={styles.photoText}>{t('plants.addPhoto')}</ThemedText>
-                <ThemedText style={styles.photoSubtext}>
+                <ThemedText style={[styles.photoText, { color: selectedTheme === "dark" ? theme.text : "#A0C878", alignSelf: "center" }]}>{t('plants.addPhoto')}</ThemedText>
+                <ThemedText style={[styles.photoSubtext, { alignSelf: "center" }]}>
                   {t('plants.tapToSelectPhoto')}
                 </ThemedText>
               </View>
@@ -247,9 +247,9 @@ export default function AddPlantScreen({}) {
               {t('plants.plantName')}
             </ThemedText>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: selectedTheme === "dark" ? theme.border || "#3D5A47" : "#E0E0E0" }]}
               placeholder={t('plants.plantNamePlaceholder')}
-              placeholderTextColor="#999"
+              placeholderTextColor={selectedTheme === "dark" ? "#8A9B8E" : "#999"}
               value={name}
               onChangeText={setName}
             />
@@ -269,9 +269,9 @@ export default function AddPlantScreen({}) {
             <View style={styles.speciesContainer}>
               <TextInput
                 ref={speciesInputRef}
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: selectedTheme === "dark" ? theme.border || "#3D5A47" : "#E0E0E0" }]}
                 placeholder={t('plants.speciesPlaceholder')}
-                placeholderTextColor="#999"
+                placeholderTextColor={selectedTheme === "dark" ? "#8A9B8E" : "#999"}
                 value={species}
                 onChangeText={handleSpeciesChange}
                 onFocus={handleSpeciesFocus}
@@ -345,9 +345,9 @@ export default function AddPlantScreen({}) {
               {t('plants.description')}
             </ThemedText>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, { backgroundColor: theme.inputBg, color: theme.text, borderColor: selectedTheme === "dark" ? theme.border || "#3D5A47" : "#E0E0E0" }]}
               placeholder={t('plants.descriptionPlaceholder')}
-              placeholderTextColor="#999"
+              placeholderTextColor={selectedTheme === "dark" ? "#8A9B8E" : "#999"}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -367,15 +367,14 @@ export default function AddPlantScreen({}) {
             </ThemedText>
             <View style={styles.wateringInputContainer}>
               <TextInput
-                style={[styles.input, styles.wateringInput]}
+                style={[styles.input, styles.wateringInput, { backgroundColor: theme.inputBg, color: theme.text, borderColor: selectedTheme === "dark" ? theme.border || "#3D5A47" : "#E0E0E0" }]}
                 placeholder={t('plants.howManyDays')}
-                placeholderTextColor="#999"
+                placeholderTextColor={selectedTheme === "dark" ? "#8A9B8E" : "#999"}
                 value={wateringInterval}
                 onChangeText={setWateringInterval}
                 keyboardType="numeric"
                 maxLength={3}
               />
-              <ThemedText style={styles.wateringUnit}>{t('plants.days')}</ThemedText>
             </View>
           </View>
 
@@ -392,9 +391,9 @@ export default function AddPlantScreen({}) {
             </ThemedText>
             <View style={styles.noteInputRow}>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, { flex: 1, backgroundColor: theme.inputBg, color: theme.text, borderColor: selectedTheme === "dark" ? theme.border || "#3D5A47" : "#E0E0E0" }]}
                 placeholder={t('plants.addNote')}
-                placeholderTextColor="#999"
+                placeholderTextColor={selectedTheme === "dark" ? "#8A9B8E" : "#999"}
                 value={noteText}
                 onChangeText={setNoteText}
               />
@@ -402,19 +401,19 @@ export default function AddPlantScreen({}) {
                 onPress={handleAddNote}
                 style={styles.addNoteBtn}
               >
-                <Ionicons name="add-circle" size={32} color={theme.thirdBg} />
+                <Ionicons name="add-circle" size={32} color={selectedTheme === "dark" ? theme.text : theme.thirdBg} />
               </TouchableOpacity>
             </View>
 
             {notes.length > 0 && (
-              <View style={styles.notesContainer}>
+              <View style={[styles.notesContainer, { backgroundColor: selectedTheme === "dark" ? theme.thirdBg : "#F8FDF6" }]}>
                 {notes.map((note, idx) => (
-                  <View key={idx} style={styles.noteItem}>
+                  <View key={idx} style={[styles.noteItem, { backgroundColor: selectedTheme === "dark" ? theme.inputBg : "#fff" }]}>
                     <View style={styles.noteContent}>
                       <Ionicons
                         name="ellipse"
                         size={6}
-                        color={theme.thirdBg}
+                        color={selectedTheme === "dark" ? theme.text : theme.thirdBg}
                         style={{ marginTop: 8, marginRight: 13 }}
                       />
                       <ThemedText style={styles.noteText}>{note}</ThemedText>
