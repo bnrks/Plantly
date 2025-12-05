@@ -12,20 +12,22 @@ const { Expo } = require("expo-server-sdk");
 initializeApp();
 const expo = new Expo();
 
-// Küçük yardımcılar
+// Helper constants / functions
 const TOK_RE = /^(Expo(nent)?PushToken)\[.+\]$/; // ExpoPushToken[...] veya ExponentPushToken[...]
 
-function addDays(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + Number(days || 1));
-  return d;
+function toDateSafe(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value?.toDate === "function") return value.toDate();
+  if (typeof value === "number") return new Date(value);
+  return null;
 }
 
-// ---- ANA İŞ ----
-// 1) due (nextWateringAt <= now) bitkileri çek
-// 2) user bazında grupla (tek bildirim)
-// 3) Expo push gönder (token hatalarını reçetelerden temizle)
-// 4) Her due bitki için lastNotifiedAt ve nextWateringAt güncelle
+function isSameDay(a, b) {
+  return a && b && a.toDateString() === b.toDateString();
+}
+
+// Ana is: her kullanicinin bitkilerini kontrol et, sulama vakti gelenleri bildir.
 async function processDueWaterings() {
   const db = getFirestore();
   const now = new Date();
@@ -33,102 +35,116 @@ async function processDueWaterings() {
 
   console.log("[process] start", { now: now.toISOString() });
 
-  // Index: plants (collection group) + nextWateringAt ASC
-  const snap = await db
-    .collectionGroup("plants")
-    .where("nextWateringAt", "<=", nowTs)
-    .orderBy("nextWateringAt", "asc")
-    .limit(3000)
-    .get();
-
-  console.log("[process] dueCount:", snap.size);
-  if (snap.empty) return { dueCount: 0, toSend: 0, updatedDocs: 0 };
+  const usersSnap = await db.collection("users").get();
 
   // userId -> { userRef, tokens[], plants[] }
   const groups = new Map();
 
-  for (const docSnap of snap.docs) {
-    const plant = docSnap.data();
-    const plantRef = docSnap.ref;
-    const userRef = plantRef.parent.parent;
-    if (!userRef) continue;
+  for (const userDoc of usersSnap.docs) {
+    const userRef = userDoc.ref;
+    const userData = userDoc.data() || {};
 
-    // Aynı gün tekrar bildirim atma
-    if (plant.lastNotifiedAt) {
-      const last = plant.lastNotifiedAt.toDate();
-      if (last.toDateString() === now.toDateString()) continue;
+    // Token oku (dizi + tekil alan)
+    let rawTokens = Array.isArray(userData.expoPushTokens)
+      ? userData.expoPushTokens
+      : [];
+    if (!rawTokens.length && typeof userData.expoPushToken === "string") {
+      rawTokens = [userData.expoPushToken];
     }
+    const tokens = rawTokens
+      .map((t) => (typeof t === "string" ? t.trim() : ""))
+      .filter((t) => TOK_RE.test(t));
 
-    const uid = userRef.id;
-    let g = groups.get(uid);
-    if (!g) {
-      const userDoc = await userRef.get();
-      const u = userDoc.data() || {};
-      // Token’ları oku (dizi + tekil alan)
-      let rawTokens = Array.isArray(u.expoPushTokens) ? u.expoPushTokens : [];
-      if (!rawTokens.length && typeof u.expoPushToken === "string") {
-        rawTokens = [u.expoPushToken];
+    if (!tokens.length) continue;
+
+    // Kullanici sulama bildirimi acik mi?
+    let wateringEnabled = true;
+    try {
+      const notifSnap = await userRef
+        .collection("settings")
+        .doc("notification_settings")
+        .get();
+      if (notifSnap.exists) {
+        const nd = notifSnap.data() || {};
+        if (typeof nd.wateringReminder === "boolean") {
+          wateringEnabled = nd.wateringReminder;
+        }
       }
-      // Kabul edilen formatlar
-      const tokens = rawTokens
-        .map((t) => (typeof t === "string" ? t.trim() : ""))
-        .filter((t) => TOK_RE.test(t));
-
-      g = { userRef, tokens, plants: [] };
-      groups.set(uid, g);
+    } catch (err) {
+      console.error("[process] notif settings fetch error", userRef.id, err);
+      // hata halinde default true tutuyoruz
+    }
+    if (!wateringEnabled) {
+      console.log("[process] skip user (watering off)", userRef.id);
+      continue;
     }
 
-    // Bu kullanıcı için due bitkiler listesine ekle
-    g.plants.push({
-      ref: plantRef,
-      name: plant.name || "Bitki",
-      wateringInterval: Number(plant.wateringInterval || 1),
-      nextWateringAt: plant.nextWateringAt,
-      lastWatered: plant.lastWatered,
-    });
+    const plantsSnap = await userRef.collection("plants").get();
+    if (plantsSnap.empty) continue;
+
+    const duePlants = [];
+    for (const plantDoc of plantsSnap.docs) {
+      const plant = plantDoc.data() || {};
+      const intervalDays = Number(plant.wateringInterval || 0);
+      const lastWatered = toDateSafe(plant.lastWatered);
+      const lastNotifiedAt = toDateSafe(plant.lastNotifiedAt);
+
+      // Veri eksikse veya ayni gun bildirim gonderildiyse atla
+      if (!intervalDays || !lastWatered) continue;
+      if (isSameDay(lastNotifiedAt, now)) continue;
+
+      const hoursSinceWatered =
+        (now.getTime() - lastWatered.getTime()) / (1000 * 60 * 60);
+      const thresholdHours = intervalDays * 24;
+
+      if (hoursSinceWatered >= thresholdHours) {
+        duePlants.push({
+          ref: plantDoc.ref,
+          name: plant.name || "Bitki",
+        });
+      }
+    }
+
+    if (!duePlants.length) continue;
+
+    groups.set(userRef.id, { userRef, tokens, plants: duePlants });
   }
 
-  // Tek bildirim üretme: kullanıcı başına 1 push
+  // Tek bildirim uretme: kullanici basina 1 push
   const messages = [];
-  const tokenOwners = []; // receipts için token->user eşlemesi
-  let plantsToUpdate = []; // push denemesi yapılan tüm bitkiler
+  const tokenOwners = []; // receipts icin token->user eslemesi
+  const plantsToUpdate = []; // push denemesi yapilan tum bitkiler
 
-  for (const [, g] of groups) {
-    if (!g.tokens.length || g.plants.length === 0) continue;
+  for (const [, group] of groups) {
+    if (!group.tokens.length || !group.plants.length) continue;
 
-    const count = g.plants.length;
-    // Metin: 1 ise isimli, birden çok ise sayılı + kısa isim listesi
-    const topNames = g.plants.slice(0, 3).map((p) => p.name);
-    const rest = count - topNames.length;
+    const count = group.plants.length;
+    const names = group.plants.map((p) => p.name).slice(0, 5);
+    const rest = count - names.length;
 
-    const title = "🌿 Sulama Zamanı";
-    const body =
-      count === 1
-        ? `${topNames[0]} için sulama vakti!`
-        : `${count} bitki için sulama zamanı: ${topNames.join(", ")}${
-            rest > 0 ? ` ve ${rest} daha` : ""
-          }`;
+    const title = "Bitkilerini Sulamayi Unutma!";
+    const body = `${names.join(", ")}${
+      rest > 0 ? ` ve ${rest} daha` : ""
+    } icin sulama vakti...`;
 
-    // Data: küçük tut (ilk 10 plantId)
     const data = {
       kind: "WATER_DUE",
-      userId: g.userRef.id,
-      plantIds: g.plants.slice(0, 10).map((p) => p.ref.id),
+      userId: group.userRef.id,
+      plantIds: group.plants.slice(0, 10).map((p) => p.ref.id),
       count,
     };
 
-    for (const to of g.tokens) {
+    for (const to of group.tokens) {
       messages.push({ to, sound: "default", title, body, data });
-      tokenOwners.push({ to, userRef: g.userRef });
+      tokenOwners.push({ to, userRef: group.userRef });
     }
 
-    // Bu kullanıcıdaki due bitkileri (push denemesi yapılanlar) güncelleme listesine al
-    plantsToUpdate.push(...g.plants);
+    plantsToUpdate.push(...group.plants);
   }
 
   console.log("[process] users:", groups.size, "toSend:", messages.length);
 
-  // Expo push gönderimi (tickets)
+  // Expo push gonderimi (tickets)
   const tickets = [];
   const chunks = expo.chunkPushNotifications(messages);
   for (const chunk of chunks) {
@@ -141,7 +157,7 @@ async function processDueWaterings() {
     }
   }
 
-  // Reçeteler (geçersiz token temizliği)
+  // Receipt'ler (gecersiz token temizligi)
   const receiptIds = tickets.filter((t) => t.id).map((t) => t.id);
   const receiptIdChunks = expo.chunkPushNotificationReceiptIds(receiptIds);
   for (const chunk of receiptIdChunks) {
@@ -167,53 +183,39 @@ async function processDueWaterings() {
     }
   }
 
-  // Due bitkileri ileri tarihe al (push denendiği kullanıcılar için)
-  const dbUpdates = [];
-  const nowTs2 = Timestamp.fromDate(now);
-  for (const p of plantsToUpdate) {
-    // baz alınacak tarih
-    const base =
-      (p.nextWateringAt?.toDate?.() ??
-        (p.nextWateringAt ? new Date(p.nextWateringAt) : null)) ||
-      p.lastWatered?.toDate?.() ||
-      (p.lastWatered ? new Date(p.lastWatered) : now);
-
-    const next = addDays(base, p.wateringInterval);
-
-    dbUpdates.push(
-      p.ref.update({
-        lastNotifiedAt: nowTs2,
-        nextWateringAt: Timestamp.fromDate(next),
-        updatedAt: nowTs2,
-      })
-    );
-  }
-  await Promise.allSettled(dbUpdates);
+  // Bildirim gonderilen bitkiler icin lastNotifiedAt guncelle
+  const updatePromises = plantsToUpdate.map((p) =>
+    p.ref.update({
+      lastNotifiedAt: nowTs,
+      updatedAt: nowTs,
+    })
+  );
+  await Promise.allSettled(updatePromises);
 
   console.log("[process] done");
   return {
-    dueCount: snap.size,
+    dueCount: plantsToUpdate.length,
     toSend: messages.length,
-    updatedDocs: dbUpdates.length,
+    updatedDocs: updatePromises.length,
   };
 }
 
-// Sağlık kontrolü
+// Saglik kontrolu
 exports.ping = onRequest({ region: "europe-west1" }, (req, res) => {
   res.send("functions up");
 });
 
-// CRON: **4 saatte bir**
+// CRON: her gun 09:00 ve 18:00
 exports.notifyDueWaterings = onSchedule(
   {
-    schedule: "0 */9 * * *",
+    schedule: "0 9,18 * * *",
     timeZone: "Europe/Istanbul",
     region: "europe-west1",
   },
   async () => processDueWaterings()
 );
 
-// Manuel test (JSON döndürür)
+// Manuel test (JSON dondurur)
 exports.runNotifyNow = onRequest(
   { region: "europe-west1" },
   async (req, res) => {
@@ -227,9 +229,9 @@ exports.runNotifyNow = onRequest(
   }
 );
 
-// Custom bildirim gönderme (Web panelden kullanılacak)
+// Custom bildirim gonderme (Web panelden kullanilacak)
 // POST body: { title: string, body: string, userIds?: string[] }
-// userIds verilmezse TÜM kullanıcılara gönderir
+// userIds verilmezse tum kullanicilara gonderir
 exports.sendCustomNotification = onRequest(
   { region: "europe-west1", cors: true },
   async (req, res) => {
@@ -251,34 +253,34 @@ exports.sendCustomNotification = onRequest(
       const db = getFirestore();
       let usersSnap;
 
-      // Belirli kullanıcılar mı yoksa hepsi mi?
+      // Belirli kullanicilar mi yoksa hepsi mi?
       if (userIds && Array.isArray(userIds) && userIds.length > 0) {
-        // Belirli kullanıcıları çek
+        // Belirli kullanicilari cek
         const userRefs = userIds.map((uid) => db.collection("users").doc(uid));
         const userDocs = await Promise.all(userRefs.map((ref) => ref.get()));
         usersSnap = userDocs.filter((doc) => doc.exists);
       } else {
-        // Tüm kullanıcıları çek
+        // Tum kullanicilari cek
         usersSnap = (await db.collection("users").get()).docs;
       }
 
       console.log("[customNotify] userCount:", usersSnap.length);
 
-      // Token'ları topla
+      // Token'lari topla
       const messages = [];
       const tokenOwners = [];
 
       for (const userDoc of usersSnap) {
         const userData = userDoc.data() || {};
-        
-        // Token'ları oku (dizi + tekil alan)
-        let rawTokens = Array.isArray(userData.expoPushTokens) 
-          ? userData.expoPushTokens 
+
+        // Token'lari oku (dizi + tekil alan)
+        let rawTokens = Array.isArray(userData.expoPushTokens)
+          ? userData.expoPushTokens
           : [];
         if (!rawTokens.length && typeof userData.expoPushToken === "string") {
           rawTokens = [userData.expoPushToken];
         }
-        
+
         // Kabul edilen formatlar
         const tokens = rawTokens
           .map((t) => (typeof t === "string" ? t.trim() : ""))
@@ -301,15 +303,15 @@ exports.sendCustomNotification = onRequest(
       console.log("[customNotify] toSend:", messages.length);
 
       if (messages.length === 0) {
-        res.json({ 
-          success: true, 
-          message: "Gönderilecek token bulunamadı.",
-          sent: 0 
+        res.json({
+          success: true,
+          message: "Gonderilecek token bulunamadi.",
+          sent: 0,
         });
         return;
       }
 
-      // Expo push gönderimi
+      // Expo push gonderimi
       const tickets = [];
       const chunks = expo.chunkPushNotifications(messages);
       for (const chunk of chunks) {
@@ -322,15 +324,18 @@ exports.sendCustomNotification = onRequest(
         }
       }
 
-      // Geçersiz token temizliği (opsiyonel, arka planda)
+      // Gecersiz token temizligi (opsiyonel, arka planda)
       const receiptIds = tickets.filter((t) => t.id).map((t) => t.id);
       if (receiptIds.length > 0) {
         // Async olarak receipts kontrol et (response bekletmeden)
         setImmediate(async () => {
           try {
-            const receiptIdChunks = expo.chunkPushNotificationReceiptIds(receiptIds);
+            const receiptIdChunks =
+              expo.chunkPushNotificationReceiptIds(receiptIds);
             for (const chunk of receiptIdChunks) {
-              const receipts = await expo.getPushNotificationReceiptsAsync(chunk);
+              const receipts = await expo.getPushNotificationReceiptsAsync(
+                chunk
+              );
               for (const [id, r] of Object.entries(receipts)) {
                 if (r.status === "ok") continue;
                 console.warn("[customNotify][receipt] error:", id, r);
@@ -355,11 +360,10 @@ exports.sendCustomNotification = onRequest(
 
       res.json({
         success: true,
-        message: `${tickets.length} bildirim gönderildi.`,
+        message: `${tickets.length} bildirim gonderildi.`,
         sent: tickets.length,
         userCount: usersSnap.length,
       });
-
     } catch (e) {
       console.error("[customNotify] error:", e);
       res.status(500).json({ error: e?.message || "internal error" });

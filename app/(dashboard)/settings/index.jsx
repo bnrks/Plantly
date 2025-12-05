@@ -18,6 +18,7 @@ import { deleteUserAccount } from "../../../src/services/authService";
 import CustomAlert from "../../../components/CustomAlert";
 import { useCustomAlert } from "../../../src/hooks/ui/useCustomAlert";
 import { SUPPORTED_LANGUAGES, setStoredLanguage, getCurrentLanguage } from "../../../src/locales";
+import { fetchNotificationSettings, updateNotificationSettings } from "../../../src/services/firestoreService";
 
 export default function Settings() {
   const router = useRouter();
@@ -27,21 +28,69 @@ export default function Settings() {
   const { user, logout } = useContext(AuthContext);
   const { alertConfig, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
-  // Bildirim ayarları state'leri
+  // Bildirim ayarlari state'leri
   const [wateringNotif, setWateringNotif] = useState(true);
   const [careNotif, setCareNotif] = useState(true);
   const [diseaseNotif, setDiseaseNotif] = useState(true);
+  const [savingNotif, setSavingNotif] = useState(false);
 
-  // Dil seçeneği state
+  // Dil secenekleri
   const [selectedLanguage, setSelectedLanguage] = useState(getCurrentLanguage() || "tr");
 
-  // Dil değiştirme fonksiyonu
+  useEffect(() => {
+    const loadNotificationSettings = async () => {
+      if (!user?.uid) return;
+      try {
+        const data = await fetchNotificationSettings(user.uid);
+        if (data) {
+          setWateringNotif(Boolean(data.wateringReminder));
+          setCareNotif(Boolean(data.routineCare));
+          setDiseaseNotif(Boolean(data.diseaseAlert));
+        }
+      } catch (error) {
+        console.error("Bildirim ayarlari cekilirken hata:", error);
+      }
+    };
+
+    loadNotificationSettings();
+  }, [user?.uid]);
+
+  const persistNotificationSettings = async (next) => {
+    if (!user?.uid) return;
+    setSavingNotif(true);
+    try {
+      await updateNotificationSettings(user.uid, next);
+    } catch (error) {
+      console.error("Bildirim ayarlari guncellenirken hata:", error);
+      showError(t("common.error"), "Bildirim ayarlari kaydedilemedi.");
+    } finally {
+      setSavingNotif(false);
+    }
+  };
+
+  const handleWateringToggle = (value) => {
+    const next = { wateringReminder: value, routineCare: careNotif, diseaseAlert: diseaseNotif };
+    setWateringNotif(value);
+    persistNotificationSettings(next);
+  };
+
+  const handleCareToggle = (value) => {
+    const next = { wateringReminder: wateringNotif, routineCare: value, diseaseAlert: diseaseNotif };
+    setCareNotif(value);
+    persistNotificationSettings(next);
+  };
+
+  const handleDiseaseToggle = (value) => {
+    const next = { wateringReminder: wateringNotif, routineCare: careNotif, diseaseAlert: value };
+    setDiseaseNotif(value);
+    persistNotificationSettings(next);
+  };
+
   const handleLanguageChange = async (langCode) => {
     setSelectedLanguage(langCode);
     await setStoredLanguage(langCode);
   };
 
-  // User yoksa erken return
   if (!user) {
     return null;
   }
@@ -54,7 +103,7 @@ export default function Settings() {
         router.replace("/login");
       });
     } catch (error) {
-      console.error("Çıkış yapılırken hata:", error);
+      console.error("Cikis yapilirken hata:", error);
       showError(t("common.error"), t("settings.logoutError"));
     }
   };
@@ -86,7 +135,7 @@ export default function Settings() {
 
   return (
     <ScreenContainer scrollable topSpacing={24} bottomSpacing={40}>
-      {/* Header Row: BackButton ve Header aynı hizada */}
+      {/* Header Row: BackButton ve Header ayni hizada */}
       <View style={styles.headerRow}>
         <BackButton style={styles.backButton} />
         <View style={styles.headerWrapper}>
@@ -99,12 +148,12 @@ export default function Settings() {
       >
         <ThemedTitle style={styles.title}>{t("settings.title")}</ThemedTitle>
 
-        {/* Tema Seçenekleri */}
+        {/* Tema Secenekleri */}
         <ThemedText style={[styles.sectionLabel, { color: theme.secondaryText }]}>
           {t("settings.theme")}
         </ThemedText>
         <View style={styles.themeContainer}>
-          {/* Açık Tema */}
+          {/* Aydinlik Tema */}
           <TouchableOpacity
             style={[
               styles.themeOption,
@@ -162,7 +211,7 @@ export default function Settings() {
             )}
           </TouchableOpacity>
 
-          {/* Sistem Varsayılanı */}
+          {/* Sistem Varsayilan */}
           <TouchableOpacity
             style={[
               styles.themeOption,
@@ -193,7 +242,7 @@ export default function Settings() {
         </View>
       </ThemedCard>
 
-      {/* Bildirim Ayarları */}
+      {/* Bildirim Ayarlari */}
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >
@@ -208,8 +257,9 @@ export default function Settings() {
             trackColor={{ false: "#767577", true: Colors.primary }}
             thumbColor={wateringNotif ? Colors.success : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
-            onValueChange={setWateringNotif}
+            onValueChange={handleWateringToggle}
             value={wateringNotif}
+            disabled={savingNotif}
           />
         </View>
 
@@ -222,8 +272,9 @@ export default function Settings() {
             trackColor={{ false: "#767577", true: Colors.primary }}
             thumbColor={careNotif ? Colors.success : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
-            onValueChange={setCareNotif}
+            onValueChange={handleCareToggle}
             value={careNotif}
+            disabled={savingNotif}
           />
         </View>
 
@@ -236,13 +287,14 @@ export default function Settings() {
             trackColor={{ false: "#767577", true: Colors.primary }}
             thumbColor={diseaseNotif ? Colors.success : "#f4f3f4"}
             ios_backgroundColor="#3e3e3e"
-            onValueChange={setDiseaseNotif}
+            onValueChange={handleDiseaseToggle}
             value={diseaseNotif}
+            disabled={savingNotif}
           />
         </View>
       </ThemedCard>
 
-      {/* Kullanıcı Bilgileri */}
+      {/* Kullanici Bilgileri */}
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >
@@ -269,7 +321,7 @@ export default function Settings() {
         </View>
       </ThemedCard>
 
-      {/* Dil Seçeneği */}
+      {/* Dil Secenegi */}
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >
@@ -297,7 +349,7 @@ export default function Settings() {
         </View>
       </ThemedCard>
 
-      {/* Çıkış ve Hesabı Sil */}
+      {/* Cikis ve Hesap Sil */}
       <ThemedCard
         style={[styles.settingsCard, { backgroundColor: theme.secondBg }]}
       >

@@ -422,7 +422,8 @@ export async function fetchUserProfileWithFavorite(userId) {
       favoritePlant,
       plantCount,
       completedModules: userData.completedModules ?? null,
-      userPictureUrl: userData.userPictureUrl || "",
+      // Yeni alan profile_picture_url, eski alan userPictureUrl ile geriye donuk uyum
+      userPictureUrl: userData.profile_picture_url || userData.userPictureUrl || "",
     };
   } catch (error) {
     console.error("Kullanici profili cekilirken hata olustu:", error);
@@ -449,6 +450,65 @@ export async function fetchUserPlantCount(userId) {
 }
 
 /**
+ * Bildirim ayarlarini oku (users/{userId}/settings/notification_settings)
+ */
+export async function fetchNotificationSettings(userId) {
+  if (!userId) return null;
+
+  const ref = doc(db, "users", userId, "settings", "notification_settings");
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    return {
+      wateringReminder: true,
+      routineCare: true,
+      diseaseAlert: true,
+    };
+  }
+  const data = snap.data() || {};
+  return {
+    wateringReminder:
+      typeof data.wateringReminder === "boolean" ? data.wateringReminder : true,
+    routineCare:
+      typeof data.routineCare === "boolean" ? data.routineCare : true,
+    diseaseAlert:
+      typeof data.diseaseAlert === "boolean" ? data.diseaseAlert : true,
+  };
+}
+
+/**
+ * Bildirim ayarlarini guncelle (users/{userId}/settings/notification_settings)
+ */
+export async function updateNotificationSettings(userId, settings = {}) {
+  if (!userId) {
+    console.warn("notification_settings guncellenemedi: userId yok");
+    return null;
+  }
+  const ref = doc(db, "users", userId, "settings", "notification_settings");
+
+  const payload = {};
+  if (typeof settings.wateringReminder === "boolean") {
+    payload.wateringReminder = settings.wateringReminder;
+  }
+  if (typeof settings.routineCare === "boolean") {
+    payload.routineCare = settings.routineCare;
+  }
+  if (typeof settings.diseaseAlert === "boolean") {
+    payload.diseaseAlert = settings.diseaseAlert;
+  }
+
+  await setDoc(
+    ref,
+    {
+      ...payload,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return payload;
+}
+
+/**
  * Profil resmini Firebase Storage'a yukler, userPictureUrl olarak user dokumanina kaydeder ve download URL dondurur.
  * @param {string} userId
  * @param {string} fileUri - cihazdan secilen resim uri'si
@@ -463,11 +523,14 @@ export async function uploadProfilePicture(userId, fileUri) {
     const response = await fetch(fileUri);
     const blob = await response.blob();
 
-    const storageRef = ref(storage, `users/profile_pictures/${userId}/avatar.jpg`);
+    // Belirtilen pathe yukle: users/profile_pictures/{userId}/profile.png
+    const storageRef = ref(storage, `users/profile_pictures/${userId}/profile.png`);
     await uploadBytes(storageRef, blob);
 
     const downloadUrl = await getDownloadURL(storageRef);
     await updateDoc(doc(db, "users", userId), {
+      // Yeni alan (istenen): profile_picture_url. Eski alanla da uyumlu kalsin.
+      profile_picture_url: downloadUrl,
       userPictureUrl: downloadUrl,
       updatedAt: serverTimestamp(),
     });

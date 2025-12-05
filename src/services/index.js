@@ -5,6 +5,10 @@ export { default as webSocketErrorHandler } from "./webSocketErrorHandler";
 export { default as firebaseErrorHandler } from "./firebaseErrorHandler";
 export { default as imageErrorHandler } from "./imageErrorHandler";
 
+// Analytics Service
+export { default as analyticsService } from "./analyticsService";
+export * from "./analyticsService";
+
 // Convenience wrapper for common operations
 export const ErrorHandlers = {
   global: () => import("./globalErrorHandler").then((m) => m.default),

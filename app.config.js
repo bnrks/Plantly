@@ -11,7 +11,7 @@ export default {
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/splash-icon.png",
+      image: "./assets/app_icon2.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff",
     },
@@ -34,6 +34,8 @@ export default {
     plugins: [
       "expo-router",
       "react-native-edge-to-edge",
+      "@react-native-firebase/app",
+      "@react-native-firebase/analytics",
       [
         "@react-native-google-signin/google-signin",
         {

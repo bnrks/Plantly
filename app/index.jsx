@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useContext } from "react"; // useContext'i buraya ekleyin
+import { useState, useRef, useEffect, useContext } from "react";
 import {
   StyleSheet,
   View,
@@ -11,11 +11,10 @@ import {
   Animated,
   Easing,
 } from "react-native";
+import NetInfo from "@react-native-community/netinfo";
 import { useRouter, Redirect } from "expo-router";
 import { AuthContext } from "../src/context/AuthContext";
 import { checkUserProfileComplete } from "../src/services/firestoreService";
-// Aşağıdaki satırı kaldırın veya yorum satırına alın
-// import { useContext } from "react"; <-- Bu satırı silin
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/Colors";
 import { ThemeContext } from "../src/context/ThemeContext";
@@ -23,45 +22,46 @@ import ThemedText from "../components/ThemedText";
 import ThemedButton from "../components/ThemedButton";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
+import CustomAlert from "../components/CustomAlert";
 
 const { width, height } = Dimensions.get("window");
 
 const getSlides = (t) => [
   {
     id: "1",
-    title: t('onboarding.slide1Title'),
-    description: t('onboarding.slide1Desc'),
+    title: t("onboarding.slide1Title"),
+    description: t("onboarding.slide1Desc"),
     image: require("../assets/onboarding-2.png"),
   },
   {
     id: "2",
-    title: t('onboarding.slide2Title'),
-    description: t('onboarding.slide2Desc'),
+    title: t("onboarding.slide2Title"),
+    description: t("onboarding.slide2Desc"),
     image: require("../assets/onboarding-4.png"),
   },
   {
     id: "3",
-    title: t('onboarding.slide3Title'),
-    description: t('onboarding.slide3Desc'),
+    title: t("onboarding.slide3Title"),
+    description: t("onboarding.slide3Desc"),
     image: require("../assets/onboarding-3.png"),
   },
   {
     id: "4",
-    title: t('onboarding.slide4Title'),
-    description: t('onboarding.slide4Desc'),
+    title: t("onboarding.slide4Title"),
+    description: t("onboarding.slide4Desc"),
     image: require("../assets/onboarding-1.png"),
   },
 ];
-// Foreground'da da banner göstermek için:
 
 const Index = () => {
-  // ⭐ TÜM HOOK TANIMLAMALARI BURADA OLMALI ⭐
   // State hooks
   const [showSplash, setShowSplash] = useState(true);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [splashComplete, setSplashComplete] = useState(false); // Splash animasyonundan sonra kullanıcı kontrolü için ek state
+  const [splashComplete, setSplashComplete] = useState(false);
   const [profileCheckDone, setProfileCheckDone] = useState(false);
   const [redirectPath, setRedirectPath] = useState(null);
+  const [connectionAlertVisible, setConnectionAlertVisible] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   // Ref hooks
   const flatListRef = useRef(null);
   const splashOpacity = useRef(new Animated.Value(0)).current;
@@ -77,17 +77,33 @@ const Index = () => {
   const theme = Colors[selectedTheme] ?? Colors.light;
   const router = useRouter();
   const { t } = useTranslation();
-  
-  // Slides'ı çevirilerle oluştur
+
   const slides = getSlides(t);
 
-  // HOOK TANIMLAMALARI BİTTİ - Bundan sonra normal fonksiyonlar ve logic
-
-  // Splash ekranını göster ve animasyonları başlat
+  // Internet baglantisi kontrolu
   useEffect(() => {
-    // Logo görünümü için animasyonları çalıştır
+    const handleState = (state) => {
+      const offline =
+        !state.isConnected || state.isInternetReachable === false;
+      setIsOffline(offline);
+      setConnectionAlertVisible(offline);
+    };
+
+    NetInfo.fetch().then(handleState).catch((err) => {
+      console.error("NetInfo fetch error:", err);
+      setIsOffline(true);
+      setConnectionAlertVisible(true);
+    });
+
+    const unsubscribe = NetInfo.addEventListener(handleState);
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Splash animasyonlari
+  useEffect(() => {
     Animated.sequence([
-      // Fade in + büyüme animasyonu
       Animated.parallel([
         Animated.timing(splashOpacity, {
           toValue: 1,
@@ -102,23 +118,19 @@ const Index = () => {
           easing: Easing.out(Easing.back(1.5)),
         }),
       ]),
-      // Biraz bekle
       Animated.delay(1000),
-      // Fade out animasyonu
       Animated.timing(splashOpacity, {
         toValue: 0,
         duration: 500,
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // Animasyon bittiğinde splash'ı gizle
       setShowSplash(false);
-      // Animasyon tamamlandığını bildir, artık kullanıcı kontrolü yapılabilir
       setSplashComplete(true);
     });
   }, []);
 
-  // Firebase'den kullanıcı durumu kontrolü
+  // Firebase'den kullanici durumu log
   useEffect(() => {
     if (user) {
       console.log("User is logged in");
@@ -127,39 +139,38 @@ const Index = () => {
     }
   }, [user]);
 
-  // Kullanıcı profil kontrolü - eksik bilgi varsa yönlendir
+  // Profil tam mi?
   useEffect(() => {
     const checkProfile = async () => {
       if (user && splashComplete && !loading) {
         try {
           const profileStatus = await checkUserProfileComplete(user.uid);
-          
+
           if (!profileStatus.isComplete) {
-            if (profileStatus.missingFields.includes('displayName')) {
+            if (profileStatus.missingFields.includes("displayName")) {
               setRedirectPath(`/enterUsername?userId=${user.uid}`);
-            } else if (profileStatus.missingFields.includes('name')) {
+            } else if (profileStatus.missingFields.includes("name")) {
               setRedirectPath(`/enterName?userId=${user.uid}`);
             } else {
-              setRedirectPath('/home');
+              setRedirectPath("/home");
             }
           } else {
-            setRedirectPath('/home');
+            setRedirectPath("/home");
           }
         } catch (error) {
-          console.error('Profil kontrol hatası:', error);
-          setRedirectPath('/home');
+          console.error("Profil kontrol hatasi:", error);
+          setRedirectPath("/home");
         }
         setProfileCheckDone(true);
       }
     };
-    
+
     checkProfile();
   }, [user, splashComplete, loading]);
 
-  // Buton animasyonları için effect
+  // Buton animasyonlari
   useEffect(() => {
     if (currentSlideIndex === slides.length - 1) {
-      // Login button animasyonu
       Animated.timing(loginButtonOpacity, {
         toValue: 1,
         duration: 500,
@@ -172,7 +183,6 @@ const Index = () => {
         useNativeDriver: true,
       }).start();
 
-      // Signup button animasyonu (biraz gecikmeyle)
       setTimeout(() => {
         Animated.timing(signupButtonOpacity, {
           toValue: 1,
@@ -185,9 +195,8 @@ const Index = () => {
           duration: 500,
           useNativeDriver: true,
         }).start();
-      }, 200); // 200ms gecikme
+      }, 200);
     } else {
-      // Son slayt değilse butonları sıfırla
       loginButtonOpacity.setValue(0);
       loginButtonTranslate.setValue(50);
       signupButtonOpacity.setValue(0);
@@ -195,7 +204,20 @@ const Index = () => {
     }
   }, [currentSlideIndex]);
 
-  // Bir sonraki slayta geç
+  const handleRetryConnection = async () => {
+    try {
+      const state = await NetInfo.fetch();
+      const offline =
+        !state.isConnected || state.isInternetReachable === false;
+      setIsOffline(offline);
+      setConnectionAlertVisible(offline);
+    } catch (error) {
+      console.error("Connection check error:", error);
+      setIsOffline(true);
+      setConnectionAlertVisible(true);
+    }
+  };
+
   const goToNextSlide = () => {
     const nextIndex = currentSlideIndex + 1;
     if (nextIndex < slides.length) {
@@ -204,14 +226,12 @@ const Index = () => {
     }
   };
 
-  // Kaydırma olayını işle
   const handleScroll = (event) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
     const index = Math.round(scrollPosition / width);
     setCurrentSlideIndex(index);
   };
 
-  // Tek bir slaytı render et
   const renderSlide = ({ item }) => {
     return (
       <View style={[styles.slide, { backgroundColor: theme.mainBg }]}>
@@ -228,7 +248,6 @@ const Index = () => {
     );
   };
 
-  // İndikatör noktaları
   const renderDots = () => {
     return (
       <View style={styles.dotContainer}>
@@ -249,138 +268,166 @@ const Index = () => {
     );
   };
 
-  // Splash ekranını render et - kullanıcı giriş yapmış olsa bile önce splash göster
+  const connectionAlert = (
+    <CustomAlert
+      visible={connectionAlertVisible}
+      type="error"
+      title="Internet baglantisi yok"
+      message="Lutfen internet baglantinizi kontrol edip tekrar deneyin."
+      onConfirm={handleRetryConnection}
+      confirmText="Tekrar dene"
+      showCancel={false}
+    />
+  );
+
+  // Splash
   if (showSplash) {
     return (
+      <>
+        <LinearGradient
+          style={[styles.container, styles.splashContainer]}
+          colors={["#A8E6CF", "#DCEDC1", "#FFFFFF"]}
+          start={{ x: 0, y: 0.001 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <Animated.Image
+            source={require("../assets/plantly-logo.png")}
+            style={[
+              styles.splashLogo,
+              {
+                opacity: splashOpacity,
+                transform: [{ scale: splashScale }],
+              },
+            ]}
+            resizeMode="contain"
+          />
+        </LinearGradient>
+        {connectionAlert}
+      </>
+    );
+  }
+
+  // Loading
+  if (loading && splashComplete) {
+    return (
+      <>
+        <View
+          style={[styles.loadingContainer, { backgroundColor: theme.mainBg }]}
+        >
+          <ActivityIndicator size="large" color={theme.accent} />
+        </View>
+        {connectionAlert}
+      </>
+    );
+  }
+
+  // Logged in user check
+  if (splashComplete && !loading && user) {
+    if (profileCheckDone && redirectPath) {
+      return (
+        <>
+          <Redirect href={redirectPath} />
+          {connectionAlert}
+        </>
+      );
+    }
+    return (
+      <>
+        <View
+          style={[styles.loadingContainer, { backgroundColor: theme.mainBg }]}
+        >
+          <ActivityIndicator size="large" color={theme.accent} />
+        </View>
+        {connectionAlert}
+      </>
+    );
+  }
+
+  // Onboarding
+  return (
+    <>
       <LinearGradient
-        style={[styles.container, styles.splashContainer]}
+        style={styles.container}
         colors={["#A8E6CF", "#DCEDC1", "#FFFFFF"]}
         start={{ x: 0, y: 0.001 }}
         end={{ x: 0, y: 1 }}
       >
-        <Animated.Image
-          source={require("../assets/plantly-logo.png")}
-          style={[
-            styles.splashLogo,
-            {
-              opacity: splashOpacity,
-              transform: [{ scale: splashScale }],
-            },
-          ]}
-          resizeMode="contain"
+        <FlatList
+          ref={flatListRef}
+          data={slides}
+          renderItem={renderSlide}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          onScroll={handleScroll}
+          keyExtractor={(item) => item.id}
+          style={{ color: theme.text }}
         />
-      </LinearGradient>
-    );
-  }
 
-  // Yükleme durumu kontrolü - splash animasyonu bittikten sonra kontrol et
-  if (loading && splashComplete) {
-    return (
-      <View
-        style={[styles.loadingContainer, { backgroundColor: theme.mainBg }]}
-      >
-        <ActivityIndicator size="large" color={theme.accent} />
-      </View>
-    );
-  }
+        {renderDots()}
 
-  // Kullanıcı giriş yapmışsa profil kontrolü yap ve yönlendir
-  if (splashComplete && !loading && user) {
-    if (profileCheckDone && redirectPath) {
-      return <Redirect href={redirectPath} />;
-    }
-    // Profil kontrolü devam ediyor
-    return (
-      <View
-        style={[styles.loadingContainer, { backgroundColor: theme.mainBg }]}
-      >
-        <ActivityIndicator size="large" color={theme.accent} />
-      </View>
-    );
-  }
+        <View style={styles.footer}>
+          {currentSlideIndex === slides.length - 1 ? (
+            <View style={styles.buttonContainer}>
+              <Animated.View
+                style={{
+                  flex: 1,
+                  opacity: loginButtonOpacity,
+                  transform: [{ translateY: loginButtonTranslate }],
+                  marginHorizontal: 8,
+                }}
+              >
+                <ThemedButton
+                  title={t("onboarding.login")}
+                  onPress={() => router.push("/login")}
+                  style={[styles.button, { backgroundColor: Colors.primary }]}
+                  textStyle={{ color: "#FFFFFF" }}
+                />
+              </Animated.View>
 
-  // Normal onboarding akışını render et
-  return (
-    <LinearGradient
-      style={styles.container}
-      colors={["#A8E6CF", "#DCEDC1", "#FFFFFF"]}
-      start={{ x: 0, y: 0.001 }}
-      end={{ x: 0, y: 1 }}
-    >
-      <FlatList
-        ref={flatListRef}
-        data={slides}
-        renderItem={renderSlide}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        onScroll={handleScroll}
-        keyExtractor={(item) => item.id}
-        style={{ color: theme.text }}
-      />
-
-      {renderDots()}
-
-      <View style={styles.footer}>
-        {currentSlideIndex === slides.length - 1 ? (
-          // Son slaytta giriş/kayıt butonları (animasyonlu)
-          <View style={styles.buttonContainer}>
-            <Animated.View
-              style={{
-                flex: 1,
-                opacity: loginButtonOpacity,
-                transform: [{ translateY: loginButtonTranslate }],
-                marginHorizontal: 8,
-              }}
-            >
-              <ThemedButton
-                title={t('onboarding.login')}
+              <Animated.View
+                style={{
+                  flex: 1,
+                  opacity: signupButtonOpacity,
+                  transform: [{ translateY: signupButtonTranslate }],
+                  marginHorizontal: 8,
+                }}
+              >
+                <ThemedButton
+                  title={t("onboarding.register")}
+                  onPress={() => router.push("/register")}
+                  style={[
+                    styles.button,
+                    styles.secondaryButton,
+                    { borderColor: theme.accent },
+                  ]}
+                  textStyle={{ color: theme.accent }}
+                />
+              </Animated.View>
+            </View>
+          ) : (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
                 onPress={() => router.push("/login")}
-                style={[styles.button, { backgroundColor: Colors.primary }]}
-                textStyle={{ color: "#FFFFFF" }}
-              />
-            </Animated.View>
+                style={styles.skipButton}
+              >
+                <ThemedText style={styles.skipText}>
+                  {t("onboarding.skip")}
+                </ThemedText>
+              </TouchableOpacity>
 
-            <Animated.View
-              style={{
-                flex: 1,
-                opacity: signupButtonOpacity,
-                transform: [{ translateY: signupButtonTranslate }],
-                marginHorizontal: 8,
-              }}
-            >
-              <ThemedButton
-                title={t('onboarding.register')}
-                onPress={() => router.push("/register")}
-                style={[
-                  styles.button,
-                  styles.secondaryButton,
-                  { borderColor: theme.accent },
-                ]}
-                textStyle={{ color: theme.accent }}
-              />
-            </Animated.View>
-          </View>
-        ) : (
-          // Diğer slaytta ileri butonu
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              onPress={() => router.push("/login")}
-              style={styles.skipButton}
-            >
-              <ThemedText style={styles.skipText}>{t('onboarding.skip')}</ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={goToNextSlide}
-              style={[styles.nextButton, { backgroundColor: theme.accent }]}
-            >
-              <Ionicons name="arrow-forward" size={24} color={theme.text} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </LinearGradient>
+              <TouchableOpacity
+                onPress={goToNextSlide}
+                style={[styles.nextButton, { backgroundColor: theme.accent }]}
+              >
+                <Ionicons name="arrow-forward" size={24} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </LinearGradient>
+      {connectionAlert}
+    </>
   );
 };
 
@@ -473,7 +520,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  // Splash ekranı için yeni stiller
   splashContainer: {
     justifyContent: "center",
     alignItems: "center",
