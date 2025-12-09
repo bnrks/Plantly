@@ -17,7 +17,8 @@ import { Colors } from "../../../constants/Colors";
 import BackButton from "../../../components/BackButton";
 import ScreenContainer from "../../../components/ScreenContainer";
 import EducationListSkeleton from "../../../components/skeletons/EducationListSkeleton";
-import { fetchEducationModules } from "../../../src/services/firestoreService";
+import { fetchEducationModules, fetchCompletedModuleIds } from "../../../src/services/firestoreService";
+import { AuthContext } from "../../../src/context/AuthContext";
 
 const { width } = Dimensions.get("window");
 
@@ -111,6 +112,8 @@ export default function EducationScreen() {
   const theme = Colors[selectedTheme] ?? Colors.light;
   const [loading, setLoading] = useState(true);
   const [modules, setModules] = useState([]);
+  const { user } = useContext(AuthContext);
+  const [completedIds, setCompletedIds] = useState([]);
 
   const accentColor = useMemo(
     () => (selectedTheme === "dark" ? theme.title : theme.thirdBg),
@@ -149,6 +152,15 @@ export default function EducationScreen() {
 
     loadModules();
   }, []);
+
+  useEffect(() => {
+    const loadCompleted = async () => {
+      if (!user?.uid) return;
+      const ids = await fetchCompletedModuleIds(user.uid);
+      setCompletedIds(ids);
+    };
+    loadCompleted();
+  }, [user?.uid]);
 
   if (loading) {
     return <EducationListSkeleton />;
@@ -211,10 +223,16 @@ export default function EducationScreen() {
                         ? "rgba(255,255,255,0.1)"
                         : "rgba(0,0,0,0.06)",
                     shadowColor: selectedTheme === "dark" ? "#050505" : "#000000",
+                    opacity: completedIds.includes(item.id) ? 0.6 : 1,
                   },
                 ]}
               >
                 <Image source={item.image} style={styles.cardImage} />
+                {completedIds.includes(item.id) && (
+                  <View style={styles.checkBadge}>
+                    <Ionicons name="checkmark-circle" size={22} color="#2e7d32" />
+                  </View>
+                )}
 
                 <View style={styles.cardBottom}>
                   <View style={styles.cardTextWrapper}>
@@ -333,5 +351,13 @@ const styles = StyleSheet.create({
   durationText: {
     fontSize: 13,
     fontWeight: "600",
+  },
+  checkBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 12,
+    padding: 2,
   },
 });

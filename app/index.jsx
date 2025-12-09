@@ -321,8 +321,22 @@ const Index = () => {
     );
   }
 
-  // Logged in user check
+  // Logged in user check (do NOT redirect when offline)
   if (splashComplete && !loading && user) {
+    // If offline, block redirects and show connection alert
+    if (isOffline) {
+      return (
+        <>
+          <View
+            style={[styles.loadingContainer, { backgroundColor: theme.mainBg }]}
+          >
+            <ActivityIndicator size="large" color={theme.accent} />
+          </View>
+          {connectionAlert}
+        </>
+      );
+    }
+
     if (profileCheckDone && redirectPath) {
       return (
         <>

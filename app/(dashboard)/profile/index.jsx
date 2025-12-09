@@ -20,6 +20,9 @@ import {
   fetchUserAchievementProgress,
   fetchUserBadges,
   fetchBadges,
+  fetchCompletedModulesCount,
+  syncCompletedModulesCounter,
+  checkAllAchievementsForAction,
 } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
 import ProfileSkeleton from "../../../components/skeletons/ProfileSkeleton";
@@ -80,13 +83,15 @@ export default function ProfileScreen() {
       if (!user?.uid) return;
       setLoading(true);
       try {
-        const [profileData, plantCount, badgesData, allBadgesData, achievementsData, progressData] = await Promise.all([
+        // 1) Temel verileri çek
+        const [profileData, plantCount, badgesData, allBadgesData, achievementsData, progressData, completedModulesCount] = await Promise.all([
           fetchUserProfileWithFavorite(user.uid),
           fetchUserPlantCount(user.uid),
           fetchUserBadges(user.uid),
           fetchBadges(),
           fetchAchievements(),
           fetchUserAchievementProgress(user.uid),
+          fetchCompletedModulesCount(user.uid),
         ]);
 
         if (profileData) {
@@ -94,6 +99,8 @@ export default function ProfileScreen() {
             ...prev,
             ...profileData,
             plantCount,
+            completedModules: typeof completedModulesCount === 'number' ? completedModulesCount : 0,
+            completedModulesCount: typeof completedModulesCount === 'number' ? completedModulesCount : 0,
           }));
         }
         
@@ -101,6 +108,20 @@ export default function ProfileScreen() {
         setAllBadges(allBadgesData || []);
         setAchievements(achievementsData || []);
         setAchievementProgress(progressData || []);
+
+        // 2) completedModulesCount sayaçını users doc'a senkronize et (varsa eksikse düzelt)
+        await syncCompletedModulesCounter(user.uid);
+
+        // 3) module_completed actionType için tüm achievement'ları mevcut sayaç ile kontrol et ve gerekirse badge ver
+        await checkAllAchievementsForAction(user.uid, "module_completed");
+
+        // 4) Badge ve progress'i yeniden çek (ödüller güncellendiyse UI'ya yansısın)
+        const [updatedBadges, updatedProgress] = await Promise.all([
+          fetchUserBadges(user.uid),
+          fetchUserAchievementProgress(user.uid),
+        ]);
+        setUserBadges(updatedBadges || []);
+        setAchievementProgress(updatedProgress || []);
       } catch (error) {
         console.error("Profil bilgisi cekilirken hata:", error);
       } finally {
@@ -210,7 +231,7 @@ export default function ProfileScreen() {
                     >
                       <Ionicons name={iconInfo.icon} size={14} color={iconInfo.color} />
                       <ThemedText style={styles.badgeText}>
-                        {badgeInfo?.name || userBadge.badgeId}
+                        {badgeInfo?.name || badgeInfo?.title || userBadge.badgeId}
                       </ThemedText>
                     </View>
                   );
@@ -354,6 +375,13 @@ export default function ProfileScreen() {
               green_thumb: "#FCE4EC",
               expert: "#FFF3E0",
             };
+            // Progress fallback: module_completed için counter'ı profilden kullan
+            const computedProgress = (() => {
+              if (achievement.actionType === 'module_completed' && achievement.progressField === 'completedModulesCount') {
+                return profile.completedModulesCount || 0;
+              }
+              return progress.current || 0;
+            })();
             
             return (
               <AchievementItem
@@ -363,7 +391,7 @@ export default function ProfileScreen() {
                 bgColor={bgColorMap[achievement.badgeId] || "#F5F5F5"}
                 title={achievement.name}
                 description={achievement.description}
-                progress={progress.current || 0}
+                progress={computedProgress}
                 target={achievement.target || 0}
                 completed={progress.completed || false}
               />

@@ -28,6 +28,8 @@ import {
 import { Colors } from "../../../constants/Colors";
 import Header from "../../../components/Header";
 import EditPlantSkeleton from "../../../components/skeletons/EditPlantSkeleton";
+import CustomAlert from "../../../components/CustomAlert";
+import { useCustomAlert } from "../../../src/hooks/ui/useCustomAlert";
 
 export default function EditPlant() {
   const router = useRouter();
@@ -36,11 +38,14 @@ export default function EditPlant() {
   const { theme: selTheme } = useContext(ThemeContext);
   const colors = selTheme === "dark" ? Colors.dark : Colors.light;
   const { t } = useTranslation();
+  const { alertConfig, showSuccess, showError, showWarning, hideAlert } =
+    useCustomAlert();
 
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [description, setDescription] = useState("");
+  const [wateringInterval, setWateringInterval] = useState("");
   const [photoUri, setPhotoUri] = useState(null);
   const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState("");
@@ -67,6 +72,11 @@ export default function EditPlant() {
       setDescription(data.description || "");
       setPhotoUri(data.imageUrl || null);
       setNotes(data.notes || []);
+      setWateringInterval(
+        typeof data.wateringInterval === "number"
+          ? String(data.wateringInterval)
+          : (data.wateringInterval || "")
+      );
     } catch {
       Alert.alert(t('common.error'), t('plants.loadError'));
     } finally {
@@ -101,7 +111,7 @@ export default function EditPlant() {
   const handleSave = async () => {
     if (saving) return;
     if (!name.trim() || !species.trim()) {
-      Alert.alert(t('plants.missingInfo'), t('plants.nameAndSpeciesRequired'));
+      showWarning(t('plants.missingInfo'), t('plants.nameAndSpeciesRequired'));
       return;
     }
     setSaving(true);
@@ -112,14 +122,26 @@ export default function EditPlant() {
         description,
         imageUrl: photoUri,
         notes,
+        wateringInterval:
+          wateringInterval && !isNaN(parseInt(wateringInterval))
+            ? parseInt(wateringInterval)
+            : undefined,
       });
-      Alert.alert(t('common.success'), t('plants.plantUpdated'));
-      router.replace({
-        pathname: "/(dashboard)/(tabs)/plants",
-        params: { refresh: "true" },
-      });
+      showSuccess(
+        t('common.success'),
+        t('plants.plantUpdated'),
+        () => {
+          hideAlert();
+          router.replace({
+            pathname: "/(dashboard)/(tabs)/plants",
+            params: { refresh: "true" },
+          });
+        },
+        undefined,
+        false
+      );
     } catch {
-      Alert.alert(t('common.error'), t('plants.updateError'));
+      showError(t('common.error'), t('plants.updateError'));
       setSaving(false);
     }
   };
@@ -129,7 +151,7 @@ export default function EditPlant() {
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.mainBg }]}>
+    <ThemedView style={[styles.container]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -242,6 +264,28 @@ export default function EditPlant() {
                     placeholderTextColor={colors.placeholder}
                   />
                 </View>
+
+                <View style={styles.fieldContainer}>
+                  <View style={styles.labelContainer}>
+                    <Ionicons name="water" size={20} color={Colors.primary} />
+                    <ThemedText style={styles.label}>{t('plants.wateringInterval')}</ThemedText>
+                  </View>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { backgroundColor: colors.inputBg, color: colors.text },
+                    ]}
+                    value={wateringInterval}
+                    onChangeText={(txt) => {
+                      const onlyDigits = txt.replace(/\D+/g, "");
+                      setWateringInterval(onlyDigits);
+                    }}
+                    placeholder={t('plants.howManyDays')}
+                    placeholderTextColor={colors.placeholder}
+                    keyboardType="numeric"
+                    maxLength={3}
+                  />
+                </View>
               </View>
 
               <View style={styles.formSection}>
@@ -339,10 +383,21 @@ export default function EditPlant() {
         <ThemedButton
           title={t('plants.cancel')}
           onPress={() => router.back()}
-          style={styles.cancelBtn}
+          style={[styles.cancelBtn, { borderColor: colors.border }]}
           textStyle={{ color: colors.text }}
         />
       </KeyboardAvoidingView>
+      <CustomAlert
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+        confirmText={alertConfig.confirmText}
+        cancelText={alertConfig.cancelText}
+        showCancel={alertConfig.showCancel}
+      />
     </ThemedView>
   );
 }
@@ -507,7 +562,6 @@ const styles = StyleSheet.create({
   cancelBtn: {
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.2)",
     height: 50,
     marginHorizontal: 10,
   },

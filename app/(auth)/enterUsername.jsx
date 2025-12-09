@@ -28,13 +28,23 @@ export default function EnterUsername() {
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   const handleSaveUsername = async () => {
-    if (!username.trim()) {
+    // Normalize spaces and trim ends
+    const cleanedUsername = username.replace(/\s+/g, " ").trim();
+
+    if (!cleanedUsername) {
       showWarning(t('common.warning'), t('auth.enterUsername'));
       return;
     }
 
-    if (username.trim().length < 3) {
+    if (cleanedUsername.length < 3) {
       showWarning(t('common.warning'), t('auth.usernameMinLength'));
+      return;
+    }
+
+    // Optional: restrict invalid characters for username
+    const usernameRegex = /^[A-Za-z0-9_\.\- ]+$/;
+    if (!usernameRegex.test(cleanedUsername)) {
+      showWarning(t('common.warning'), t('auth.usernameInvalid'));
       return;
     }
 
@@ -45,11 +55,11 @@ export default function EnterUsername() {
       const auth = getAuth();
       const currentUser = auth.currentUser;
       if (currentUser) {
-        await updateProfile(currentUser, { displayName: username.trim() });
+        await updateProfile(currentUser, { displayName: cleanedUsername });
       }
       
       // Firestore'da displayName güncelle
-      await updateUserDisplayName(userId, username.trim());
+      await updateUserDisplayName(userId, cleanedUsername);
       
       showSuccess(t('common.success'), t('auth.nowEnterName'), () => {
         hideAlert();

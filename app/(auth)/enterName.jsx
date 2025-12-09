@@ -27,14 +27,23 @@ export default function EnterName() {
   const theme = Colors[selectedTheme] ?? Colors.light;
 
   const handleSaveName = async () => {
-    if (!name.trim()) {
+    // Normalize spaces and trim ends
+    const cleanedName = name.replace(/\s+/g, " ").trim();
+
+    if (!cleanedName) {
       showWarning(t('common.warning'), t('auth.enterName'));
+      return;
+    }
+
+    // Optional: enforce min length after cleaning
+    if (cleanedName.length < 2) {
+      showWarning(t('common.warning'), t('auth.nameMinLength'));
       return;
     }
 
     try {
       setLoading(true);
-      await updateUserName(userId, name.trim());
+      await updateUserName(userId, cleanedName);
       showSuccess(t('common.success'), t('auth.registrationComplete'), () => {
         hideAlert();
         router.replace("/(dashboard)/(tabs)/home");

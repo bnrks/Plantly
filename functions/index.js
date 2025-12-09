@@ -85,19 +85,18 @@ async function processDueWaterings() {
     const duePlants = [];
     for (const plantDoc of plantsSnap.docs) {
       const plant = plantDoc.data() || {};
-      const intervalDays = Number(plant.wateringInterval || 0);
       const lastWatered = toDateSafe(plant.lastWatered);
       const lastNotifiedAt = toDateSafe(plant.lastNotifiedAt);
 
-      // Veri eksikse veya ayni gun bildirim gonderildiyse atla
-      if (!intervalDays || !lastWatered) continue;
+      // lastWatered yoksa atla; ayni gun bildirim gonderildiyse atla
+      if (!lastWatered) continue;
       if (isSameDay(lastNotifiedAt, now)) continue;
 
       const hoursSinceWatered =
         (now.getTime() - lastWatered.getTime()) / (1000 * 60 * 60);
-      const thresholdHours = intervalDays * 24;
 
-      if (hoursSinceWatered >= thresholdHours) {
+      // 24 saatten fazla olduysa bildirim icin isaretle
+      if (hoursSinceWatered >= 24) {
         duePlants.push({
           ref: plantDoc.ref,
           name: plant.name || "Bitki",

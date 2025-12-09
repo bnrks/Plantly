@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import ThemedTitle from "./ThemedTitle";
 import ThemedText from "./ThemedText";
 import { Colors } from "../constants/Colors";
@@ -10,6 +11,7 @@ const HomeEducationCard = ({
   banner,
   onPress,
   themeName = "light",
+  completed = false,
 }) => {
   const theme = Colors[themeName] ?? Colors.light;
 
@@ -23,8 +25,17 @@ const HomeEducationCard = ({
   const safeDescription = typeof description === 'string' ? description : '';
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.card, completed && { opacity: 0.6 }]}
+      activeOpacity={0.9}
+      onPress={onPress}
+    >
       <Image source={imageSource} style={styles.image} />
+      {completed && (
+        <View style={styles.checkBadge}>
+          <Ionicons name="checkmark-circle" size={22} color="#2e7d32" />
+        </View>
+      )}
       <View style={[styles.info, { backgroundColor: theme.secondBg }]}>
         <ThemedTitle style={styles.title}>{safeTitle}</ThemedTitle>
         <ThemedText style={[styles.desc, { color: theme.text }]} numberOfLines={2}>
@@ -52,6 +63,13 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: 110,
+  },
+  checkBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderRadius: 12,
   },
   info: {
     paddingHorizontal: 12,

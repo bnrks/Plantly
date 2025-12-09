@@ -11,13 +11,20 @@ import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
 import EducationModuleSkeleton from "../../../components/skeletons/EducationModuleSkeleton";
 import { fetchEducationModuleById } from "../../../src/services/firestoreService";
+import ThemedButton from "../../../components/ThemedButton";
+import { useRouter } from "expo-router";
+import { AuthContext } from "../../../src/context/AuthContext";
+import { fetchCompletedModuleIds } from "../../../src/services/firestoreService";
 
 export default function EducationModuleScreen() {
+  const router = useRouter();
+  const { user } = useContext(AuthContext);
   const params = useLocalSearchParams();
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
   const [loading, setLoading] = useState(true);
   const [moduleData, setModuleData] = useState(null);
+  const [completed, setCompleted] = useState(false);
 
   const moduleId = params.id ?? "starter";
 
@@ -37,6 +44,7 @@ export default function EducationModuleScreen() {
             title: data.moduleName || "Eğitim Modülü",
             content: data.content,
             banner: data.bannerLink ? { uri: data.bannerLink } : null,
+            questions: Array.isArray(data.questions) ? data.questions : [],
           });
         } else {
           setModuleData({
@@ -60,6 +68,17 @@ export default function EducationModuleScreen() {
     loadModule();
   }, [moduleId]);
 
+  useEffect(() => {
+    const checkCompleted = async () => {
+      if (!user?.uid || !moduleId) return;
+      try {
+        const ids = await fetchCompletedModuleIds(user.uid);
+        setCompleted(ids.includes(String(moduleId)));
+      } catch {}
+    };
+    checkCompleted();
+  }, [user?.uid, moduleId]);
+
   if (loading) {
     return <EducationModuleSkeleton />;
   }
@@ -74,6 +93,8 @@ export default function EducationModuleScreen() {
       (moduleData.content.type === "doc" &&
         Array.isArray(moduleData.content.content) &&
         moduleData.content.content.length > 0));
+
+  const hasQuestions = Array.isArray(moduleData.questions) && moduleData.questions.length > 0;
 
   return (
     <ScreenContainer style={styles.screen}>
@@ -130,6 +151,25 @@ export default function EducationModuleScreen() {
           {hasContent ? (
             <View style={styles.contentSection}>
               <TipTapRenderer content={moduleData.content} />
+              {hasQuestions ? (
+                <View style={{ marginTop: 24 }}>
+                  {completed ? (
+                    <ThemedText style={{ textAlign: "center", opacity: 0.7 }}>
+                      Bu modülü zaten tamamladın.
+                    </ThemedText>
+                  ) : (
+                    <ThemedButton
+                      title="Sınavı Başlat"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(dashboard)/education/quiz",
+                          params: { id: moduleData.id },
+                        })
+                      }
+                    />
+                  )}
+                </View>
+              ) : null}
             </View>
           ) : (
             <View style={styles.emptySection}>

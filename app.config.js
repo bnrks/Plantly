@@ -34,8 +34,6 @@ export default {
     plugins: [
       "expo-router",
       "react-native-edge-to-edge",
-      "@react-native-firebase/app",
-      "@react-native-firebase/analytics",
       [
         "@react-native-google-signin/google-signin",
         {

@@ -21,7 +21,7 @@ import CustomAlert from "../../../components/CustomAlert";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { AuthContext } from "../../../src/context/AuthContext";
-import { fetchPlantsForWatering, fetchEducationModules, fetchUserProfileWithFavorite } from "../../../src/services/firestoreService";
+import { fetchPlantsForWatering, fetchEducationModules, fetchUserProfileWithFavorite, fetchCompletedModuleIds } from "../../../src/services/firestoreService";
 import { useAchievementTracker } from "../../../src/hooks/achievements";
 import { registerForPush } from "../../../src/notifications/registerForPush";
 import HomePlantCard from "../../../components/HomePlantCard";
@@ -64,6 +64,7 @@ const Home = () => {
   const userid = user?.uid || "";
   const registeredRef = useRef(false);
   const [modules, setModules] = useState([]);
+  const [completedModuleIds, setCompletedModuleIds] = useState([]);
   
   // Achievement tracker hook
   const { trackWatering, newBadge, clearNewBadge, isTracking } = useAchievementTracker(userid);
@@ -162,6 +163,15 @@ const Home = () => {
 
     loadModules();
   }, []);
+
+  useEffect(() => {
+    const loadCompleted = async () => {
+      if (!userid) return;
+      const ids = await fetchCompletedModuleIds(userid);
+      setCompletedModuleIds(ids);
+    };
+    loadCompleted();
+  }, [userid]);
 
   if (!user) return null;
 
@@ -282,6 +292,7 @@ const Home = () => {
                 description={item.description}
                 banner={item.banner}
                 themeName={selectedTheme}
+                completed={completedModuleIds.includes(item.id)}
                 onPress={() =>
                   router.push({
                     pathname: "/(dashboard)/education/module",

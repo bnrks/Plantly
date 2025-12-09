@@ -371,7 +371,10 @@ export default function AddPlantScreen({}) {
                 placeholder={t('plants.howManyDays')}
                 placeholderTextColor={selectedTheme === "dark" ? "#8A9B8E" : "#999"}
                 value={wateringInterval}
-                onChangeText={setWateringInterval}
+                onChangeText={(txt) => {
+                  const onlyDigits = txt.replace(/\D+/g, "");
+                  setWateringInterval(onlyDigits);
+                }}
                 keyboardType="numeric"
                 maxLength={3}
               />

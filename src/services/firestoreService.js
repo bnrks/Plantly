@@ -371,10 +371,43 @@ export async function fetchEducationModuleById(moduleId) {
       moduleName: data.module_name ?? "",
       content: data.content ?? null, // TipTap JSON
       bannerLink: data.banner_link ?? "",
+      questions: Array.isArray(data.questions) ? data.questions : [],
     };
   } catch (error) {
     console.error("Modul cekilirken hata olustu:", error);
     throw error;
+  }
+}
+
+/**
+ * Kullanıcı için tamamlanan eğitim modülünü işaretler
+ * users/{userId}/completedModules/{moduleId}
+ */
+export async function markEducationModuleCompleted(userId, moduleId, moduleName = "") {
+  if (!userId || !moduleId) return false;
+  try {
+    // Kullanıcı dokümanı yoksa oluştur (koleksiyon eklenebilmesi için ebeveyn garanti)
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      await setDoc(
+        userRef,
+        { uid: userId, createdAt: serverTimestamp() },
+        { merge: true }
+      );
+    }
+
+    // Alt koleksiyon belgesini yaz (koleksiyon otomatik oluşur)
+    const cmRef = doc(collection(db, "users", userId, "completedModules"), moduleId);
+    await setDoc(
+      cmRef,
+      { moduleId, name: moduleName, completedAt: serverTimestamp() },
+      { merge: true }
+    );
+    return true;
+  } catch (e) {
+    console.error("markEducationModuleCompleted hata:", e);
+    return false;
   }
 }
 
@@ -446,6 +479,56 @@ export async function fetchUserPlantCount(userId) {
   } catch (error) {
     console.error("Bitki sayisi cekilirken hata olustu:", error);
     throw error;
+  }
+}
+
+/**
+ * Kullanıcının tamamladığı eğitim modüllerinin ID listesini döndürür.
+ */
+export async function fetchCompletedModuleIds(userId) {
+  if (!userId) return [];
+  try {
+    const snap = await getDocs(collection(db, "users", userId, "completedModules"));
+    return snap.docs.map((d) => d.id);
+  } catch (e) {
+    console.error("Tamamlanan moduller cekilirken hata:", e);
+    return [];
+  }
+}
+
+/**
+ * Kullanıcının tamamladığı eğitim modüllerinin sayısını döndürür.
+ */
+export async function fetchCompletedModulesCount(userId) {
+  if (!userId) return 0;
+  try {
+    const snap = await getDocs(collection(db, "users", userId, "completedModules"));
+    return snap.size || 0;
+  } catch (e) {
+    console.error("Tamamlanan modul sayisi cekilirken hata:", e);
+    return 0;
+  }
+}
+
+/**
+ * users/{userId}/completedModules alt koleksiyonuna bakarak
+ * users/{userId}.completedModulesCount alanını senkronize eder.
+ * Achievement kontrolü bu sayaçtan beslendiği için tutarlılık sağlar.
+ */
+export async function syncCompletedModulesCounter(userId) {
+  try {
+    if (!userId) return 0;
+    const count = await fetchCompletedModulesCount(userId);
+    const userRef = doc(db, "users", userId);
+    await setDoc(
+      userRef,
+      { completedModulesCount: count, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+    return count;
+  } catch (error) {
+    console.error("completedModulesCount senkronizasyon hatasi:", error);
+    return 0;
   }
 }
 
