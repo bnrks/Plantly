@@ -1,5 +1,5 @@
 // Error utility functions for common error handling patterns
-import globalErrorHandler from "./globalErrorHandler";
+import { globalErrorHandler } from "./logging/globalErrorHandler";
 
 /**
  * Async function wrapper that automatically reports errors
@@ -9,7 +9,7 @@ export const withErrorHandling = (asyncFn, context = {}) => {
     try {
       return await asyncFn(...args);
     } catch (error) {
-      globalErrorHandler.reportError(error, {
+      globalErrorHandler?.(error, {
         ...context,
         functionName: asyncFn.name || "anonymous",
         arguments: __DEV__ ? args : "hidden",
@@ -27,7 +27,7 @@ export const withNetworkErrorHandling = (networkFn, context = {}) => {
     try {
       return await networkFn(...args);
     } catch (error) {
-      globalErrorHandler.reportNetworkError(error, {
+      globalErrorHandler?.(error, {
         ...context,
         url: context.url || args[0],
         method: context.method || "unknown",
@@ -45,7 +45,7 @@ export const withFirebaseErrorHandling = (firebaseFn, context = {}) => {
     try {
       return await firebaseFn(...args);
     } catch (error) {
-      globalErrorHandler.reportFirebaseError(error, {
+      globalErrorHandler?.(error, {
         ...context,
         operation: context.operation || firebaseFn.name,
       });
@@ -61,7 +61,7 @@ export const safeExecute = async (fn, fallbackValue = null, context = {}) => {
   try {
     return await fn();
   } catch (error) {
-    globalErrorHandler.reportError(error, {
+    globalErrorHandler?.(error, {
       ...context,
       safeExecution: true,
     });
@@ -83,7 +83,7 @@ export const withRetry = (fn, maxAttempts = 3, baseDelay = 1000) => {
         lastError = error;
 
         if (attempt === maxAttempts) {
-          globalErrorHandler.reportError(error, {
+          globalErrorHandler?.(error, {
             retryAttempts: maxAttempts,
             finalAttempt: true,
           });
@@ -116,13 +116,13 @@ export const createDebouncedErrorReporter = (delay = 1000) => {
 
     if (!errorCounts.has(errorKey)) {
       errorCounts.set(errorKey, { count: 1, lastReport: now });
-      globalErrorHandler.reportError(error, context);
+      globalErrorHandler?.(error, context);
     } else {
       const errorData = errorCounts.get(errorKey);
       errorData.count++;
 
       if (now - errorData.lastReport > delay) {
-        globalErrorHandler.reportError(error, {
+        globalErrorHandler?.(error, {
           ...context,
           duplicateCount: errorData.count,
         });
@@ -138,7 +138,7 @@ export const createDebouncedErrorReporter = (delay = 1000) => {
  */
 export const triggerErrorBoundary = (error, context = {}) => {
   // Report to global handler first
-  globalErrorHandler.reportError(error, {
+  globalErrorHandler?.(error, {
     ...context,
     triggeredBoundary: true,
   });

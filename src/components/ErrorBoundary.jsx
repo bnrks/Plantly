@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import globalErrorHandler from "../services/globalErrorHandler";
+import { globalErrorHandler } from "../services/logging/globalErrorHandler";
 import ErrorFallback from "./ErrorFallback";
 
 class ErrorBoundary extends React.Component {
@@ -31,7 +31,8 @@ class ErrorBoundary extends React.Component {
     });
 
     // Global error handler'a bildir
-    globalErrorHandler.reportError(error, {
+    globalErrorHandler?.(error, {
+      type: "error_boundary",
       boundaryName: this.props.name || "Unknown",
       componentStack: errorInfo.componentStack,
       errorBoundary: true,

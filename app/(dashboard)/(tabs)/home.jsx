@@ -21,7 +21,7 @@ import CustomAlert from "../../../components/CustomAlert";
 import { Colors } from "../../../constants/Colors";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { AuthContext } from "../../../src/context/AuthContext";
-import { fetchPlantsForWatering, fetchEducationModules, fetchUserProfileWithFavorite, fetchCompletedModuleIds } from "../../../src/services/firestoreService";
+import { fetchPlantsForWatering, fetchEducationModules, fetchUserProfileWithFavorite, fetchCompletedModuleIds, updateUserWateringStreak, updateUserWateringScore } from "../../../src/services/firestoreService";
 import { useAchievementTracker } from "../../../src/hooks/achievements";
 import { registerForPush } from "../../../src/notifications/registerForPush";
 import HomePlantCard from "../../../components/HomePlantCard";
@@ -181,6 +181,11 @@ const Home = () => {
     try {
       // Achievement tracker ile sulama yap
       const result = await trackWatering(plantId);
+      // Sulama serisini güncelle (gece 12yi geçtiyse +1, aynı gün tekrarı engellenir)
+      if (userid) {
+        await updateUserWateringStreak(userid);
+        await updateUserWateringScore(userid);
+      }
       
       if (result.badgeAwarded) {
         console.log("🎉 Yeni badge kazanıldı:", result.badge?.name);

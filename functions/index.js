@@ -27,6 +27,19 @@ function isSameDay(a, b) {
   return a && b && a.toDateString() === b.toDateString();
 }
 
+// Bir tarih objesini günün başlangıcına çek
+function startOfDay(d) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+}
+
+// Dün ve bugün başlangıçlarını döndür
+function getDayBounds(now) {
+  const todayStart = startOfDay(now);
+  const yesterday = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+  const yesterdayStart = startOfDay(yesterday);
+  return { todayStart, yesterdayStart };
+}
+
 // Ana is: her kullanicinin bitkilerini kontrol et, sulama vakti gelenleri bildir.
 async function processDueWaterings() {
   const db = getFirestore();
@@ -225,6 +238,64 @@ exports.runNotifyNow = onRequest(
       console.error("[runNotifyNow] error:", e);
       res.status(500).send(e?.message || "internal error");
     }
+  }
+);
+
+// CRON: Her gece 00:00'da sulama serisini sıfırla (günü içinde sulama yoksa)
+exports.resetWateringStreaksDaily = onSchedule(
+  {
+    schedule: "0 0 * * *",
+    timeZone: "Europe/Istanbul",
+    region: "europe-west1",
+  },
+  async () => {
+    const db = getFirestore();
+    const now = new Date();
+    const nowTs = Timestamp.fromDate(now);
+    const { todayStart, yesterdayStart } = getDayBounds(now);
+
+    console.log("[resetStreaks] start", {
+      now: now.toISOString(),
+      todayStart: todayStart.toISOString(),
+      yesterdayStart: yesterdayStart.toISOString(),
+    });
+
+    const usersSnap = await db.collection("users").get();
+    if (usersSnap.empty) {
+      console.log("[resetStreaks] no users");
+      return { processed: 0, reset: 0 };
+    }
+
+    let processed = 0;
+    const updates = [];
+
+    for (const userDoc of usersSnap.docs) {
+      processed += 1;
+      const userRef = userDoc.ref;
+      const userData = userDoc.data() || {};
+      const lastWatered = toDateSafe(userData.lastWatered);
+
+      // Dün içinde sulama yapıldı mı? Koşul: yesterdayStart <= lastWatered < todayStart
+      const wateredYesterday =
+        !!lastWatered && lastWatered >= yesterdayStart && lastWatered < todayStart;
+
+      if (!wateredYesterday) {
+        // Günü içinde sulama yoksa streak'i sıfırla
+        updates.push(
+          userRef.update({
+            wateringStreak: 0,
+            lastStreakUpdate: nowTs,
+            updatedAt: nowTs,
+          })
+        );
+      }
+    }
+
+    const results = await Promise.allSettled(updates);
+    const resetCount = results.filter((r) => r.status === "fulfilled").length;
+
+    console.log("[resetStreaks] done", { processed, resetCount });
+    return { processed, reset: resetCount };
   }
 );
 

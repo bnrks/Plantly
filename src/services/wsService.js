@@ -1,7 +1,7 @@
 import { getAuth } from "firebase/auth";
-import { updateThreadTitle } from "./firestoreService";
-import webSocketErrorHandler from "./webSocketErrorHandler";
-import globalErrorHandler from "./globalErrorHandler";
+import { updateThreadTitle } from "./firestore";
+import { handleWebSocketError } from "./chat/webSocketErrorHandler";
+import { globalErrorHandler } from "./logging/globalErrorHandler";
 
 class WebSocketService {
   constructor() {
@@ -188,23 +188,10 @@ class WebSocketService {
           this.isConnected = false;
           this.isConnecting = false;
 
-          // Global error handler'a raporla
-          globalErrorHandler.reportWebSocketError(
-            new Error(error.message || "WebSocket connection error"),
-            {
-              errorType: "websocket_connection",
-              errorEvent: error,
-              showToUser: true, // WebSocket hataları kullanıcıya gösterilsin
-              retryable: true,
-            }
-          );
+          handleWebSocketError(error);
+          globalErrorHandler?.(error);
 
-          // Hata detaylarını status message olarak gönder
           const errorMessage = error.message || JSON.stringify(error);
-          console.log(
-            "📡 Sending error to connection listeners:",
-            errorMessage
-          );
           this.notifyConnectionListeners("error", errorMessage);
           reject(error);
         };
@@ -222,20 +209,12 @@ class WebSocketService {
 
           // Close event'i global handler'a raporla
           if (!event.wasClean) {
-            globalErrorHandler.reportWebSocketError(
+            globalErrorHandler?.(
               new Error(
                 `WebSocket closed unexpectedly: ${
                   event.reason || "Unknown reason"
                 }`
-              ),
-              {
-                errorType: "websocket_close",
-                closeCode: event.code,
-                closeReason: event.reason,
-                wasClean: event.wasClean,
-                showToUser: false, // Kullanıcıya gösterme
-                retryable: false, // Otomatik retry yapma
-              }
+              )
             );
           }
 
@@ -252,12 +231,7 @@ class WebSocketService {
         this.isConnected = false;
         this.isConnecting = false;
 
-        // Global error handler'a raporla
-        globalErrorHandler.reportWebSocketError(constructorError, {
-          errorType: "websocket_constructor",
-          showToUser: true,
-          retryable: true,
-        });
+        globalErrorHandler?.(constructorError);
 
         const errorMessage =
           constructorError.message || JSON.stringify(constructorError);

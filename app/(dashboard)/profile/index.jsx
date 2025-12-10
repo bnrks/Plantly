@@ -1,5 +1,5 @@
-import { StyleSheet, View, Image, TouchableOpacity } from "react-native";
-import { useContext, useEffect, useState } from "react";
+import { View, Image, TouchableOpacity } from "react-native";
+import { useContext, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -12,45 +12,16 @@ import BackButton from "../../../components/BackButton";
 import ScreenContainer from "../../../components/ScreenContainer";
 import { ThemeContext } from "../../../src/context/ThemeContext";
 import { Colors } from "../../../constants/Colors";
-import {
-  fetchUserProfileWithFavorite,
-  fetchUserPlantCount,
-  uploadProfilePicture,
-  fetchAchievements,
-  fetchUserAchievementProgress,
-  fetchUserBadges,
-  fetchBadges,
-  fetchCompletedModulesCount,
-  syncCompletedModulesCounter,
-  checkAllAchievementsForAction,
-} from "../../../src/services/firestoreService";
+import { uploadProfilePicture } from "../../../src/services/firestoreService";
 import { AuthContext } from "../../../src/context/AuthContext";
 import ProfileSkeleton from "../../../components/skeletons/ProfileSkeleton";
-
-// Kayıt tarihini formatla
-const formatJoinDate = (createdAt, t) => {
-  if (!createdAt) return t('profile.member');
-  
-  const monthKeys = [
-    'months.january', 'months.february', 'months.march', 'months.april',
-    'months.may', 'months.june', 'months.july', 'months.august',
-    'months.september', 'months.october', 'months.november', 'months.december'
-  ];
-  
-  let date;
-  if (createdAt.toDate) {
-    date = createdAt.toDate();
-  } else if (createdAt.seconds) {
-    date = new Date(createdAt.seconds * 1000);
-  } else {
-    date = new Date(createdAt);
-  }
-  
-  const month = t(monthKeys[date.getMonth()]);
-  const year = date.getFullYear();
-  
-  return t('profile.memberSinceFormat', { month, year });
-};
+import { useProfileData } from "../../../src/hooks/profile/useProfileData";
+import {
+  formatJoinDate,
+  getBadgeIconInfo,
+  getProgressForAchievement,
+} from "../../../src/hooks/profile/useProfileHelpers";
+import { profileStyles as styles } from "../../../css/profileStyles";
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -59,78 +30,18 @@ export default function ProfileScreen() {
   const { theme: selectedTheme } = useContext(ThemeContext);
   const theme = Colors[selectedTheme] ?? Colors.light;
 
-  const [profile, setProfile] = useState({
-    name: "",
-    displayName: "",
-    createdAt: null,
-    wateringStreak: 0,
-    plantCount: null,
-    favoritePlant: null,
-    completedModules: null,
-    userPictureUrl: "",
-  });
-  const [loading, setLoading] = useState(true);
+  const {
+    profile,
+    setProfile,
+    loading,
+    userBadges,
+    allBadges,
+    achievements,
+    achievementProgress,
+    badgeIconUrls,
+    achievementIconUrls,
+  } = useProfileData(user?.uid);
   const [uploading, setUploading] = useState(false);
-  
-  // Achievement & Badge state'leri
-  const [userBadges, setUserBadges] = useState([]);
-  const [allBadges, setAllBadges] = useState([]);
-  const [achievements, setAchievements] = useState([]);
-  const [achievementProgress, setAchievementProgress] = useState([]);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user?.uid) return;
-      setLoading(true);
-      try {
-        // 1) Temel verileri çek
-        const [profileData, plantCount, badgesData, allBadgesData, achievementsData, progressData, completedModulesCount] = await Promise.all([
-          fetchUserProfileWithFavorite(user.uid),
-          fetchUserPlantCount(user.uid),
-          fetchUserBadges(user.uid),
-          fetchBadges(),
-          fetchAchievements(),
-          fetchUserAchievementProgress(user.uid),
-          fetchCompletedModulesCount(user.uid),
-        ]);
-
-        if (profileData) {
-          setProfile((prev) => ({
-            ...prev,
-            ...profileData,
-            plantCount,
-            completedModules: typeof completedModulesCount === 'number' ? completedModulesCount : 0,
-            completedModulesCount: typeof completedModulesCount === 'number' ? completedModulesCount : 0,
-          }));
-        }
-        
-        setUserBadges(badgesData || []);
-        setAllBadges(allBadgesData || []);
-        setAchievements(achievementsData || []);
-        setAchievementProgress(progressData || []);
-
-        // 2) completedModulesCount sayaçını users doc'a senkronize et (varsa eksikse düzelt)
-        await syncCompletedModulesCounter(user.uid);
-
-        // 3) module_completed actionType için tüm achievement'ları mevcut sayaç ile kontrol et ve gerekirse badge ver
-        await checkAllAchievementsForAction(user.uid, "module_completed");
-
-        // 4) Badge ve progress'i yeniden çek (ödüller güncellendiyse UI'ya yansısın)
-        const [updatedBadges, updatedProgress] = await Promise.all([
-          fetchUserBadges(user.uid),
-          fetchUserAchievementProgress(user.uid),
-        ]);
-        setUserBadges(updatedBadges || []);
-        setAchievementProgress(updatedProgress || []);
-      } catch (error) {
-        console.error("Profil bilgisi cekilirken hata:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProfile();
-  }, [user?.uid]);
 
   const handleChangePhoto = async () => {
     try {
@@ -164,25 +75,6 @@ export default function ProfileScreen() {
   }
 
   const favorite = profile.favoritePlant;
-  
-  // Badge için ikon ve renk belirleme
-  const getBadgeIconInfo = (badgeId) => {
-    const iconMap = {
-      watering_master: { icon: "water", color: "#2196F3" },
-      plant_lover: { icon: "leaf", color: Colors.primary },
-      green_thumb: { icon: "flower", color: "#E91E63" },
-      expert: { icon: "school", color: "#FF9800" },
-    };
-    return iconMap[badgeId] || { icon: "ribbon", color: Colors.primary };
-  };
-  
-  // Kullanıcının kazandığı badge ID'leri
-  const earnedBadgeIds = userBadges.map(ub => ub.badgeId);
-  
-  // Achievement progress'i ID'ye göre bul
-  const getProgressForAchievement = (achievementId) => {
-    return achievementProgress.find(p => p.achievementId === achievementId) || { current: 0, completed: false };
-  };
 
   return (
     <ScreenContainer scrollable topSpacing={24} bottomSpacing={80}>
@@ -223,13 +115,18 @@ export default function ProfileScreen() {
               {userBadges.length > 0 ? (
                 userBadges.slice(0, 3).map((userBadge) => {
                   const badgeInfo = allBadges.find(b => b.id === userBadge.badgeId);
-                  const iconInfo = getBadgeIconInfo(userBadge.badgeId);
+                  const iconInfo = getBadgeIconInfo(userBadge.badgeId, badgeInfo?.rarity);
+                  const badgeImgUrl = badgeIconUrls[userBadge.badgeId];
                   return (
                     <View 
                       key={userBadge.badgeId} 
                       style={[styles.badge, { backgroundColor: theme.thirdBg }]}
                     >
-                      <Ionicons name={iconInfo.icon} size={14} color={iconInfo.color} />
+                      {badgeImgUrl ? (
+                        <Image source={{ uri: badgeImgUrl }} style={{ width: 14, height: 14, borderRadius: 3 }} />
+                      ) : (
+                        <Ionicons name={iconInfo.icon} size={14} color={iconInfo.color} />
+                      )}
                       <ThemedText style={styles.badgeText}>
                         {badgeInfo?.name || badgeInfo?.title || userBadge.badgeId}
                       </ThemedText>
@@ -304,7 +201,11 @@ export default function ProfileScreen() {
             <SummaryItem
               icon="trophy-outline"
               label={t('profile.summary.wateringScore')}
-              value={t('profile.summary.points', { count: 850 })}
+              value={
+                typeof profile.wateringScore === "number"
+                  ? t('profile.summary.points', { count: Math.round(profile.wateringScore) })
+                  : t('profile.summary.points', { count: 0 })
+              }
               color="#FFC107"
             />
             <SummaryItem
@@ -367,7 +268,7 @@ export default function ProfileScreen() {
         
         {achievements.length > 0 ? (
           achievements.map((achievement) => {
-            const progress = getProgressForAchievement(achievement.id);
+            const progress = getProgressForAchievement(achievementProgress, achievement.id);
             const iconInfo = getBadgeIconInfo(achievement.badgeId);
             const bgColorMap = {
               watering_master: "#E3F2FD",
@@ -383,6 +284,7 @@ export default function ProfileScreen() {
               return progress.current || 0;
             })();
             
+            const imageUrl = achievementIconUrls[achievement.id] || badgeIconUrls[achievement.badgeId] || null;
             return (
               <AchievementItem
                 key={achievement.id}
@@ -394,6 +296,7 @@ export default function ProfileScreen() {
                 progress={computedProgress}
                 target={achievement.target || 0}
                 completed={progress.completed || false}
+                imageUrl={imageUrl}
               />
             );
           })
@@ -450,13 +353,17 @@ export default function ProfileScreen() {
   );
 }
 
-function AchievementItem({ icon, iconColor, bgColor, title, description, progress, target, completed }) {
+function AchievementItem({ icon, iconColor, bgColor, title, description, progress, target, completed, imageUrl }) {
   const progressPercent = target > 0 ? Math.min((progress / target) * 100, 100) : 0;
   
   return (
     <View style={styles.achievementItem}>
       <View style={[styles.achievementImageWrapper, { backgroundColor: bgColor }]}>
-        <Ionicons name={icon} size={28} color={iconColor} />
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={styles.achievementImage} />
+        ) : (
+          <Ionicons name={icon} size={28} color={iconColor} />
+        )}
         {completed && (
           <View style={styles.completedBadge}>
             <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
@@ -481,17 +388,7 @@ function AchievementItem({ icon, iconColor, bgColor, title, description, progres
   );
 }
 
-function MetaItem({ icon, label, value, color }) {
-  return (
-    <View style={styles.metaItem}>
-      <Ionicons name={icon} size={18} color={color} />
-      <View style={{ marginLeft: 8 }}>
-        <ThemedText style={styles.metaLabel}>{label}</ThemedText>
-        <ThemedTitle style={styles.metaValue}>{value}</ThemedTitle>
-      </View>
-    </View>
-  );
-}
+
 
 function SummaryItem({ icon, label, value, color }) {
   return (
@@ -511,276 +408,3 @@ function SummaryItem({ icon, label, value, color }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  backButton: {
-    position: "absolute",
-    left: 0,
-    zIndex: 1,
-  },
-  headerWrapper: {
-    flex: 1,
-    alignItems: "center",
-  },
-  settingsButton: {
-    position: "absolute",
-    right: 0,
-    zIndex: 1,
-    padding: 8,
-  },
-  profileCard: {
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    marginTop: 8,
-  },
-  profileCardRow: {
-    flexDirection: "row",
-    width: "100%",
-  },
-  profileLeftColumn: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  profileRightColumn: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 16,
-  },
-  fullName: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  nickname: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginBottom: 4,
-  },
-  joinDate: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginBottom: 12,
-  },
-  badgesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    gap: 4,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  avatarWrapper: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    backgroundColor: "rgba(83,115,84,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-  },
-  editAvatar: {
-    position: "absolute",
-    bottom: -6,
-    right: -6,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.primary,
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  userName: {
-    fontSize: 22,
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 14,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginTop: 8,
-    gap: 12,
-  },
-  metaItem: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(83,115,84,0.08)",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-  },
-  metaLabel: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  metaValue: {
-    fontSize: 14,
-  },
-  sectionCard: {
-    paddingVertical: 20,
-    paddingHorizontal: 18,
-    borderRadius: 22,
-    marginTop: 14,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    marginBottom: 16,
-  },
-  summaryGrid: {
-    gap: 14,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 14,
-  },
-  summaryItem: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 16,
-    backgroundColor: "rgba(83,115,84,0.08)",
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  summaryIconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  summaryTextContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  summaryLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  summaryValue: {
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  favoriteCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
-  },
-  favoriteIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  favoriteTitle: {
-    fontSize: 18,
-    marginBottom: 4,
-  },
-  favoriteSubtitle: {
-    fontSize: 14,
-  },
-  favoriteImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  achievementItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-    gap: 14,
-  },
-  achievementImageWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  achievementImage: {
-    width: 40,
-    height: 40,
-    resizeMode: "contain",
-  },
-  achievementTextContainer: {
-    flex: 1,
-  },
-  achievementTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  achievementDescription: {
-    fontSize: 13,
-    opacity: 0.7,
-  },
-  completedBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    backgroundColor: "#fff",
-    borderRadius: 10,
-  },
-  progressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-    gap: 8,
-  },
-  progressBar: {
-    flex: 1,
-    height: 6,
-    backgroundColor: "rgba(0,0,0,0.1)",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 3,
-  },
-  progressText: {
-    fontSize: 12,
-    fontWeight: "600",
-    opacity: 0.7,
-    minWidth: 45,
-    textAlign: "right",
-  },
-});
