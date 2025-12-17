@@ -1,7 +1,9 @@
 import { getAuth } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { updateThreadTitle } from "./firestore";
 import { handleWebSocketError } from "./chat/webSocketErrorHandler";
 import { globalErrorHandler } from "./logging/globalErrorHandler";
+import { db } from "./firebaseConfig";
 
 class WebSocketService {
   constructor() {
@@ -15,6 +17,65 @@ class WebSocketService {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 3000; // 3 saniye
+
+    this._resolvedWebSocketUrl = null;
+  }
+
+  async resolveApiUrl() {
+    const settingsRef = doc(db, "settings", "api_settings");
+    const snap = await getDoc(settingsRef);
+    const apiUrl = snap.exists() ? snap.data()?.api_url : null;
+
+    if (!apiUrl || typeof apiUrl !== "string") {
+      throw new Error(
+        "Firestore settings/api_settings içinde geçerli api_url bulunamadı"
+      );
+    }
+
+    return apiUrl.trim();
+  }
+
+  buildWebSocketUrl(apiUrl) {
+    const trimmed = (apiUrl || "").trim();
+    if (!trimmed) {
+      throw new Error("Geçersiz api_url");
+    }
+
+    // api_url http(s) ise ws(s) yap
+    let normalized = trimmed;
+    if (normalized.startsWith("http://")) {
+      normalized = `ws://${normalized.slice("http://".length)}`;
+    } else if (normalized.startsWith("https://")) {
+      normalized = `wss://${normalized.slice("https://".length)}`;
+    } else if (!normalized.startsWith("ws://") && !normalized.startsWith("wss://")) {
+      // Şema yoksa https varsay
+      normalized = `wss://${normalized}`;
+    }
+
+    // /ws/chat ekle (zaten varsa dokunma)
+    try {
+      const url = new URL(normalized);
+      const path = url.pathname || "/";
+      if (!path.endsWith("/ws/chat")) {
+        const basePath = path.endsWith("/") ? path.slice(0, -1) : path;
+        url.pathname = `${basePath}/ws/chat`;
+      }
+      return url.toString();
+    } catch {
+      // URL parse edilemezse en basit birleştirme
+      const base = normalized.endsWith("/")
+        ? normalized.slice(0, -1)
+        : normalized;
+      return base.endsWith("/ws/chat") ? base : `${base}/ws/chat`;
+    }
+  }
+
+  async resolveWebSocketUrl() {
+    // Her bağlanmadan önce Firestore'dan oku (dinamik olsun)
+    const apiUrl = await this.resolveApiUrl();
+    const wsUrl = this.buildWebSocketUrl(apiUrl);
+    this._resolvedWebSocketUrl = wsUrl;
+    return wsUrl;
   }
 
   // Heartbeat mekanizması - Devre dışı
@@ -104,15 +165,16 @@ class WebSocketService {
   }
 
   async connectWebSocket() {
+    const wsUrl = await this.resolveWebSocketUrl();
+
     return new Promise((resolve, reject) => {
       try {
         // WebSocket bağlantısını kur
-        this.ws = new WebSocket(
-          "wss://learning-partially-rabbit.ngrok-free.app/ws/chat" // You should change this to your actual backend URL
-        );
+        this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = async () => {
           console.log("✅ WebSocket bağlantısı açıldı");
+          console.log("🔗 WebSocket URL:", wsUrl);
           this.isConnected = true;
           this.isConnecting = false;
           this.reconnectAttempts = 0; // Reset retry counter
