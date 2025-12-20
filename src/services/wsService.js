@@ -19,6 +19,7 @@ class WebSocketService {
     this.reconnectDelay = 3000; // 3 saniye
 
     this._resolvedWebSocketUrl = null;
+    this._manualClose = false;
   }
 
   async resolveApiUrl() {
@@ -265,12 +266,15 @@ class WebSocketService {
             wasClean: event.wasClean,
           });
 
+          const wasManualClose = this._manualClose;
+          this._manualClose = false;
+
           this.isConnected = false;
           this.isConnecting = false;
           this.stopHeartbeat(); // Heartbeat'i durdur
 
           // Close event'i global handler'a raporla
-          if (!event.wasClean) {
+          if (!wasManualClose && !event.wasClean) {
             globalErrorHandler?.(
               new Error(
                 `WebSocket closed unexpectedly: ${
@@ -335,8 +339,13 @@ class WebSocketService {
     }
   }
 
-  disconnect() {
+  disconnect({ resetThreadId = false } = {}) {
+    this._manualClose = true;
     this.stopHeartbeat(); // Heartbeat'i durdur
+
+    if (resetThreadId) {
+      this.threadId = null;
+    }
 
     if (this.ws) {
       this.ws.close();

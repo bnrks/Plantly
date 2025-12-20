@@ -26,7 +26,7 @@ export const useImageHandling = (
     }
   };
 
-  const analyzeImage = async (inputText) => {
+  const analyzeImage = async (inputText, options = {}) => {
     if (!selectedImage || connectionStatus !== "connected") {
       console.log(
         "⚠️ Image analizi iptal edildi - image yok veya bağlantı yok"
@@ -83,7 +83,8 @@ export const useImageHandling = (
       // Fotoğraf analizi yap
       const analysisResult = await chatService.analyzeImage(
         selectedImage,
-        inputText
+        inputText,
+        options
       );
 
       console.log("📥 Analiz sonucu:", analysisResult);

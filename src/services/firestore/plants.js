@@ -121,7 +121,3 @@ export async function fetchPlantsForWatering(useruid, setPlants, setLoading) {
   }
 }
 
-export async function updatePlantDisease(userId, plantId, disease) {
-  const plantRef = doc(db, "users", userId, "plants", plantId);
-  await updateDoc(plantRef, { disease, diseaseUpdatedAt: serverTimestamp() });
-}

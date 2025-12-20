@@ -67,39 +67,60 @@ export default function PlantDetails() {
   const confirmDelete = () => {
     setShowDeleteAlert(true);
   };
-  function diseaseToStatus(disease) {
-    switch (disease) {
-      case "late_blight":
-        return t('plants.sick');
-      case "bacterial_spot":
-        return t('plants.sick');
-      case "early_blight":
-        return t('plants.sick');
-      default:
-        return t('plants.healthy');
-    }
-  }
+  const lastDiseaseClassTr = plant?.lastDisease?.classTr;
+  const hasLastDisease = Boolean(lastDiseaseClassTr);
 
-  function diseaseToDescription(disease) {
-    switch (disease) {
-      case "late_blight":
-        return t('plants.lateBlight');
-      case "bacterial_spot":
-        return t('plants.bacterialSpot');
-      case "early_blight":
-        return t('plants.earlyBlight');
-      default:
-        return t('plants.noSickDescription');
+  const diseaseHistoryEntries = (() => {
+    const raw = plant?.diseaseHistory;
+    if (!raw) return [];
+
+    const asArray = Array.isArray(raw)
+      ? raw.map((item, index) => ({ id: String(index), ...(item || {}) }))
+      : Object.entries(raw).map(([key, value]) => ({
+          id: String(key),
+          ...(value || {}),
+        }));
+
+    const resolveDate = (entry) => {
+      const at = entry?.at;
+      if (at?.toDate) return at.toDate();
+      if (at instanceof Date) return at;
+      if (typeof at === "number") return new Date(at);
+      if (typeof at === "string" || at instanceof String) {
+        const parsed = new Date(at);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+      }
+      const fromKey = Number(entry?.id);
+      if (Number.isFinite(fromKey)) return new Date(fromKey);
+      return null;
+    };
+
+    return asArray
+      .map((entry) => ({ ...entry, _atDate: resolveDate(entry) }))
+      .sort((a, b) => {
+        const atA = a?._atDate?.getTime?.() ?? 0;
+        const atB = b?._atDate?.getTime?.() ?? 0;
+        return atB - atA;
+      });
+  })();
+
+  const formatHistoryDate = (date) => {
+    if (!date) return "";
+    try {
+      return date.toLocaleString();
+    } catch {
+      return String(date);
     }
-  }
+  };
   // TODO: Backend ile entegre edilecek => örnek veri
   const plantexample = {
     name: plant.name,
     description: plant.description,
     species: plant.species,
     image: { uri: plant.imageUrl },
-    status: diseaseToStatus(plant.disease),
-    statusDescription: diseaseToDescription(plant.disease),
+    // Hastalık bilgisini Firestore'daki lastDisease(map) field'ından al
+    status: hasLastDisease ? lastDiseaseClassTr : t('plants.healthy'),
+    statusDescription: hasLastDisease ? "" : t('plants.noSickDescription'),
     suggestions: plant.suggestions || [t('plants.noCareRecommendations')],
     notes: plant.notes || [t('plants.noNotes')],
     waterLevel: plant.waterLevel || 60,
@@ -140,9 +161,7 @@ export default function PlantDetails() {
               styles.statusText,
               {
                 color:
-                  plantexample.status === "Sağlıklı" || plantexample.status === "Healthy"
-                    ? theme.success
-                    : theme.danger,
+                  hasLastDisease ? theme.danger : theme.success,
               },
             ]}
           >
@@ -215,6 +234,33 @@ export default function PlantDetails() {
             <ThemedText style={styles.suggestionText}>{suggestion}</ThemedText>
           </View>
         ))}
+      </ThemedCard>
+
+      {/* Hastalık Geçmişi */}
+      <ThemedCard style={[styles.careCard, { backgroundColor: theme.secondBg }]}>
+        <ThemedTitle style={styles.sectionHeader}>{t('plants.diseaseHistory')}</ThemedTitle>
+
+        {diseaseHistoryEntries.length === 0 ? (
+          <ThemedText style={styles.historyEmptyText}>{t('plants.noDiseaseHistory')}</ThemedText>
+        ) : (
+          diseaseHistoryEntries.map((entry) => {
+            const title = entry?.classTr || entry?.class || "";
+            const stage = entry?.stageTr || entry?.stage || entry?.recoveryStageTr || entry?.recoveryStage;
+            const confidence = typeof entry?.confidence === "number" ? Math.round(entry.confidence * 100) : null;
+            const dateText = formatHistoryDate(entry?._atDate);
+
+            return (
+              <View key={entry.id} style={styles.historyRow}>
+                <ThemedText style={styles.historyTitleText}>{title}</ThemedText>
+                {dateText ? <ThemedText style={styles.historyMetaText}>{dateText}</ThemedText> : null}
+                {stage ? <ThemedText style={styles.historyMetaText}>{String(stage)}</ThemedText> : null}
+                {confidence !== null ? (
+                  <ThemedText style={styles.historyMetaText}>{`${confidence}%`}</ThemedText>
+                ) : null}
+              </View>
+            );
+          })
+        )}
       </ThemedCard>
 
       {/* Notlar */}
@@ -370,5 +416,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     marginBottom: 6,
+  },
+  historyRow: {
+    marginBottom: 12,
+  },
+  historyTitleText: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  historyMetaText: {
+    fontSize: 14,
+    fontWeight: "500",
+    opacity: 0.8,
+  },
+  historyEmptyText: {
+    fontSize: 14,
+    fontWeight: "500",
+    opacity: 0.8,
   },
 });

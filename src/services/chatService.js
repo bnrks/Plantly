@@ -108,7 +108,7 @@ class ChatService {
   /**
    * Fotoğraf analizi yapma
    */
-  async analyzeImage(selectedImage, inputText = "") {
+  async analyzeImage(selectedImage, inputText = "", options = {}) {
     try {
       // Firebase ID Token al
       const auth = getAuth();
@@ -117,6 +117,8 @@ class ChatService {
         throw new Error("Kullanıcı bulunamadı");
       }
       const idToken = await currentUser.getIdToken();
+
+      const { plantId } = options || {};
 
       // FormData hazırla
       const fd = new FormData();
@@ -131,7 +133,15 @@ class ChatService {
       const wsService = require("./wsService").default;
       fd.append("thread_id", wsService.threadId || "");
 
-      console.log("📤 Fotoğraf analizi başlatılıyor...");
+      // (Optional) Plant ID'yi backend'e ilet
+      if (plantId) {
+        fd.append("plant_id", String(plantId));
+      }
+
+      console.log("📤 Fotoğraf analizi başlatılıyor...", {
+        threadId: wsService.threadId || "",
+        plantId: plantId || "",
+      });
 
       // API'ye gönder
       const response = await fetch(
@@ -184,6 +194,30 @@ class ChatService {
     console.log("🔧 data.assistant:", data.assistant);
     console.log("🔧 data.assistant?.content:", data.assistant?.content);
 
+    const applyDiagnosisToMessage = (targetMessage, diagnosisLike) => {
+      if (!diagnosisLike || typeof diagnosisLike !== "object") return;
+
+      // Yeni WS şemasıyla gelen diagnosis object / alanları normalize et
+      const classValue =
+        diagnosisLike.classTr ||
+        diagnosisLike.diagnosisTr ||
+        diagnosisLike.class ||
+        diagnosisLike.type;
+      const confidenceValue =
+        typeof diagnosisLike.confidence === "number"
+          ? diagnosisLike.confidence
+          : undefined;
+
+      targetMessage.type = "analysis";
+      targetMessage.disease = classValue;
+      if (confidenceValue !== undefined) {
+        targetMessage.confidence = confidenceValue;
+      }
+
+      // İstersen UI tarafında daha zengin kullanılsın diye ham objeyi de tut
+      targetMessage.diagnosis = diagnosisLike;
+    };
+
     // Yeni format: { assistant: {...}, diagnosis: {...}, message_id, thread_id }
     if (data.assistant && data.assistant.content) {
       const parsedContent = this.parseMarkdownJson(data.assistant.content);
@@ -199,8 +233,7 @@ class ChatService {
 
       // Eğer diagnosis bilgisi varsa ekle
       if (data.diagnosis) {
-        newMessage.diagnosis = data.diagnosis;
-        newMessage.type = "analysis";
+        applyDiagnosisToMessage(newMessage, data.diagnosis);
       }
 
       // Eğer notes varsa ayrı mesaj olarak döndür
@@ -237,8 +270,7 @@ class ChatService {
       };
 
       if (data.diagnosis) {
-        newMessage.diagnosis = data.diagnosis;
-        newMessage.type = "analysis";
+        applyDiagnosisToMessage(newMessage, data.diagnosis);
       }
 
       if (parsedContent.notes && Array.isArray(parsedContent.notes)) {
@@ -257,8 +289,28 @@ class ChatService {
 
     // Eski format: { type: "message", message: {...} }
     if (data.type === "message" && data.message) {
-      // SystemEvent mesajlarını filtreleme (diagnosis objeleri)
+      // Yeni şema: SystemEvent diagnosis yayınını message olarak UI'ya çevir
       if (data.message.role === "systemEvent") {
+        const content = data.message.content;
+        if (content && typeof content === "object" && content.type === "diagnosis") {
+          const diagnosisMessage = {
+            id: data.message.id || Date.now().toString(),
+            role: "assistant",
+            content:
+              content.classTr ||
+              content.class ||
+              "Teşhis sonucu alındı.",
+            timestamp: new Date(),
+          };
+
+          applyDiagnosisToMessage(diagnosisMessage, content);
+
+          // Ek alanları da sakla (opsiyonel)
+          diagnosisMessage.thread_id = data.thread_id;
+          return diagnosisMessage;
+        }
+
+        // Diagnosis dışındaki systemEvent'leri sessizce yok say
         console.log("⚙️ SystemEvent mesajı atlandı:", data.message);
         return null;
       }
@@ -274,6 +326,23 @@ class ChatService {
         content: parsedContent.content || data.message.content,
         timestamp: new Date(),
       };
+
+      // Yeni şema: assistant mesajı üzerinde diagnosis alanları gelebilir
+      if (
+        data.message.class ||
+        data.message.classTr ||
+        typeof data.message.confidence === "number" ||
+        data.message.diagnosisTr
+      ) {
+        applyDiagnosisToMessage(mainMessage, {
+          type: "diagnosis",
+          class: data.message.class,
+          classTr: data.message.classTr,
+          diagnosisTr: data.message.diagnosisTr,
+          confidence: data.message.confidence,
+          notes: data.message.notes,
+        });
+      }
 
       // Eğer notes varsa ayrı mesaj olarak döndür
       if (parsedContent.notes && Array.isArray(parsedContent.notes)) {
@@ -292,10 +361,21 @@ class ChatService {
         return [mainMessage, notesMessage];
       }
 
+      // Yeni şema: notes array direkt message üzerinde gelebilir
+      if (Array.isArray(data.message.notes) && data.message.notes.length > 0) {
+        const notesMessage = {
+          id: `${mainMessage.id}_notes`,
+          role: "assistant_notes",
+          content: data.message.notes,
+          timestamp: new Date(),
+          hasActionButton: true,
+        };
+        return [mainMessage, notesMessage];
+      }
+
       // Eğer bu bir fotoğraf analizi cevabıysa, diagnosis bilgisini de ekle
       if (data.diagnosis) {
-        mainMessage.diagnosis = data.diagnosis;
-        mainMessage.type = "analysis";
+        applyDiagnosisToMessage(mainMessage, data.diagnosis);
       }
 
       console.log("✅ İşlenmiş mesaj (message):", mainMessage);

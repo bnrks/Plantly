@@ -10,8 +10,18 @@ export const useChat = (connectionStatus) => {
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef(null);
 
+  // Analiz modunda (MyPlants'tan gelen) aynı görseli tekrar tekrar göndermeyi engelle
+  const analysisReconnectDoneRef = useRef(false);
+  const analysisRequestSentRef = useRef(false);
+
   // Analiz parametrelerini al
   const { analysisImage, plantId, analysisMode } = useLocalSearchParams();
+
+  // Analiz parametreleri değişince guard'ları sıfırla
+  useEffect(() => {
+    analysisReconnectDoneRef.current = false;
+    analysisRequestSentRef.current = false;
+  }, [analysisMode, analysisImage]);
 
   useEffect(() => {
     // Mesaj dinleyicisi ekle
@@ -170,6 +180,9 @@ export const useChat = (connectionStatus) => {
   // Analiz modunda direkt reconnection yap
   useEffect(() => {
     if (analysisMode === "true" && analysisImage) {
+      if (analysisReconnectDoneRef.current) return;
+      analysisReconnectDoneRef.current = true;
+
       console.log(
         "🔍 Analiz modu algılandı, WebSocket reconnection yapılıyor..."
       );
@@ -207,6 +220,9 @@ export const useChat = (connectionStatus) => {
         analysisImage &&
         connectionStatus === "connected"
       ) {
+        if (analysisRequestSentRef.current) return;
+        analysisRequestSentRef.current = true;
+
         try {
           console.log("🔍 MyPlants analiz modu başlatılıyor...");
 
@@ -253,7 +269,8 @@ export const useChat = (connectionStatus) => {
           console.log("📸 MyPlants analizi başlatılıyor...");
           const analysisResult = await chatService.analyzeImage(
             imageForAnalysis,
-            "Bitkimin analizi için fotoğraf gönderiyorum."
+            "Bitkimin analizi için fotoğraf gönderiyorum.",
+            { plantId }
           );
 
           console.log("✅ MyPlants analizi tamamlandı:", analysisResult);
@@ -319,7 +336,7 @@ export const useChat = (connectionStatus) => {
       clearChat();
 
       // WebSocket'i yeniden başlat ve yeni thread oluştur
-      wsService.disconnect();
+      wsService.disconnect({ resetThreadId: true });
 
       // Kısa bir süre bekle
       await new Promise((resolve) => setTimeout(resolve, 500));
