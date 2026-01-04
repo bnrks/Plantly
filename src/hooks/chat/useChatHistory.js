@@ -1,5 +1,4 @@
 import { useState, useContext } from "react";
-import wsService from "../../services/wsService";
 import chatService from "../../services/chatService";
 import { deleteThread } from "../../services/firestoreService";
 import { AuthContext } from "../../context/AuthContext";
@@ -11,7 +10,8 @@ export const useChatHistory = (
   setIsTyping,
   flatListRef,
   showConfirm,
-  hideAlert
+  hideAlert,
+  setThreadId
 ) => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
@@ -41,14 +41,16 @@ export const useChatHistory = (
       // Modal'ı kapat
       setShowHistoryModal(false);
 
-      // Mevcut bağlantıyı kes
-      wsService.disconnect();
-
       // Chat'i temizle
       setMessages([]);
       setInputText("");
       setSelectedImage(null);
       setIsTyping(false);
+
+      // Aktif thread'i seç
+      if (typeof setThreadId === "function") {
+        setThreadId(threadId);
+      }
 
       // Geçmiş mesajları getir
       const previousMessages = await chatService.getChatMessages(threadId);
@@ -56,11 +58,6 @@ export const useChatHistory = (
 
       // Mesajları ekle
       setMessages(previousMessages);
-
-      // Thread ID ile WebSocket bağlantısı kur
-      setTimeout(() => {
-        wsService.connect(threadId);
-      }, 500);
 
       // Mesaj listesini sona kaydır
       setTimeout(() => {

@@ -1,6 +1,5 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import wsService from "../../services/wsService";
 import { Colors } from "../../../constants/Colors";
 
 export const useWebSocketConnection = () => {
@@ -9,59 +8,23 @@ export const useWebSocketConnection = () => {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    // Bağlantı durumu dinleyicisi ekle
-    const handleConnectionChange = (status, message) => {
-      setConnectionStatus(status);
-      setStatusMessage(message);
-    };
-
-    wsService.addConnectionListener(handleConnectionChange);
-
-    // Kullanıcı varsa WebSocket bağlantısını kur (thread olmadan)
+    // WS kaldırıldı: HTTP modunda bağlantı konsepti yok.
+    // Kullanıcı varsa "ready" kabul ediyoruz.
     if (user) {
-      wsService.connect();
+      setConnectionStatus("connected");
+      setStatusMessage("HTTP modu");
+    } else {
+      setConnectionStatus("disconnected");
+      setStatusMessage("Oturum bekleniyor...");
     }
-
-    // Cleanup
-    return () => {
-      wsService.removeConnectionListener(handleConnectionChange);
-    };
   }, [user]);
 
   // WebSocket yeniden bağlanma fonksiyonu
   const reconnectWebSocket = async () => {
-    if (!user) {
-      console.log("❌ Kullanıcı oturum açmamış, yeniden bağlantı yapılamaz");
-      return;
-    }
-
-    try {
-      console.log("🔄 WebSocket yeniden bağlanıyor...");
-      setConnectionStatus("connecting");
-      setStatusMessage("Yeniden bağlanıyor...");
-
-      // Önce bağlantıyı kes
-      wsService.disconnect();
-
-      // Kısa bir süre bekle
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Yeniden bağlan
-      await wsService.connect();
-
-      console.log("✅ WebSocket yeniden bağlandı");
-    } catch (error) {
-      console.error("❌ WebSocket yeniden bağlantı hatası:", error);
-      setConnectionStatus("error");
-      setStatusMessage("Yeniden bağlantı başarısız");
-
-      // Error'ı global handler'a raporla
-      const {
-        formatWebSocketError,
-      } = require("../../exceptions/chat_exceptions");
-      const errorData = formatWebSocketError(error);
-      console.log("🔧 Formatted reconnect error:", errorData);
-    }
+    // HTTP modunda reconnect gerekmiyor; UI uyumu için no-op.
+    if (!user) return;
+    setConnectionStatus("connected");
+    setStatusMessage("HTTP modu");
   };
 
   const getStatusColor = () => {
@@ -93,13 +56,13 @@ export const useWebSocketConnection = () => {
   const getDisplayMessage = () => {
     switch (connectionStatus) {
       case "connecting":
-        return "Bağlantı kuruluyor...";
+        return "Hazırlanıyor...";
       case "connected":
-        return "Bağlantı kuruldu";
+        return "Hazır (HTTP)";
       case "error":
         return "Bağlantı hatası";
       default:
-        return "Bağlantı bekleniyor...";
+        return "Oturum bekleniyor...";
     }
   };
 

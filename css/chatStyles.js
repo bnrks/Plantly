@@ -75,14 +75,19 @@ export const chatStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: 40,
+    paddingBottom: 60,
   },
   welcomeAvatar: {
-    width: 80,
-    height: 80,
-    marginBottom: 16,
-    opacity: 0.8,
-    marginTop: 40,
+    width: 120,
+    height: 120,
+    marginBottom: 24,
+  },
+  welcomeTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 12,
   },
   welcomeText: {
     fontSize: 18,
@@ -91,9 +96,10 @@ export const chatStyles = StyleSheet.create({
     marginBottom: 8,
   },
   welcomeSubtext: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: "center",
     opacity: 0.7,
+    lineHeight: 22,
   },
   messageContainer: {
     flexDirection: "row",
@@ -190,6 +196,10 @@ export const chatStyles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
+  latencyText: {
+    fontSize: 10,
+    marginTop: 2,
+  },
   userMessageTime: {
     color: "rgba(255,255,255,0.7)",
     textAlign: "right",
@@ -216,7 +226,7 @@ export const chatStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingBottom: 20,
     marginTop: "auto",
-    marginBottom: 64,
+    // marginBottom dinamik olarak chat.jsx'te insets.bottom ile ayarlanacak
   },
   inputWrapper: {
     flexDirection: "row",
@@ -234,9 +244,34 @@ export const chatStyles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  inlineImageContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(160, 200, 120, 0.15)",
+    borderRadius: 12,
+    padding: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "rgba(160, 200, 120, 0.3)",
+  },
+  inlineImagePreview: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+  },
+  inlineRemoveButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  inlineImageText: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 13,
+    opacity: 0.8,
+  },
   selectedImageContainer: {
     position: "absolute",
-    bottom: 145, // Input container'ın biraz üstünde
+    bottom: 145,
     left: 40,
     zIndex: 10,
   },

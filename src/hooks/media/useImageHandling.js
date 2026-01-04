@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-import wsService from "../../services/wsService";
 import chatService from "../../services/chatService";
 
 export const useImageHandling = (
   connectionStatus,
   setMessages,
   setInputText,
-  flatListRef
+  flatListRef,
+  ensureThread
 ) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -27,45 +27,41 @@ export const useImageHandling = (
   };
 
   const analyzeImage = async (inputText, options = {}) => {
-    if (!selectedImage || connectionStatus !== "connected") {
+    // imageOverride: chat.jsx'ten gelen URI ile doğrudan analiz yapabilmek için
+    const imageToAnalyze = options?.imageOverride || selectedImage;
+
+    console.log("🔍 analyzeImage çağrıldı", {
+      hasImageOverride: !!options?.imageOverride,
+      imageToAnalyze: imageToAnalyze?.uri || imageToAnalyze,
+      selectedImage: selectedImage?.uri,
+      connectionStatus,
+    });
+
+    if (!imageToAnalyze || connectionStatus !== "connected") {
       console.log(
-        "⚠️ Image analizi iptal edildi - image yok veya bağlantı yok"
+        "⚠️ Image analizi iptal edildi - image yok veya bağlantı yok",
+        { imageToAnalyze, connectionStatus }
       );
       return;
     }
 
+    // imageToAnalyze'ı normalize et (string URI veya { uri } objesi olabilir)
+    const normalizedImage =
+      typeof imageToAnalyze === "string"
+        ? { uri: imageToAnalyze }
+        : imageToAnalyze;
+
     try {
       setIsAnalyzing(true);
 
-      // Preview build debug
-      console.log("🔧 analyzeImage başlıyor");
-      console.log("🔧 Thread ID mevcut durumu:", wsService.threadId);
-
-      // Eğer henüz thread yoksa, thread oluştur
-      if (!wsService.threadId) {
-        console.log("🧵 Fotoğraf analizi için thread oluşturuluyor...");
-        await wsService.initializeThread();
-
-        // Thread oluşturulduktan sonra bekle
-        let waitCount = 0;
-        while (!wsService.threadId && waitCount < 10) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          waitCount++;
-          console.log(`⏳ Thread oluşturma bekleniyor... ${waitCount}/10`);
-        }
-
-        if (!wsService.threadId) {
-          console.error("❌ Thread oluşturulamadı!");
-          throw new Error("Thread oluşturulamadı");
-        }
-
-        console.log("✅ Thread oluşturuldu:", wsService.threadId);
-      }
+      // Thread yoksa HTTP ile oluştur
+      const ensuredThreadId =
+        typeof ensureThread === "function" ? await ensureThread() : null;
 
       // Kullanıcı mesajını ekle (fotoğraf ve metin)
       const userMessage = chatService.createUserMessage(
         inputText,
-        selectedImage.uri
+        normalizedImage.uri
       );
 
       console.log("➕ Kullanıcı mesajı ekleniyor:", userMessage.id);
@@ -82,20 +78,30 @@ export const useImageHandling = (
 
       // Fotoğraf analizi yap
       const analysisResult = await chatService.analyzeImage(
-        selectedImage,
+        normalizedImage,
         inputText,
-        options
+        {
+          ...options,
+          threadId: options?.threadId || ensuredThreadId,
+        }
       );
 
       console.log("📥 Analiz sonucu:", analysisResult);
 
-      // WebSocket mesajları zaten useChat hook'unda işleniyor
-      // HTTP response'dan ayrıca mesaj eklemeye gerek yok
-      if (
-        analysisResult &&
-        (analysisResult.assistant || analysisResult.message_id)
-      ) {
-        console.log("✅ Analiz başarılı, WebSocket mesajları bekleniyor...");
+      // HTTP response'u chat message formatına çevirip ekle
+      const processed = chatService.processWebSocketMessage(analysisResult);
+      if (processed) {
+        setMessages((prev) => {
+          if (Array.isArray(processed)) {
+            const next = [...prev];
+            for (const msg of processed) {
+              if (!next.some((m) => m.id === msg.id)) next.push(msg);
+            }
+            return next;
+          }
+          if (prev.some((m) => m.id === processed.id)) return prev;
+          return [...prev, processed];
+        });
       }
 
       // Input ve seçili fotoğrafı temizle

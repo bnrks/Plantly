@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import {
   View,
   FlatList,
@@ -66,6 +66,27 @@ export default function ChatScreen() {
   // Analysis parametrelerini al
   const { analysisImage, plantId, analysisMode } = useLocalSearchParams();
 
+  const normalizeParam = (value) => {
+    if (Array.isArray(value)) return value[0];
+    if (value === undefined || value === null) return null;
+    if (typeof value !== "string") return String(value);
+    return value;
+  };
+
+  const safeDecodeUri = (value) => {
+    if (!value || typeof value !== "string") return value;
+    try {
+      // expo-router bazen encode edilmiş uri döndürebiliyor
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  };
+
+  const analysisImageParam = safeDecodeUri(normalizeParam(analysisImage));
+  const plantIdParam = normalizeParam(plantId);
+  const analysisModeParam = normalizeParam(analysisMode);
+
   // Klavye durumunu takip et ve tab bar'ı yönet
   const { isKeyboardVisible } = useKeyboardVisibility();
 
@@ -87,6 +108,9 @@ export default function ChatScreen() {
     isTyping,
     setIsTyping,
     flatListRef,
+    threadId,
+    setThreadId,
+    ensureThread,
     sendMessage,
     startNewChat: startNewChatFromHook,
   } = useChat(connectionStatus);
@@ -103,7 +127,8 @@ export default function ChatScreen() {
     connectionStatus,
     setMessages,
     setInputText,
-    flatListRef
+    flatListRef,
+    ensureThread
   );
 
   const {
@@ -121,8 +146,15 @@ export default function ChatScreen() {
     setIsTyping,
     flatListRef,
     showConfirm,
-    hideAlert
+    hideAlert,
+    setThreadId
   );
+
+  const analysisAutoSentRef = useRef(false);
+
+  useEffect(() => {
+    analysisAutoSentRef.current = false;
+  }, [analysisModeParam, analysisImageParam, plantIdParam]);
 
   const {
     showPlantSelectionModal,
@@ -136,16 +168,39 @@ export default function ChatScreen() {
   } = usePlantSelection(showConfirm, hideAlert);
 
   // Analysis modunda gelen fotoğrafı otomatik işle
+  // imageOverride kullandığımız için artık selectedImage state'ini beklemeye gerek yok
   useEffect(() => {
-    if (analysisMode === "true" && analysisImage && plantId) {
-      // Fotoğrafı set et
-      setSelectedImage(analysisImage);
-      // Otomatik gönder (input boş kalacak, sadece fotoğraf gönderilecek)
-      setTimeout(() => {
-        sendMessage();
-      }, 500);
-    }
-  }, [analysisMode, analysisImage, plantId]);
+    console.log("🔎 Analysis mode effect check:", {
+      analysisModeParam,
+      analysisImageParam: analysisImageParam ? "exists" : "null",
+      plantIdParam,
+      connectionStatus,
+      alreadySent: analysisAutoSentRef.current,
+    });
+
+    if (!(analysisModeParam === "true" && analysisImageParam && plantIdParam))
+      return;
+    if (analysisAutoSentRef.current) return;
+    if (connectionStatus !== "connected") return;
+
+    // Fotoğrafı UI'da göstermek için set et
+    setSelectedImage({ uri: analysisImageParam });
+
+    // Hemen analiz başlat (imageOverride sayesinde selectedImage state'ini beklemeye gerek yok)
+    analysisAutoSentRef.current = true;
+    console.log("🧪 analysisMode auto-send tetiklendi", {
+      analysisMode: analysisModeParam,
+      analysisImage: analysisImageParam,
+      plantId: plantIdParam,
+      connectionStatus,
+    });
+    analyzeImage("", { plantId: plantIdParam, imageOverride: { uri: analysisImageParam } });
+  }, [
+    analysisModeParam,
+    analysisImageParam,
+    plantIdParam,
+    connectionStatus,
+  ]);
 
   // WebSocket bağlantı durumunu izle ve error handling
   useEffect(() => {
@@ -435,6 +490,18 @@ export default function ChatScreen() {
               minute: "2-digit",
             })}
           </ThemedText>
+
+          {!isUser && typeof item.latencyMs === "number" && (
+            <ThemedText
+              style={[
+                styles.messageTime,
+                styles.assistantMessageTime,
+                styles.latencyText,
+              ]}
+            >
+              {`${item.latencyMs} ms`}
+            </ThemedText>
+          )}
         </View>
 
         {isUser && (
@@ -624,6 +691,7 @@ export default function ChatScreen() {
                       { paddingBottom: inputPad + 16 },
                     ]}
                     showsVerticalScrollIndicator={false}
+                    scrollEnabled={messages.length > 0}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode={
                       Platform.OS === "ios" ? "interactive" : "on-drag"
@@ -636,22 +704,13 @@ export default function ChatScreen() {
                     }}
                     ListEmptyComponent={
                       <View style={styles.emptyChat}>
-                        <View style={styles.headerIcon}>
-                          <Ionicons name="leaf" size={24} color={Colors.primary} />
-                        </View>
-                        <ThemedTitle style={styles.title}>
-                          🌱 {t('chat.title')}
-                        </ThemedTitle>
-                        <ThemedText style={styles.subtitle}>
-                          {t('chat.subtitle')}
-                        </ThemedText>
                         <Image
                           source={require("../../../assets/plantly-asistant.png")}
                           style={styles.welcomeAvatar}
                         />
-                        <ThemedText style={styles.welcomeText}>
+                        <ThemedTitle style={styles.welcomeTitle}>
                           {t('chat.welcomeMessage')}
-                        </ThemedText>
+                        </ThemedTitle>
                         <ThemedText style={styles.welcomeSubtext}>
                           {t('chat.welcomeSubtext')}
                         </ThemedText>
@@ -659,41 +718,39 @@ export default function ChatScreen() {
                     }
                   />
 
-                  {/* Seçili fotoğraf önizlemesi - Absolute positioned */}
-                  {selectedImage && (
-                    <View
-                      style={[
-                        styles.selectedImageContainer,
-                        isKeyboardVisible && { bottom: 140, left: 40 }, // Klavye açıkken daha yukarı
-                      ]}
-                    >
-                      <Image
-                        source={{ uri: selectedImage.uri }}
-                        style={styles.selectedImagePreview}
-                      />
-                      <TouchableOpacity
-                        style={styles.removeImageButton}
-                        onPress={removeSelectedImage}
-                      >
-                        <Ionicons
-                          name="close-circle"
-                          size={24}
-                          color="#E53935"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
                   {/* Mesaj Input Alanı */}
                   <View
                     style={[
                       styles.inputContainer,
+                      { marginBottom: 64 + insets.bottom },
                       isKeyboardVisible && {
                         marginBottom: selectedImage ? 60 : 100,
                       },
                     ]}
                     onLayout={(e) => setInputPad(e.nativeEvent.layout.height)}
                   >
+                    {/* Seçili fotoğraf önizlemesi - Input içinde */}
+                    {selectedImage && (
+                      <View style={styles.inlineImageContainer}>
+                        <Image
+                          source={{ uri: selectedImage.uri }}
+                          style={styles.inlineImagePreview}
+                        />
+                        <TouchableOpacity
+                          style={styles.inlineRemoveButton}
+                          onPress={removeSelectedImage}
+                        >
+                          <Ionicons
+                            name="close-circle"
+                            size={20}
+                            color="#E53935"
+                          />
+                        </TouchableOpacity>
+                        <ThemedText style={styles.inlineImageText}>
+                          {t('chat.photoReady')}
+                        </ThemedText>
+                      </View>
+                    )}
                     <View
                       style={[
                         styles.inputWrapper,

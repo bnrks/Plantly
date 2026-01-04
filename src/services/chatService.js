@@ -5,6 +5,133 @@ import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 
 class ChatService {
+  async getIdToken() {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error("Kullanıcı bulunamadı");
+    }
+    return currentUser.getIdToken();
+  }
+
+  async resolveApiUrl() {
+    // settings/api_settings api_url
+    const { doc, getDoc } = require("firebase/firestore");
+    const settingsRef = doc(db, "settings", "api_settings");
+    const snap = await getDoc(settingsRef);
+    const apiUrl = snap.exists() ? snap.data()?.api_url : null;
+
+    if (!apiUrl || typeof apiUrl !== "string") {
+      throw new Error(
+        "Firestore settings/api_settings içinde geçerli api_url bulunamadı"
+      );
+    }
+    return apiUrl.trim();
+  }
+
+  buildHttpBaseUrl(apiUrl) {
+    const trimmed = (apiUrl || "").trim();
+    if (!trimmed) throw new Error("Geçersiz api_url");
+
+    let normalized = trimmed;
+    // ws(s) -> http(s)
+    if (normalized.startsWith("ws://")) {
+      normalized = `http://${normalized.slice("ws://".length)}`;
+    } else if (normalized.startsWith("wss://")) {
+      normalized = `https://${normalized.slice("wss://".length)}`;
+    } else if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
+      // Şema yoksa https varsay
+      normalized = `https://${normalized}`;
+    }
+
+    // /ws/chat gibi suffix'leri temizle
+    try {
+      const url = new URL(normalized);
+      if (url.pathname && url.pathname.endsWith("/ws/chat")) {
+        url.pathname = url.pathname.replace(/\/ws\/chat$/, "");
+      }
+      // trailing slash'ı normalize et
+      url.pathname = (url.pathname || "/").replace(/\/+$/, "");
+      return url.toString().replace(/\/+$/, "");
+    } catch {
+      return normalized.replace(/\/ws\/chat\/?$/, "").replace(/\/+$/, "");
+    }
+  }
+
+  buildHttpUrl(baseUrl, path) {
+    const base = (baseUrl || "").replace(/\/+$/, "");
+    const p = (path || "").startsWith("/") ? path : `/${path}`;
+    return `${base}${p}`;
+  }
+
+  async createThread({ title = "Bitki Bakımı", new_thread = true } = {}) {
+    const idToken = await this.getIdToken();
+    const apiUrl = await this.resolveApiUrl();
+    const baseUrl = this.buildHttpBaseUrl(apiUrl);
+
+    const response = await fetch(this.buildHttpUrl(baseUrl, "/chat/threads"), {
+      method: "POST",
+      headers: {
+        idToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title, new_thread }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const json = await response.json();
+    return json;
+  }
+
+  async sendTextMessage({ threadId, text }) {
+    const idToken = await this.getIdToken();
+    const apiUrl = await this.resolveApiUrl();
+    const baseUrl = this.buildHttpBaseUrl(apiUrl);
+
+    const response = await fetch(this.buildHttpUrl(baseUrl, "/chat/message"), {
+      method: "POST",
+      headers: {
+        idToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ thread_id: threadId, text }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async sendDiagnosis({ threadId, cls, confidence, auto_reply = true }) {
+    const idToken = await this.getIdToken();
+    const apiUrl = await this.resolveApiUrl();
+    const baseUrl = this.buildHttpBaseUrl(apiUrl);
+
+    const response = await fetch(this.buildHttpUrl(baseUrl, "/chat/diagnosis"), {
+      method: "POST",
+      headers: {
+        idToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        thread_id: threadId,
+        cls,
+        confidence,
+        auto_reply,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
   /**
    * Markdown içindeki JSON'ı parse eder
    */
@@ -110,15 +237,8 @@ class ChatService {
    */
   async analyzeImage(selectedImage, inputText = "", options = {}) {
     try {
-      // Firebase ID Token al
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        throw new Error("Kullanıcı bulunamadı");
-      }
-      const idToken = await currentUser.getIdToken();
-
-      const { plantId } = options || {};
+      const idToken = await this.getIdToken();
+      const { plantId, threadId } = options || {};
 
       // FormData hazırla
       const fd = new FormData();
@@ -129,9 +249,8 @@ class ChatService {
       });
       fd.append("auto_reply", "true");
 
-      // Thread ID'yi wsService'ten al (eğer varsa)
-      const wsService = require("./wsService").default;
-      fd.append("thread_id", wsService.threadId || "");
+      // Thread ID (HTTP modelinde client tarafında tutulur)
+      fd.append("thread_id", threadId ? String(threadId) : "");
 
       // (Optional) Plant ID'yi backend'e ilet
       if (plantId) {
@@ -139,21 +258,21 @@ class ChatService {
       }
 
       console.log("📤 Fotoğraf analizi başlatılıyor...", {
-        threadId: wsService.threadId || "",
+        threadId: threadId || "",
         plantId: plantId || "",
       });
 
+      const apiUrl = await this.resolveApiUrl();
+      const baseUrl = this.buildHttpBaseUrl(apiUrl);
+
       // API'ye gönder
-      const response = await fetch(
-        "https://learning-partially-rabbit.ngrok-free.app/chat/analyze-image", // You should change this to your actual backend URL
-        {
-          method: "POST",
-          headers: {
-            idToken: idToken,
-          },
-          body: fd,
-        }
-      );
+      const response = await fetch(this.buildHttpUrl(baseUrl, "/chat/analyze-image"), {
+        method: "POST",
+        headers: {
+          idToken,
+        },
+        body: fd,
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -223,12 +342,23 @@ class ChatService {
       const parsedContent = this.parseMarkdownJson(data.assistant.content);
       console.log("🔍 Assistant parsed content:", parsedContent);
 
+      const latencyMs =
+        typeof data?.assistant?.latency_ms === "number"
+          ? data.assistant.latency_ms
+          : typeof data?.latency_ms === "number"
+            ? data.latency_ms
+            : undefined;
+
       const newMessage = {
         id:
-          data.message_id || data.assistant.message_id || Date.now().toString(),
+          data.message_id ||
+          data.assistant.message_id ||
+          data.assistant.id ||
+          Date.now().toString(),
         role: "assistant",
         content: parsedContent.content || data.assistant.content,
         timestamp: new Date(),
+        ...(latencyMs !== undefined ? { latencyMs } : {}),
       };
 
       // Eğer diagnosis bilgisi varsa ekle
@@ -236,12 +366,19 @@ class ChatService {
         applyDiagnosisToMessage(newMessage, data.diagnosis);
       }
 
+      const notesFromAssistant =
+        Array.isArray(parsedContent.notes)
+          ? parsedContent.notes
+          : Array.isArray(data.assistant.notes)
+            ? data.assistant.notes
+            : null;
+
       // Eğer notes varsa ayrı mesaj olarak döndür
-      if (parsedContent.notes && Array.isArray(parsedContent.notes)) {
+      if (notesFromAssistant) {
         const notesMessage = {
           id: `${newMessage.id}_notes`,
           role: "assistant_notes",
-          content: parsedContent.notes,
+          content: notesFromAssistant,
           timestamp: new Date(),
           hasActionButton: true,
         };
@@ -262,11 +399,15 @@ class ChatService {
       console.log("🔍 Direkt content formatı algılandı");
       const parsedContent = this.parseMarkdownJson(data.content);
 
+      const latencyMs =
+        typeof data?.latency_ms === "number" ? data.latency_ms : undefined;
+
       const newMessage = {
         id: data.message_id || Date.now().toString(),
         role: "assistant",
         content: parsedContent.content || data.content,
         timestamp: new Date(),
+        ...(latencyMs !== undefined ? { latencyMs } : {}),
       };
 
       if (data.diagnosis) {
@@ -325,6 +466,9 @@ class ChatService {
         role: data.message.role,
         content: parsedContent.content || data.message.content,
         timestamp: new Date(),
+        ...(typeof data?.message?.latency_ms === "number"
+          ? { latencyMs: data.message.latency_ms }
+          : {}),
       };
 
       // Yeni şema: assistant mesajı üzerinde diagnosis alanları gelebilir
@@ -344,12 +488,19 @@ class ChatService {
         });
       }
 
+      const notesFromMessage =
+        Array.isArray(parsedContent.notes)
+          ? parsedContent.notes
+          : Array.isArray(data.message.notes)
+            ? data.message.notes
+            : null;
+
       // Eğer notes varsa ayrı mesaj olarak döndür
-      if (parsedContent.notes && Array.isArray(parsedContent.notes)) {
+      if (notesFromMessage) {
         const notesMessage = {
           id: `${mainMessage.id}_notes`,
           role: "assistant_notes",
-          content: parsedContent.notes,
+          content: notesFromMessage,
           timestamp: new Date(),
           hasActionButton: true,
         };

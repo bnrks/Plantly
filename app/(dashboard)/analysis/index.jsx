@@ -68,15 +68,6 @@ export default function Analysis() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Yapay Zeka Hastalık Analizi Başlık Butonu */}
-        <View style={[localStyles.analysisBanner, { backgroundColor: theme.thirdBg }]}>
-          <Image source={analyzerIcon} style={localStyles.analyzerIcon} />
-          <View style={localStyles.bannerTextContainer}>
-            <ThemedTitle style={localStyles.bannerTitle}>{t('analysis.aiTitle')}</ThemedTitle>
-            <ThemedTitle style={localStyles.bannerSubtitle}>{t('analysis.aiSubtitle')}</ThemedTitle>
-          </View>
-        </View>
-
         {step === "instruction" && (
           <View style={styles.block}>
             {/* Büyük Asistant resmi */}
